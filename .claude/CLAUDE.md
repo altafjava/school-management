@@ -6,7 +6,7 @@
 
 ## Project Identity
 
-Enterprise Multi-Tenant SaaS Platform (Java 21, Spring Boot 3). Generic, reusable foundation — domain projects (school, hospital, HR) plug in via `spring-boot-starter`.
+Enterprise Multi-Tenant SaaS Platform (Java 25, Spring Boot 4). Generic, reusable foundation — domain projects (school, hospital, HR) plug in via `spring-boot-starter`.
 
 Group ID: `com.altafjava.platform`
 Module names: `core`, `domain`, `infrastructure`, `application`, `api`, `integration`, `spring-boot-starter` — no `platform-` prefix.
@@ -134,6 +134,24 @@ core ← domain ← application ← api
 - Return DTOs (Java records) — never JPA entities.
 - Breaking changes → `/api/v2/`. Deprecated endpoints carry `Deprecation` + `Sunset` headers.
 
+### API Versioning Strategy
+
+URL-path versioning is the standard: `/api/v{N}/resource`.
+
+| Trigger | Action |
+|---------|--------|
+| New field added to response | Non-breaking — add to v1 response DTO, update `unmappedTargetPolicy` if needed |
+| Existing field renamed or removed | Breaking — introduce `/api/v2/` endpoint, keep v1 running with `Deprecation` + `Sunset` response headers |
+| Request shape changed incompatibly | Breaking — new version required |
+| New endpoint added | Non-breaking — add at current version |
+
+Rules:
+- **Never delete v{N} without a minimum 6-month deprecation window** and a `Sunset` date header on every response from that endpoint.
+- **Keep the `Deprecation` header** (`Deprecation: true`, `Sunset: <RFC 7231 date>`) on every response from a deprecated endpoint so clients can programmatically detect removal timelines.
+- **Version the controller package**, not just the URL: deprecated controllers live in `api/rest/v1/`, new ones in `api/rest/v2/`.
+- **Shared application layer** — v1 and v2 controllers must call the same application services; version differences are isolated to DTOs and mappers only.
+- **Document breaking changes** in `CHANGELOG.md` under the `Breaking Changes` heading before merging.
+
 ---
 
 ## DTOs
@@ -170,11 +188,26 @@ core ← domain ← application ← api
 
 - Access control: `@PreAuthorize` on controllers. Never manual role checks in services.
 - Input validation: Bean Validation at API boundary only.
-- Secrets: environment variables only — never hardcoded, never in `application.yml`.
+- Secrets: never hardcoded, never as raw `${VAR:default}` in `application.yml` — always through `SecretProvider` (`EnvironmentSecretProvider` in dev/test, `VaultSecretProvider` in staging/prod).
 - Passwords: `BCryptPasswordEncoderAdapter` only.
 - PII: `@Pii` annotation — never log, never expose raw.
-- Queries: JPQL/named parameters only — no string concatenation.
-- Non-dev profiles: fail startup if `JWT_SECRET` absent or default.
+- Queries: JPQL/named parameters only — no string concatenation, including identifiers (table/column names) built from user input.
+- Non-dev profiles: `SecurityStartupValidator` fails startup if any required secret is absent or default.
+
+---
+
+## Configuration
+
+Three tiers, each with its own store — never collapse them into one mechanism:
+
+| Tier | Examples | Store |
+|------|----------|-------|
+| Secrets | DB/Redis/RabbitMQ/ES credentials, JWT keys, encryption key, third-party API keys | `SecretProvider` (Vault in staging/prod) |
+| Environment/infra tunables | Pool sizes, circuit-breaker/retry params, actuator exposure, cache TTL regions | Spring profile YAML, reviewed via PR |
+| Tenant/business settings | Feature flags, per-tenant rate limits, branding, notification prefs | DB, key/JSON shape (see `FeatureFlag`), `tenantAwareCacheKeyGenerator` |
+
+- Never add a new tenant- or business-facing value to `application.yml` — it belongs in tier 3.
+- Tier-3 tables owned by `platform-saas` stay domain-generic — no school/hospital/HR-specific columns (extend via key/value, not new platform columns; domain apps own their own keys through `PlatformConfigurer`).
 
 ---
 
@@ -267,6 +300,7 @@ Also run: `./gradlew publishToMavenLocal` after structural changes.
 | JSON | Jackson (auto-configured) | manual JSON string building |
 | Passwords | `BCryptPasswordEncoderAdapter` | any other hasher |
 | Encryption | `AesEncryptionService` | custom crypto |
+| Secret retrieval | `SecretProvider` | raw `${VAR}` in YAML for anything sensitive |
 | Event publishing | `EventPublisher` (core interface) | `ApplicationContext.publishEvent()` directly |
 | Scheduling | `JobExecutionStrategy` + `@ScheduledJob` | `@Scheduled` |
 | Distributed lock | `@SchedulerLock` (ShedLock) | `synchronized`, `ReentrantLock` across JVMs |
@@ -289,4 +323,4 @@ Also run: `./gradlew publishToMavenLocal` after structural changes.
 11. No `FetchType.EAGER`
 12. No `EnumType.ORDINAL`
 13. No manual `TenantContext` setting outside `TenantContextFilter`
-14. Never `git commit` or `git push` without explicit user instruction
+14. Never `git add`, `git commit` or `git push` without explicit user instruction

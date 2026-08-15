@@ -48,4 +48,10 @@ public class SchoolPlatformConfigurer implements PlatformConfigurer {
 		// Run school domain migrations against every new SCHEMA-mode tenant schema
 		return List.of("db/domain/changelog-master.xml");
 	}
+
+	@Override
+	public Set<String> additionalTrustedDeserializationPackages() {
+		// Lets the platform's Redis serializer deserialize cached com.altafjava.school.* domain types.
+		return Set.of("com.altafjava.school.");
+	}
 }
