@@ -22,6 +22,7 @@ import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.ExamService;
 import com.altafjava.school.application.service.GradeService;
 import com.altafjava.school.application.service.StudentService;
+import com.altafjava.school.application.service.SubjectService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
@@ -29,6 +30,7 @@ import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.grade.model.Grade;
 import com.altafjava.school.domain.student.model.Student;
+import com.altafjava.school.domain.subject.model.Subject;
 
 /**
  * Verifies that grade records created under tenant A are not visible to tenant B.
@@ -47,6 +49,9 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private ExamService examService;
+
+	@Autowired
+	private SubjectService subjectService;
 
 	@Autowired
 	private TenantOnboardingService onboardingService;
@@ -80,11 +85,12 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		activateTenant(tenantA);
 		Classroom classroom = classroomService.create(
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 5", "A", "2024-25", null);
-		Exam exam = examService.schedule("Midterm", "Math", classroom.getId(),
+		Subject subject = subjectService.create("MATH-" + UUID.randomUUID().toString().substring(0, 6), "Math", null);
+		Exam exam = examService.schedule("Midterm", subject.getId(), classroom.getId(),
 				LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100));
 		Student student = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6),
 				"Alice", "Smith", "alice@a.edu", LocalDate.of(2010, 1, 1));
-		gradeService.record(student.getId(), "Math", exam.getId(), BigDecimal.valueOf(85), "teacher-a");
+		gradeService.record(student.getId(), exam.getId(), BigDecimal.valueOf(85), "teacher-a");
 
 		activateTenant(tenantB);
 		Page<Grade> tenantBGrades = gradeService.listGrades(PageRequest.of(0, 100));
@@ -99,11 +105,13 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		activateTenant(tenantA);
 		Classroom classroom = classroomService.create(
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 6", "B", "2024-25", null);
-		Exam exam = examService.schedule("Final", "Science", classroom.getId(),
+		Subject subject = subjectService.create("SCI-" + UUID.randomUUID().toString().substring(0, 6), "Science",
+				null);
+		Exam exam = examService.schedule("Final", subject.getId(), classroom.getId(),
 				LocalDateTime.now().plusDays(14), BigDecimal.valueOf(100));
 		Student student = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6),
 				"Bob", "Jones", "bob@a.edu", LocalDate.of(2011, 3, 20));
-		Grade grade = gradeService.record(student.getId(), "Science", exam.getId(),
+		Grade grade = gradeService.record(student.getId(), exam.getId(),
 				BigDecimal.valueOf(90), "teacher-a");
 		String publicId = grade.getPublicId().toString();
 

@@ -13,15 +13,16 @@ jacocoTestReport {
     }
 }
 
-// Coverage ratchet — floor = measured baseline (31.8%, 2026-08-16), not the 85% aspirational
-// target in TESTING.md's table. Raise as coverage improves; never lower to make a change pass.
+// Coverage ratchet — floor = measured baseline (41.3%, 2026-08-16, Phase 2), not the 85%
+// aspirational target in TESTING.md's table. Raise as coverage improves; never lower to make a
+// change pass.
 jacocoTestCoverageVerification {
     dependsOn test
     violationRules {
         rule {
             limit {
                 counter = 'LINE'
-                minimum = 0.31
+                minimum = 0.41
             }
         }
     }

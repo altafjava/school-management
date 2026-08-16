@@ -22,6 +22,7 @@ import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.student.repository.StudentRepository;
+import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.util.SchoolAuthenticationHelper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -52,6 +53,9 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private ExamRepository examRepository;
+
+	@Autowired
+	private SubjectRepository subjectRepository;
 
 	private Long tenantId;
 	private String adminEmail;
@@ -84,11 +88,24 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 		Long classroomId = withTenant(() -> classroomRepository
 				.findByPublicIdAndTenantId(UUID.fromString(classroomPublicId), tenantId).orElseThrow().getId());
 
+		String subjectPublicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"code\":\"MATH-" + classCode + "\",\"name\":\"Math\"}")
+				.when()
+				.post("/api/v1/subjects")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+		Long subjectId = withTenant(() -> subjectRepository
+				.findByPublicIdAndTenantId(UUID.fromString(subjectPublicId), tenantId).orElseThrow().getId());
+
 		String examPublicId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
-				.body("{\"title\":\"Midterm\",\"subject\":\"Math\",\"classroomId\":" + classroomId
+				.body("{\"title\":\"Midterm\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
 						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100}")
 				.when()
 				.post("/api/v1/exams")
@@ -134,7 +151,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
-				.body("{\"studentId\":" + studentId + ",\"subject\":\"Math\",\"examId\":" + examId
+				.body("{\"studentId\":" + studentId + ",\"examId\":" + examId
 						+ ",\"marks\":95,\"gradedBy\":\"admin\"}")
 				.when()
 				.post("/api/v1/grades")
@@ -166,7 +183,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + studentToken)
 				.contentType(ContentType.JSON)
-				.body("{\"studentId\":" + studentId + ",\"subject\":\"Math\",\"examId\":" + examId
+				.body("{\"studentId\":" + studentId + ",\"examId\":" + examId
 						+ ",\"marks\":90,\"gradedBy\":\"self\"}")
 				.when()
 				.post("/api/v1/grades")
@@ -183,7 +200,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
-				.body("{\"studentId\":" + studentId + ",\"subject\":\"Math\",\"examId\":" + examId
+				.body("{\"studentId\":" + studentId + ",\"examId\":" + examId
 						+ ",\"marks\":75,\"gradedBy\":\"admin\"}")
 				.when()
 				.post("/api/v1/grades")

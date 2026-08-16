@@ -20,6 +20,7 @@ import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
+import com.altafjava.school.domain.subject.repository.SubjectRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ExamServiceTest {
@@ -28,12 +29,14 @@ class ExamServiceTest {
 	private ExamRepository examRepository;
 	@Mock
 	private ClassroomRepository classroomRepository;
+	@Mock
+	private SubjectRepository subjectRepository;
 
 	private ExamService examService;
 
 	@BeforeEach
 	void setUp() {
-		examService = new ExamService(examRepository, classroomRepository);
+		examService = new ExamService(examRepository, classroomRepository, subjectRepository);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -47,18 +50,31 @@ class ExamServiceTest {
 		when(classroomRepository.existsByIdAndTenantId(99L, 1L)).thenReturn(false);
 
 		assertThrows(ResourceNotFoundException.class,
-				() -> examService.schedule("Midterm", "Math", 99L, LocalDateTime.now().plusDays(7),
+				() -> examService.schedule("Midterm", 5L, 99L, LocalDateTime.now().plusDays(7),
 						BigDecimal.valueOf(100)));
 
 		verify(examRepository, never()).save(any());
 	}
 
 	@Test
-	void schedule_withExistingClassroom_succeeds() {
+	void schedule_withNonExistentSubject_throwsResourceNotFound() {
 		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
+		when(subjectRepository.existsByIdAndTenantId(99L, 1L)).thenReturn(false);
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> examService.schedule("Midterm", 99L, 10L, LocalDateTime.now().plusDays(7),
+						BigDecimal.valueOf(100)));
+
+		verify(examRepository, never()).save(any());
+	}
+
+	@Test
+	void schedule_withExistingClassroomAndSubject_succeeds() {
+		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
+		when(subjectRepository.existsByIdAndTenantId(5L, 1L)).thenReturn(true);
 		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
 
-		assertDoesNotThrow(() -> examService.schedule("Midterm", "Math", 10L, LocalDateTime.now().plusDays(7),
+		assertDoesNotThrow(() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
 				BigDecimal.valueOf(100)));
 	}
 }

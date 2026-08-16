@@ -19,6 +19,7 @@ import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.util.SchoolAuthenticationHelper;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -49,6 +50,9 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private ClassroomRepository classroomRepository;
+
+	@Autowired
+	private SubjectRepository subjectRepository;
 
 	private Long tenantId;
 	private String adminEmail;
@@ -89,16 +93,39 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 		}
 	}
 
+	private Long createSubjectAndGetInternalId(String accessToken, String code) {
+		String publicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"code\":\"" + code + "\",\"name\":\"" + code + "\"}")
+				.when()
+				.post("/api/v1/subjects")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+
+		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null,
+				com.altafjava.platform.core.tenant.TenantType.SHARED);
+		try {
+			return subjectRepository.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId)
+					.orElseThrow().getId();
+		} finally {
+			TenantContext.ForTesting.clear();
+		}
+	}
+
 	@Test
 	void scheduleExam_asTenantAdmin_returns201() {
 		String accessToken = login();
 		Long classroomId = createClassroomAndGetInternalId(accessToken, "CLS-EX1");
+		Long subjectId = createSubjectAndGetInternalId(accessToken, "MATH-EX1");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
-				.body("{\"title\":\"Midterm\",\"subject\":\"Math\",\"classroomId\":" + classroomId
+				.body("{\"title\":\"Midterm\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
 						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100}")
 				.when()
 				.post("/api/v1/exams")
@@ -123,13 +150,14 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 	void scheduleExam_asStudentRole_returns403() {
 		String accessToken = login();
 		Long classroomId = createClassroomAndGetInternalId(accessToken, "CLS-EX2");
+		Long subjectId = createSubjectAndGetInternalId(accessToken, "SCI-EX2");
 		String studentToken = authHelper.tokenWithRole(tenantId, "STUDENT");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + studentToken)
 				.contentType(ContentType.JSON)
-				.body("{\"title\":\"Final\",\"subject\":\"Science\",\"classroomId\":" + classroomId
+				.body("{\"title\":\"Final\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
 						+ ",\"scheduledAt\":\"2026-05-01T09:00:00\",\"maxMarks\":100}")
 				.when()
 				.post("/api/v1/exams")
@@ -141,11 +169,12 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 	void examCreatedUnderOneTenant_returns404ForAnotherTenant() {
 		String accessToken = login();
 		Long classroomId = createClassroomAndGetInternalId(accessToken, "CLS-EX3");
+		Long subjectId = createSubjectAndGetInternalId(accessToken, "HIST-EX3");
 		String publicId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
-				.body("{\"title\":\"Quiz\",\"subject\":\"History\",\"classroomId\":" + classroomId
+				.body("{\"title\":\"Quiz\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
 						+ ",\"scheduledAt\":\"2026-04-01T09:00:00\",\"maxMarks\":50}")
 				.when()
 				.post("/api/v1/exams")

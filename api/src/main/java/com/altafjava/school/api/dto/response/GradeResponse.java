@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record GradeResponse(
 		String publicId,
 		Long studentId,
-		String subject,
+		Long subjectId,
 		Long examId,
 		BigDecimal marks,
 		String gradeLetter,

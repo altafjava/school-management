@@ -52,7 +52,6 @@ public class GradeController {
 	public GradeResponse record(@Valid @RequestBody RecordGradeRequest request) {
 		return gradeMapper.toResponse(gradeService.record(
 				request.studentId(),
-				request.subject(),
 				request.examId(),
 				request.marks(),
 				request.gradedBy()));

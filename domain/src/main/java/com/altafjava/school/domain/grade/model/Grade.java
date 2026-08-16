@@ -24,8 +24,9 @@ public class Grade extends SoftDeletableEntity {
 	@Column(name = "student_id", nullable = false)
 	private Long studentId;
 
-	@Column(name = "subject", nullable = false, length = 100)
-	private String subject;
+	// FK to subjects.id
+	@Column(name = "subject_id", nullable = false)
+	private Long subjectId;
 
 	// FK to exams.id
 	@Column(name = "exam_id", nullable = false)
@@ -40,11 +41,11 @@ public class Grade extends SoftDeletableEntity {
 	@Column(name = "graded_by", length = 100)
 	private String gradedBy;
 
-	public static Grade create(Long studentId, String subject, Long examId,
+	public static Grade create(Long studentId, Long subjectId, Long examId,
 			BigDecimal marks, String gradeLetter, String gradedBy) {
 		return Grade.builder()
 				.studentId(studentId)
-				.subject(subject)
+				.subjectId(subjectId)
 				.examId(examId)
 				.marks(marks)
 				.gradeLetter(gradeLetter)
