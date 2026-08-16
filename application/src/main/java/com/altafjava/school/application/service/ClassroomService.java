@@ -9,14 +9,17 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.teacher.repository.TeacherRepository;
 
 @Service
 public class ClassroomService {
 
 	private final ClassroomRepository classroomRepository;
+	private final TeacherRepository teacherRepository;
 
-	public ClassroomService(ClassroomRepository classroomRepository) {
+	public ClassroomService(ClassroomRepository classroomRepository, TeacherRepository teacherRepository) {
 		this.classroomRepository = classroomRepository;
+		this.teacherRepository = teacherRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -34,6 +37,12 @@ public class ClassroomService {
 	@Transactional
 	public Classroom create(String classCode, String grade, String section,
 			String academicYear, Long classTeacherId) {
+		if (classTeacherId != null) {
+			Long tenantId = TenantContext.getCurrentTenantId();
+			if (!teacherRepository.existsByIdAndTenantId(classTeacherId, tenantId)) {
+				throw new ResourceNotFoundException("Teacher not found: " + classTeacherId);
+			}
+		}
 		Classroom classroom = Classroom.create(classCode, grade, section, academicYear, classTeacherId);
 		return classroomRepository.save(classroom);
 	}

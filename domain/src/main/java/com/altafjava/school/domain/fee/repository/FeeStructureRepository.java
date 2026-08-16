@@ -14,4 +14,6 @@ public interface FeeStructureRepository extends JpaRepository<FeeStructure, Long
 	Optional<FeeStructure> findByPublicIdAndTenantId(UUID publicId, Long tenantId);
 
 	boolean existsByNameAndTenantId(String name, Long tenantId);
+
+	boolean existsByIdAndTenantId(Long id, Long tenantId);
 }

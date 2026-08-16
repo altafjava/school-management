@@ -1,5 +1,21 @@
 plugins {
     id 'java-library'
+    id 'jacoco'
+}
+
+// Line/branch coverage reporting for this module. Report-only for now (no
+// jacocoTestCoverageVerification minimum) — see TESTING.md §2 for why a real coverage baseline
+// must be measured before a threshold is enforced, mirroring platform-saas's own approach.
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.named('test') {
+    finalizedBy jacocoTestReport
 }
 
 dependencies {

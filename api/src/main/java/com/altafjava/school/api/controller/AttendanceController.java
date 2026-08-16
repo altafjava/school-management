@@ -17,7 +17,6 @@ import com.altafjava.school.api.dto.request.MarkAttendanceRequest;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
 import com.altafjava.school.api.mapper.AttendanceMapper;
 import com.altafjava.school.application.service.AttendanceService;
-import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 
 @RestController
 @RequestMapping("/api/v1/attendance")
@@ -54,7 +53,7 @@ public class AttendanceController {
 				request.studentId(),
 				request.classroomId(),
 				request.attendanceDate(),
-				AttendanceStatus.valueOf(request.status()),
+				request.status(),
 				request.markedBy()));
 	}
 }
