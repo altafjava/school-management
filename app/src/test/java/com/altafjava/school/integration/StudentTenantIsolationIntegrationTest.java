@@ -43,22 +43,23 @@ class StudentTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 
 	@BeforeEach
 	void createTenants() {
-		TenantContext.clear();
+		TenantContext.ForTesting.clear();
 		String suffix = UUID.randomUUID().toString().substring(0, 8);
 		tenantA = onboardingService.registerTenant(new RegisterTenantCommand(
 				"School A", "school-a-" + suffix, 1L, "admin@school-a.test", "Password123!", "USD"));
 		tenantB = onboardingService.registerTenant(new RegisterTenantCommand(
 				"School B", "school-b-" + suffix, 1L, "admin@school-b.test", "Password123!", "USD"));
-		TenantContext.clear();
+		TenantContext.ForTesting.clear();
 	}
 
 	private void activateTenant(Tenant tenant) {
-		TenantContext.setCurrentTenant(tenant.getId(), tenant.getPublicId(), tenant.getSubdomain(), tenant.getType());
+		TenantContext.ForTesting.setCurrentTenant(tenant.getId(), tenant.getPublicId(), tenant.getSubdomain(),
+				tenant.getType());
 	}
 
 	@AfterEach
 	void clearContext() {
-		TenantContext.clear();
+		TenantContext.ForTesting.clear();
 	}
 
 	@Test

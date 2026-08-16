@@ -1,6 +1,6 @@
 # CLAUDE.md — Development Standards
 
-> **Enterprise-grade always.** Every decision — coding, design, architecture, security, testing — must meet enterprise production standards. Choose maintainability, correctness, and explicitness over convenience. When two approaches work, pick the one a senior engineer would be proud to ship.
+> **Enterprise-grade always** — coding, design, architecture, security, testing. Maintainability, correctness, explicitness over convenience.
 
 ---
 
@@ -21,7 +21,7 @@ SOLID, DRY, YAGNI, KISS, Fail Fast, Least Astonishment, Composition over Inherit
 
 ## Design Patterns
 
-Use only when the problem demands it. No alternatives.
+Use only when the problem demands it — no invented alternatives.
 
 | Pattern | Location |
 |---------|----------|
@@ -32,7 +32,7 @@ Use only when the problem demands it. No alternatives.
 | Decorator | `TenantContextPropagatingDecorator` |
 | Chain of Responsibility | Tenant resolution fallback |
 | Adapter | `BCryptPasswordEncoderAdapter`, repository adapters |
-| Outbox | Event publishing |
+| Outbox | Event publishing — `TransactionalOutboxEventPublisher` (`infrastructure/.../event/outbox/`), backed by the `outbox_events` table |
 | Saga | `SagaCoordinator` |
 
 ---
@@ -62,7 +62,7 @@ core ← domain ← application ← api
 - `infrastructure`: implements interfaces from `domain`/`application`. No business logic.
 - `api`: depends on `application` + `core`. Controllers, DTOs, mappers, validation only.
 
-**Never violate this.** Need to cross layers? Introduce an interface in the inner layer.
+Never violate this — cross-layer needs go through an interface in the inner layer.
 
 ---
 
@@ -136,8 +136,6 @@ core ← domain ← application ← api
 
 ### API Versioning Strategy
 
-URL-path versioning is the standard: `/api/v{N}/resource`.
-
 | Trigger | Action |
 |---------|--------|
 | New field added to response | Non-breaking — add to v1 response DTO, update `unmappedTargetPolicy` if needed |
@@ -145,12 +143,10 @@ URL-path versioning is the standard: `/api/v{N}/resource`.
 | Request shape changed incompatibly | Breaking — new version required |
 | New endpoint added | Non-breaking — add at current version |
 
-Rules:
-- **Never delete v{N} without a minimum 6-month deprecation window** and a `Sunset` date header on every response from that endpoint.
-- **Keep the `Deprecation` header** (`Deprecation: true`, `Sunset: <RFC 7231 date>`) on every response from a deprecated endpoint so clients can programmatically detect removal timelines.
-- **Version the controller package**, not just the URL: deprecated controllers live in `api/rest/v1/`, new ones in `api/rest/v2/`.
-- **Shared application layer** — v1 and v2 controllers must call the same application services; version differences are isolated to DTOs and mappers only.
-- **Document breaking changes** in `CHANGELOG.md` under the `Breaking Changes` heading before merging.
+- Deprecate for a minimum 6 months; every response from that endpoint carries `Deprecation: true` + `Sunset: <RFC 7231 date>`.
+- Version the controller package too, not just the URL: `api/rest/v1/`, `api/rest/v2/`.
+- v1 and v2 share the same application services — version differences are isolated to DTOs and mappers only.
+- Document breaking changes in `CHANGELOG.md` under `Breaking Changes` before merging.
 
 ---
 
@@ -188,7 +184,7 @@ Rules:
 
 - Access control: `@PreAuthorize` on controllers. Never manual role checks in services.
 - Input validation: Bean Validation at API boundary only.
-- Secrets: never hardcoded, never as raw `${VAR:default}` in `application.yml` — always through `SecretProvider` (`EnvironmentSecretProvider` in dev/test, `VaultSecretProvider` in staging/prod).
+- Secrets: never hardcoded or raw `${VAR:default}` in YAML — via `SecretProvider` (`EnvironmentSecretProvider` dev/test, `VaultSecretProvider` staging/prod).
 - Passwords: `BCryptPasswordEncoderAdapter` only.
 - PII: `@Pii` annotation — never log, never expose raw.
 - Queries: JPQL/named parameters only — no string concatenation, including identifiers (table/column names) built from user input.
@@ -198,7 +194,7 @@ Rules:
 
 ## Configuration
 
-Three tiers, each with its own store — never collapse them into one mechanism:
+Three tiers, each with its own store — never collapse into one:
 
 | Tier | Examples | Store |
 |------|----------|-------|
@@ -275,16 +271,14 @@ Never: mock repos in integration tests, `@Disabled` placeholders, OpenAPI assert
 
 ## Subagent Discipline
 
-Spawn subagents only when: (1) task requires genuine parallelism, or (2) open-ended search spans many files with no obvious path.
-For single-file reads, symbol lookups, or targeted greps — use Bash/Read directly.
-Explore agent: only for open-ended "find X across the codebase" — never for a known file path.
+Spawn subagents only for genuine parallelism or an open-ended multi-file search with no obvious path — not for single-file reads, symbol lookups, or targeted greps (use Bash/Read directly).
+Explore agent: open-ended search only, never a known file path.
 
 ---
 
 ## Post-Edit Quality Gate
 
-After every edit: `./gradlew compileJava compileTestJava`. Large changes: `./gradlew clean build`. Fix all warnings before stopping.
-Also run: `./gradlew publishToMavenLocal` after structural changes.
+After every edit: `./gradlew compileJava compileTestJava` (large changes: `clean build`); fix all warnings before stopping. Run `publishToMavenLocal` after structural changes.
 
 ---
 
@@ -305,6 +299,27 @@ Also run: `./gradlew publishToMavenLocal` after structural changes.
 | Scheduling | `JobExecutionStrategy` + `@ScheduledJob` | `@Scheduled` |
 | Distributed lock | `@SchedulerLock` (ShedLock) | `synchronized`, `ReentrantLock` across JVMs |
 | External IDs | `UUID.randomUUID()` | sequential/timestamp IDs |
+
+---
+
+## Deliberate Non-Changes
+
+Settled decisions — don't reopen without a new, concrete trigger.
+
+- JPA entities stay mutable classes, never records — Hibernate needs mutable state for proxying/lazy-loading.
+- Never seal `JobExecutionStrategy`, `TenantResolver`, or `ResourceAccessPolicy` — they're consumer extension points.
+- Don't abstract Hibernate annotations (`@SQLRestriction`, `@Filter`, `@Cache`) behind a platform interface in `domain` — no ORM-swap plan.
+- No `StructuredTaskScope` in production code — still a JDK preview feature (JEP 505).
+- No blanket `@Async` → virtual-thread conversion — must be bound-sized and load-tested per executor.
+- No JVM/GC/CDS tuning in-repo — no `Dockerfile` yet; fix the deployment pipeline first.
+- No second extension mechanism alongside `PlatformConfigurer`.
+
+---
+
+## Documentation Policy
+
+- No new dated audit/status/readiness markdown (`*_AUDIT.md`, `*_ASSESSMENT.md`, `PHASE*.md`) — fixes go into code + tests, not point-in-time reports.
+- Update living docs in place, never supersede with a new file: `README.md`, `DEVELOPER_GUIDE.md`, `ROADMAP.md`, `CONTRACTS.md`, `CONFIGURATION_STRATEGY.md`, `TESTING.md`, `CHANGELOG.md`, `MIGRATION.md`.
 
 ---
 

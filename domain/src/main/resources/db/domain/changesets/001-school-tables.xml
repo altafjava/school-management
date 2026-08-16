@@ -121,6 +121,9 @@
         <createIndex indexName="idx_classrooms_deleted" tableName="classrooms">
             <column name="deleted"/>
         </createIndex>
+        <createIndex indexName="idx_classrooms_class_teacher_id" tableName="classrooms">
+            <column name="class_teacher_id"/>
+        </createIndex>
         <createIndex indexName="uq_classrooms_code_tenant" tableName="classrooms" unique="true">
             <column name="class_code"/>
             <column name="tenant_id"/>

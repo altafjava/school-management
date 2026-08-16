@@ -48,18 +48,19 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 
 	@BeforeEach
 	void createTenantContext() {
-		TenantContext.clear();
+		TenantContext.ForTesting.clear();
 		String suffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant tenant = onboardingService.registerTenant(new RegisterTenantCommand(
 				"Policy Test School", "policy-" + suffix, 1L,
 				"admin@policy.test", "Password123!", "USD"));
 		testTenantId = tenant.getId();
-		TenantContext.setCurrentTenant(testTenantId, tenant.getPublicId(), "policy-" + suffix, TenantType.SHARED);
+		TenantContext.ForTesting.setCurrentTenant(testTenantId, tenant.getPublicId(), "policy-" + suffix,
+				TenantType.SHARED);
 	}
 
 	@AfterEach
 	void clearContext() {
-		TenantContext.clear();
+		TenantContext.ForTesting.clear();
 	}
 
 	@Test

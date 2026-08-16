@@ -125,6 +125,9 @@
         <createIndex indexName="idx_exams_deleted" tableName="exams">
             <column name="deleted"/>
         </createIndex>
+        <createIndex indexName="idx_exams_classroom_id" tableName="exams">
+            <column name="classroom_id"/>
+        </createIndex>
         <createIndex indexName="idx_exams_scheduled_at" tableName="exams">
             <column name="scheduled_at"/>
         </createIndex>
@@ -275,6 +278,9 @@
         <createIndex indexName="idx_grades_student_id" tableName="grades">
             <column name="student_id"/>
         </createIndex>
+        <createIndex indexName="idx_grades_exam_id" tableName="grades">
+            <column name="exam_id"/>
+        </createIndex>
         <!-- One grade record per student per exam -->
         <createIndex indexName="uq_grades_student_exam_tenant" tableName="grades" unique="true">
             <column name="student_id"/>
@@ -404,6 +410,9 @@
         </createIndex>
         <createIndex indexName="idx_fee_payments_student_id" tableName="fee_payments">
             <column name="student_id"/>
+        </createIndex>
+        <createIndex indexName="idx_fee_payments_fee_structure_id" tableName="fee_payments">
+            <column name="fee_structure_id"/>
         </createIndex>
         <createIndex indexName="uq_fee_payments_receipt_tenant" tableName="fee_payments" unique="true">
             <column name="receipt_number"/>
