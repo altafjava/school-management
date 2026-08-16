@@ -60,7 +60,7 @@ public class GradeService {
 	}
 
 	@Transactional
-	public Grade record(Long studentId, String subject, Long examId, BigDecimal marks, String gradedBy) {
+	public Grade record(Long studentId, Long examId, BigDecimal marks, String gradedBy) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (!studentRepository.existsByIdAndTenantId(studentId, tenantId)) {
 			throw new ResourceNotFoundException("Student not found: " + studentId);
@@ -73,7 +73,9 @@ public class GradeService {
 		}
 		GradingScale scale = gradingScaleService.getScale();
 		String gradeLetter = gradeCalculator.calculateLetterGrade(marks, exam.getMaxMarks(), scale);
-		Grade grade = Grade.create(studentId, subject, examId, marks, gradeLetter, gradedBy);
+		// subjectId is derived from the exam, not client-supplied — a grade's subject must always
+		// match its exam's subject, so there is no legitimate case where they could differ.
+		Grade grade = Grade.create(studentId, exam.getSubjectId(), examId, marks, gradeLetter, gradedBy);
 		return gradeRepository.save(grade);
 	}
 }

@@ -32,6 +32,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="join_date" type="DATE"/>
+            <column name="user_id" type="BIGINT"/>
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
@@ -51,12 +52,19 @@
                 constraintName="fk_teachers_tenant_id"
                 baseTableName="teachers" baseColumnNames="tenant_id"
                 referencedTableName="tenants" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_teachers_user_id"
+                baseTableName="teachers" baseColumnNames="user_id"
+                referencedTableName="users" referencedColumnNames="id"/>
 
         <createIndex indexName="idx_teachers_tenant_id" tableName="teachers">
             <column name="tenant_id"/>
         </createIndex>
         <createIndex indexName="idx_teachers_deleted" tableName="teachers">
             <column name="deleted"/>
+        </createIndex>
+        <createIndex indexName="idx_teachers_user_id" tableName="teachers">
+            <column name="user_id"/>
         </createIndex>
         <createIndex indexName="uq_teachers_employee_code_tenant" tableName="teachers" unique="true">
             <column name="employee_code"/>

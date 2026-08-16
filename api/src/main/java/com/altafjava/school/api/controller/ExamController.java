@@ -53,7 +53,7 @@ public class ExamController {
 	public ExamResponse schedule(@Valid @RequestBody ScheduleExamRequest request) {
 		return examMapper.toResponse(examService.schedule(
 				request.title(),
-				request.subject(),
+				request.subjectId(),
 				request.classroomId(),
 				request.scheduledAt(),
 				request.maxMarks()));

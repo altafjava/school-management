@@ -1,5 +1,6 @@
 package com.altafjava.school.api.controller;
 
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,9 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateClassroomRequest;
 import com.altafjava.school.api.dto.response.ClassroomResponse;
+import com.altafjava.school.api.dto.response.TimetableEntryResponse;
 import com.altafjava.school.api.mapper.ClassroomMapper;
+import com.altafjava.school.api.mapper.TimetableEntryMapper;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.ClassroomService;
+import com.altafjava.school.application.service.TimetableService;
 
 @RestController
 @RequestMapping("/api/v1/classrooms")
@@ -26,10 +30,15 @@ public class ClassroomController {
 
 	private final ClassroomService classroomService;
 	private final ClassroomMapper classroomMapper;
+	private final TimetableService timetableService;
+	private final TimetableEntryMapper timetableEntryMapper;
 
-	public ClassroomController(ClassroomService classroomService, ClassroomMapper classroomMapper) {
+	public ClassroomController(ClassroomService classroomService, ClassroomMapper classroomMapper,
+			TimetableService timetableService, TimetableEntryMapper timetableEntryMapper) {
 		this.classroomService = classroomService;
 		this.classroomMapper = classroomMapper;
+		this.timetableService = timetableService;
+		this.timetableEntryMapper = timetableEntryMapper;
 	}
 
 	@GetMapping
@@ -57,5 +66,11 @@ public class ClassroomController {
 				request.section(),
 				request.academicYear(),
 				request.classTeacherId()));
+	}
+
+	@GetMapping("/{publicId}/timetable")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	public List<TimetableEntryResponse> timetable(@PathVariable String publicId) {
+		return timetableEntryMapper.toResponseList(timetableService.listForClassroom(publicId));
 	}
 }

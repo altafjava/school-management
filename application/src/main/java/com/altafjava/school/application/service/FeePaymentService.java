@@ -55,7 +55,16 @@ public class FeePaymentService {
 		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
 		studentDataAccessGuard.assertCanView(tenantId, studentPublicId);
+		return calculateBalanceForStudent(tenantId, student);
+	}
 
+	/**
+	 * Same computation as {@link #calculateBalance}, for trusted internal callers (scheduler
+	 * jobs) that already have a resolved {@link Student} and tenant, and are not acting on behalf
+	 * of an end user — so no {@link StudentDataAccessGuard} check applies.
+	 */
+	@Transactional(readOnly = true)
+	public List<FeeBalance> calculateBalanceForStudent(Long tenantId, Student student) {
 		List<FeeStructure> feeStructures = feeStructureRepository.findAllByTenantId(tenantId);
 		List<FeePayment> payments = feePaymentRepository.findByStudentId(tenantId, student.getId());
 

@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.altafjava.school.domain.attendance.model.Attendance;
+import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 
 public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
@@ -25,5 +26,17 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 	boolean existsByStudentIdAndClassroomIdAndAttendanceDateAndTenantId(Long studentId, Long classroomId,
 			LocalDate attendanceDate, Long tenantId);
 
+	boolean existsByClassroomIdAndAttendanceDateAndTenantId(Long classroomId, LocalDate attendanceDate,
+			Long tenantId);
+
 	Page<Attendance> findByStudentIdAndTenantId(Long studentId, Long tenantId, Pageable pageable);
+
+	// Students inferred as "in" a classroom from their attendance history — school-saas has no
+	// explicit student-to-classroom enrollment table yet (see ROADMAP.md Phase 2).
+	@Query("SELECT DISTINCT a.studentId FROM Attendance a WHERE a.tenantId = :tenantId AND a.classroomId = :classroomId")
+	List<Long> findDistinctStudentIdsByClassroomId(@Param("tenantId") Long tenantId,
+			@Param("classroomId") Long classroomId);
+
+	long countByTenantIdAndAttendanceDateBetweenAndStatus(Long tenantId, LocalDate from, LocalDate to,
+			AttendanceStatus status);
 }

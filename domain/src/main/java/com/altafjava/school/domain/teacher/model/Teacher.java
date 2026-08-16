@@ -39,6 +39,10 @@ public class Teacher extends SoftDeletableEntity {
 	@Column(name = "join_date")
 	private LocalDate joinDate;
 
+	// FK to platform users.id — nullable, set only once this teacher has a login account.
+	@Column(name = "user_id")
+	private Long userId;
+
 	public static Teacher create(String employeeCode, String firstName, String lastName,
 			String email, LocalDate joinDate) {
 		return Teacher.builder()

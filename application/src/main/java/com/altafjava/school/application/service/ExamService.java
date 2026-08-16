@@ -12,16 +12,20 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
+import com.altafjava.school.domain.subject.repository.SubjectRepository;
 
 @Service
 public class ExamService {
 
 	private final ExamRepository examRepository;
 	private final ClassroomRepository classroomRepository;
+	private final SubjectRepository subjectRepository;
 
-	public ExamService(ExamRepository examRepository, ClassroomRepository classroomRepository) {
+	public ExamService(ExamRepository examRepository, ClassroomRepository classroomRepository,
+			SubjectRepository subjectRepository) {
 		this.examRepository = examRepository;
 		this.classroomRepository = classroomRepository;
+		this.subjectRepository = subjectRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -37,13 +41,16 @@ public class ExamService {
 	}
 
 	@Transactional
-	public Exam schedule(String title, String subject, Long classroomId,
+	public Exam schedule(String title, Long subjectId, Long classroomId,
 			LocalDateTime scheduledAt, BigDecimal maxMarks) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (!classroomRepository.existsByIdAndTenantId(classroomId, tenantId)) {
 			throw new ResourceNotFoundException("Classroom not found: " + classroomId);
 		}
-		Exam exam = Exam.create(title, subject, classroomId, scheduledAt, maxMarks);
+		if (!subjectRepository.existsByIdAndTenantId(subjectId, tenantId)) {
+			throw new ResourceNotFoundException("Subject not found: " + subjectId);
+		}
+		Exam exam = Exam.create(title, subjectId, classroomId, scheduledAt, maxMarks);
 		return examRepository.save(exam);
 	}
 }

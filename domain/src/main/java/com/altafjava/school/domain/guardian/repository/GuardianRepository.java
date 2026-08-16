@@ -16,4 +16,6 @@ public interface GuardianRepository extends JpaRepository<Guardian, Long> {
 	Optional<Guardian> findByUserIdAndTenantId(Long userId, Long tenantId);
 
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
+
+	Optional<Guardian> findByIdAndTenantId(Long id, Long tenantId);
 }

@@ -60,7 +60,7 @@ class GradeServiceTest {
 		when(studentRepository.existsByIdAndTenantId(99L, 1L)).thenReturn(false);
 
 		assertThrows(ResourceNotFoundException.class,
-				() -> gradeService.record(99L, "Math", 1L, BigDecimal.valueOf(85), "teacher"));
+				() -> gradeService.record(99L, 1L, BigDecimal.valueOf(85), "teacher"));
 
 		verify(gradeRepository, never()).save(any());
 	}
@@ -71,25 +71,25 @@ class GradeServiceTest {
 		when(examRepository.findByIdAndTenantId(99L, 1L)).thenReturn(Optional.empty());
 
 		assertThrows(ResourceNotFoundException.class,
-				() -> gradeService.record(1L, "Math", 99L, BigDecimal.valueOf(85), "teacher"));
+				() -> gradeService.record(1L, 99L, BigDecimal.valueOf(85), "teacher"));
 
 		verify(gradeRepository, never()).save(any());
 	}
 
 	@Test
 	void record_duplicateForSameStudentExam_throwsIllegalArgument() {
-		Exam exam = Exam.create("Midterm", "Math", 10L, null, BigDecimal.valueOf(100));
+		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100));
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(exam));
 		when(gradeRepository.existsByStudentIdAndExamIdAndTenantId(1L, 2L, 1L)).thenReturn(true);
 
 		assertThrows(IllegalArgumentException.class,
-				() -> gradeService.record(1L, "Math", 2L, BigDecimal.valueOf(85), "teacher"));
+				() -> gradeService.record(1L, 2L, BigDecimal.valueOf(85), "teacher"));
 	}
 
 	@Test
 	void record_withValidReferences_computesLetterGradeFromDefaultScale() {
-		Exam exam = Exam.create("Midterm", "Math", 10L, null, BigDecimal.valueOf(100));
+		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100));
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(exam));
 		when(gradeRepository.existsByStudentIdAndExamIdAndTenantId(1L, 2L, 1L)).thenReturn(false);
@@ -97,9 +97,10 @@ class GradeServiceTest {
 		when(gradeRepository.save(any(Grade.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		Grade grade = assertDoesNotThrow(
-				() -> gradeService.record(1L, "Math", 2L, BigDecimal.valueOf(92), "teacher"));
+				() -> gradeService.record(1L, 2L, BigDecimal.valueOf(92), "teacher"));
 
 		assertEquals("A", grade.getGradeLetter());
+		assertEquals(5L, grade.getSubjectId());
 	}
 
 	@Test

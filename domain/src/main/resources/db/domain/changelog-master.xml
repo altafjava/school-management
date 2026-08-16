@@ -9,5 +9,6 @@
     <include file="db/domain/changesets/002-school-extended-tables.xml"/>
     <include file="db/domain/changesets/003-terms.xml"/>
     <include file="db/domain/changesets/004-guardians.xml"/>
+    <include file="db/domain/changesets/005-timetable.xml"/>
 
 </databaseChangeLog>
