@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.ScheduleExamRequest;
 import com.altafjava.school.api.dto.response.ExamResponse;
 import com.altafjava.school.api.mapper.ExamMapper;
+import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.ExamService;
 
 @RestController
@@ -31,7 +33,7 @@ public class ExamController {
 	}
 
 	@GetMapping
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public Page<ExamResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -40,14 +42,14 @@ public class ExamController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public ExamResponse get(@PathVariable String publicId) {
 		return examMapper.toResponse(examService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize("hasRole('TENANT_ADMIN')")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public ExamResponse schedule(@Valid @RequestBody ScheduleExamRequest request) {
 		return examMapper.toResponse(examService.schedule(
 				request.title(),

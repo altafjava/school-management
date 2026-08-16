@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.school.api.dto.request.MarkAttendanceRequest;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
 import com.altafjava.school.api.mapper.AttendanceMapper;
+import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AttendanceService;
 
 @RestController
@@ -31,7 +32,7 @@ public class AttendanceController {
 	}
 
 	@GetMapping
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public Page<AttendanceResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -40,14 +41,14 @@ public class AttendanceController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public AttendanceResponse get(@PathVariable String publicId) {
 		return attendanceMapper.toResponse(attendanceService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public AttendanceResponse mark(@Valid @RequestBody MarkAttendanceRequest request) {
 		return attendanceMapper.toResponse(attendanceService.mark(
 				request.studentId(),

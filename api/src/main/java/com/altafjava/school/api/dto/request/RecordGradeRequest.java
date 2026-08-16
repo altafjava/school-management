@@ -11,6 +11,5 @@ public record RecordGradeRequest(
 		@NotBlank @Size(max = 100) String subject,
 		@NotNull Long examId,
 		@NotNull @DecimalMin("0.0") BigDecimal marks,
-		@NotBlank @Size(max = 5) String gradeLetter,
 		@Size(max = 100) String gradedBy) {
 }

@@ -1,6 +1,7 @@
 [versions]
-pitest = "1.15.0"
-pitest-junit5-plugin = "1.2.1"
+pitest = "1.19.0"
+pitest-core = "1.25.9"
+pitest-junit5-plugin = "1.2.3"
 archunit = "1.5.0"
 rest-assured = "5.4.0"
 testcontainers = "2.0.1"
@@ -103,6 +104,9 @@ gatling-http-java = { module = "io.gatling:gatling-http-java", version.ref = "ga
 
 # PIT Mutation Testing
 pitest-junit5-plugin = { module = "org.pitest:pitest-junit5-plugin", version.ref = "pitest-junit5-plugin" }
+
+# Jackson (Jackson 3 — package tools.jackson.*, version managed by the Spring Boot BOM)
+jackson-databind = { module = "tools.jackson.core:jackson-databind" }
 
 [plugins]
 gatling = { id = "io.gatling.gradle", version.ref = "gatling" }

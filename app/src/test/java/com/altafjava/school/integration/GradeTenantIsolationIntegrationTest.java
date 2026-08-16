@@ -84,7 +84,7 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 				LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100));
 		Student student = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6),
 				"Alice", "Smith", "alice@a.edu", LocalDate.of(2010, 1, 1));
-		gradeService.record(student.getId(), "Math", exam.getId(), BigDecimal.valueOf(85), "A", "teacher-a");
+		gradeService.record(student.getId(), "Math", exam.getId(), BigDecimal.valueOf(85), "teacher-a");
 
 		activateTenant(tenantB);
 		Page<Grade> tenantBGrades = gradeService.listGrades(PageRequest.of(0, 100));
@@ -104,7 +104,7 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		Student student = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6),
 				"Bob", "Jones", "bob@a.edu", LocalDate.of(2011, 3, 20));
 		Grade grade = gradeService.record(student.getId(), "Science", exam.getId(),
-				BigDecimal.valueOf(90), "A", "teacher-a");
+				BigDecimal.valueOf(90), "teacher-a");
 		String publicId = grade.getPublicId().toString();
 
 		activateTenant(tenantB);

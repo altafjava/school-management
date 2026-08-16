@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclude filter. Kept intentionally minimal — every entry below is a specific,
+  investigated finding with a documented reason it isn't a real defect here, not a blanket
+  category suppression. Never add an entry to silence a real finding without investigating it
+  first.
+-->
+<FindBugsFilter>
+</FindBugsFilter>

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.school.api.dto.request.RecordGradeRequest;
 import com.altafjava.school.api.dto.response.GradeResponse;
 import com.altafjava.school.api.mapper.GradeMapper;
+import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.GradeService;
 
 @RestController
@@ -31,7 +32,7 @@ public class GradeController {
 	}
 
 	@GetMapping
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public Page<GradeResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -40,21 +41,20 @@ public class GradeController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public GradeResponse get(@PathVariable String publicId) {
 		return gradeMapper.toResponse(gradeService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize("hasAnyRole('TENANT_ADMIN', 'TEACHER')")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public GradeResponse record(@Valid @RequestBody RecordGradeRequest request) {
 		return gradeMapper.toResponse(gradeService.record(
 				request.studentId(),
 				request.subject(),
 				request.examId(),
 				request.marks(),
-				request.gradeLetter(),
 				request.gradedBy()));
 	}
 }

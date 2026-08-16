@@ -45,6 +45,10 @@ public class Student extends SoftDeletableEntity {
 	@Column(name = "enrollment_status", nullable = false, length = 30)
 	private EnrollmentStatus enrollmentStatus;
 
+	// FK to platform users.id — nullable, set only once this student has their own login account.
+	@Column(name = "user_id")
+	private Long userId;
+
 	public static Student create(String studentCode, String firstName, String lastName,
 			String email, LocalDate dateOfBirth) {
 		return Student.builder()

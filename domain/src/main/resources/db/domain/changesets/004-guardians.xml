@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd">
+
+    <changeSet id="school-011-guardians" author="school">
+        <createTable tableName="guardians">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="public_id" type="VARCHAR(36)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tenant_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="phone" type="VARCHAR(30)"/>
+            <column name="user_id" type="BIGINT"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="TIMESTAMP"/>
+            <column name="deleted_by" type="VARCHAR(100)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(100)"/>
+            <column name="updated_by" type="VARCHAR(100)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                constraintName="fk_guardians_tenant_id"
+                baseTableName="guardians" baseColumnNames="tenant_id"
+                referencedTableName="tenants" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_guardians_user_id"
+                baseTableName="guardians" baseColumnNames="user_id"
+                referencedTableName="users" referencedColumnNames="id"/>
+
+        <createIndex indexName="idx_guardians_tenant_id" tableName="guardians">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex indexName="idx_guardians_deleted" tableName="guardians">
+            <column name="deleted"/>
+        </createIndex>
+        <createIndex indexName="idx_guardians_user_id" tableName="guardians">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="school-012-student-guardian-links" author="school">
+        <createTable tableName="student_guardian_links">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="public_id" type="VARCHAR(36)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tenant_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="student_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="guardian_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="relationship_type" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="primary_contact" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="consent_given_at" type="TIMESTAMP"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="TIMESTAMP"/>
+            <column name="deleted_by" type="VARCHAR(100)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(100)"/>
+            <column name="updated_by" type="VARCHAR(100)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                constraintName="fk_sgl_tenant_id"
+                baseTableName="student_guardian_links" baseColumnNames="tenant_id"
+                referencedTableName="tenants" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_sgl_student_id"
+                baseTableName="student_guardian_links" baseColumnNames="student_id"
+                referencedTableName="students" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_sgl_guardian_id"
+                baseTableName="student_guardian_links" baseColumnNames="guardian_id"
+                referencedTableName="guardians" referencedColumnNames="id"/>
+
+        <createIndex indexName="idx_sgl_tenant_id" tableName="student_guardian_links">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex indexName="idx_sgl_deleted" tableName="student_guardian_links">
+            <column name="deleted"/>
+        </createIndex>
+        <createIndex indexName="idx_sgl_student_id" tableName="student_guardian_links">
+            <column name="student_id"/>
+        </createIndex>
+        <createIndex indexName="idx_sgl_guardian_id" tableName="student_guardian_links">
+            <column name="guardian_id"/>
+        </createIndex>
+        <createIndex indexName="uq_sgl_student_guardian" tableName="student_guardian_links" unique="true">
+            <column name="student_id"/>
+            <column name="guardian_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

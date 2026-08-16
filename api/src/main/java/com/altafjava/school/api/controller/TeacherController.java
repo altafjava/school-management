@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateTeacherRequest;
 import com.altafjava.school.api.dto.response.TeacherResponse;
 import com.altafjava.school.api.mapper.TeacherMapper;
@@ -31,7 +32,7 @@ public class TeacherController {
 	}
 
 	@GetMapping
-	@PreAuthorize("hasRole('TENANT_ADMIN')")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public Page<TeacherResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -40,14 +41,14 @@ public class TeacherController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize("hasRole('TENANT_ADMIN')")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public TeacherResponse get(@PathVariable String publicId) {
 		return teacherMapper.toResponse(teacherService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize("hasRole('TENANT_ADMIN')")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public TeacherResponse hire(@Valid @RequestBody CreateTeacherRequest request) {
 		return teacherMapper.toResponse(teacherService.hire(
 				request.employeeCode(),

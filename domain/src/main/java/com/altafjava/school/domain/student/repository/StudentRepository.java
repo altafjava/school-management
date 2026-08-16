@@ -19,6 +19,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
 
+	Optional<Student> findByIdAndTenantId(Long id, Long tenantId);
+
 	@Query("SELECT s FROM Student s WHERE s.tenantId = :tenantId AND s.email = :email")
 	Optional<Student> findByEmailAndTenantId(@Param("email") String email, @Param("tenantId") Long tenantId);
 }
