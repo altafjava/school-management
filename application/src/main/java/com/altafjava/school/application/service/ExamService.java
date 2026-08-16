@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 
@@ -16,9 +17,11 @@ import com.altafjava.school.domain.exam.repository.ExamRepository;
 public class ExamService {
 
 	private final ExamRepository examRepository;
+	private final ClassroomRepository classroomRepository;
 
-	public ExamService(ExamRepository examRepository) {
+	public ExamService(ExamRepository examRepository, ClassroomRepository classroomRepository) {
 		this.examRepository = examRepository;
+		this.classroomRepository = classroomRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -36,6 +39,10 @@ public class ExamService {
 	@Transactional
 	public Exam schedule(String title, String subject, Long classroomId,
 			LocalDateTime scheduledAt, BigDecimal maxMarks) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		if (!classroomRepository.existsByIdAndTenantId(classroomId, tenantId)) {
+			throw new ResourceNotFoundException("Classroom not found: " + classroomId);
+		}
 		Exam exam = Exam.create(title, subject, classroomId, scheduledAt, maxMarks);
 		return examRepository.save(exam);
 	}

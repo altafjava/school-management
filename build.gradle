@@ -73,7 +73,7 @@ subprojects {
             mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.0"
             // Platform BOM — aligns all com.altafjava.platform:* versions across every school module.
             // Upgrade the platform by changing this single version string.
-            mavenBom "com.altafjava.platform:platform-bom:1.0.0-SNAPSHOT"
+            mavenBom "com.altafjava.platform:platform-bom:0.1.0-SNAPSHOT"
         }
     }
 
@@ -86,7 +86,7 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(21)
+            languageVersion = JavaLanguageVersion.of(25)
         }
     }
 

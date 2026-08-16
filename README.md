@@ -189,3 +189,14 @@ school-saas/
 ```
 
 Dependency direction: `app → api → application → domain`. The `app` module pulls in the `platform-saas` spring-boot-starter which auto-configures all infrastructure (multi-tenancy, security, messaging, caching, payments, scheduling).
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [ROADMAP.md](ROADMAP.md) | Backend product architecture, module boundaries, prioritization, and phase-wise roadmap |
+| [TESTING.md](TESTING.md) | Test pyramid, coverage/mutation standards, CI enforcement plan, definition of done |
+| [PLATFORM_GAPS.md](PLATFORM_GAPS.md) | Real gaps found in `platform-saas` while building on it |
+| [LOAD_TESTING.md](LOAD_TESTING.md) | Gatling load-test setup and simulations |

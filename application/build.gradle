@@ -1,9 +1,29 @@
 plugins {
     id 'java-library'
+    id 'jacoco'
+}
+
+// Line/branch coverage reporting for this module — report-only for now, see TESTING.md §2.
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+tasks.named('test') {
+    finalizedBy jacocoTestReport
 }
 
 dependencies {
     api project(':domain')
     // Platform application — exposes JobExecutionStrategy, events, EventPublisher
     api 'com.altafjava.platform:application'
+
+    testImplementation libs.junit.jupiter.api
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.junit.jupiter
 }

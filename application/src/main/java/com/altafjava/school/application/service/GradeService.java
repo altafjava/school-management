@@ -8,16 +8,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
 import com.altafjava.school.domain.grade.repository.GradeRepository;
+import com.altafjava.school.domain.student.repository.StudentRepository;
 
 @Service
 public class GradeService {
 
 	private final GradeRepository gradeRepository;
+	private final StudentRepository studentRepository;
+	private final ExamRepository examRepository;
 
-	public GradeService(GradeRepository gradeRepository) {
+	public GradeService(GradeRepository gradeRepository, StudentRepository studentRepository,
+			ExamRepository examRepository) {
 		this.gradeRepository = gradeRepository;
+		this.studentRepository = studentRepository;
+		this.examRepository = examRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -36,6 +43,12 @@ public class GradeService {
 	public Grade record(Long studentId, String subject, Long examId,
 			BigDecimal marks, String gradeLetter, String gradedBy) {
 		Long tenantId = TenantContext.getCurrentTenantId();
+		if (!studentRepository.existsByIdAndTenantId(studentId, tenantId)) {
+			throw new ResourceNotFoundException("Student not found: " + studentId);
+		}
+		if (!examRepository.existsByIdAndTenantId(examId, tenantId)) {
+			throw new ResourceNotFoundException("Exam not found: " + examId);
+		}
 		if (gradeRepository.existsByStudentIdAndExamIdAndTenantId(studentId, examId, tenantId)) {
 			throw new IllegalArgumentException(
 					"Grade already recorded for student " + studentId + " in exam " + examId);

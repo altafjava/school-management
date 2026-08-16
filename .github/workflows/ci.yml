@@ -54,6 +54,12 @@ jobs:
           PLATFORM_SAAS_TOKEN: ${{ secrets.PLATFORM_SAAS_TOKEN }}
         run: ./gradlew compileJava compileTestJava --build-cache
 
+      # Blocking — already configured (Eclipse formatter) but never enforced in CI before Phase 0.
+      # No baseline concern here unlike coverage/mutation gates: a file either matches the
+      # formatter's rules or it doesn't, so there's no "ratchet up from an unmeasured start" step.
+      - name: Spotless (formatting)
+        run: ./gradlew spotlessCheck --build-cache
+
       - name: Test
         env:
           GITHUB_ACTOR: ${{ github.actor }}
@@ -76,6 +82,18 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/test-results/
+          retention-days: 7
+
+      # Report-only (see TESTING.md §2/§5): no jacocoTestCoverageVerification minimum yet — a real
+      # baseline needs to exist before a threshold means anything. `test` already finalizes into
+      # jacocoTestReport per module (application/api/app build.gradle), so the reports already
+      # exist by this point; this step just makes them visible without gating the build on them.
+      - name: Archive Coverage Reports (JaCoCo)
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: jacoco-coverage-reports
+          path: '**/build/reports/jacoco/'
           retention-days: 7
 
   auto-pr:

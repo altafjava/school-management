@@ -11,14 +11,21 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.fee.model.FeePayment;
 import com.altafjava.school.domain.fee.repository.FeePaymentRepository;
+import com.altafjava.school.domain.fee.repository.FeeStructureRepository;
+import com.altafjava.school.domain.student.repository.StudentRepository;
 
 @Service
 public class FeePaymentService {
 
 	private final FeePaymentRepository feePaymentRepository;
+	private final StudentRepository studentRepository;
+	private final FeeStructureRepository feeStructureRepository;
 
-	public FeePaymentService(FeePaymentRepository feePaymentRepository) {
+	public FeePaymentService(FeePaymentRepository feePaymentRepository, StudentRepository studentRepository,
+			FeeStructureRepository feeStructureRepository) {
 		this.feePaymentRepository = feePaymentRepository;
+		this.studentRepository = studentRepository;
+		this.feeStructureRepository = feeStructureRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -37,6 +44,12 @@ public class FeePaymentService {
 	public FeePayment record(Long studentId, Long feeStructureId, BigDecimal paidAmount,
 			LocalDateTime paidAt, String receiptNumber) {
 		Long tenantId = TenantContext.getCurrentTenantId();
+		if (!studentRepository.existsByIdAndTenantId(studentId, tenantId)) {
+			throw new ResourceNotFoundException("Student not found: " + studentId);
+		}
+		if (!feeStructureRepository.existsByIdAndTenantId(feeStructureId, tenantId)) {
+			throw new ResourceNotFoundException("FeeStructure not found: " + feeStructureId);
+		}
 		if (feePaymentRepository.existsByReceiptNumberAndTenantId(receiptNumber, tenantId)) {
 			throw new IllegalArgumentException("Receipt number already exists: " + receiptNumber);
 		}

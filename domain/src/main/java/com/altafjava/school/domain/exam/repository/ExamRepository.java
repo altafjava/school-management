@@ -21,4 +21,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 	List<Exam> findUpcoming(@Param("tenantId") Long tenantId,
 			@Param("from") LocalDateTime from,
 			@Param("to") LocalDateTime to);
+
+	boolean existsByIdAndTenantId(Long id, Long tenantId);
 }

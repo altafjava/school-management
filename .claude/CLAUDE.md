@@ -1,12 +1,12 @@
 # CLAUDE.md — Development Standards
 
-> **Enterprise-grade always.** Every decision — coding, design, architecture, security, testing — must meet enterprise production standards. Choose maintainability, correctness, and explicitness over convenience. When two approaches work, pick the one a senior engineer would be proud to ship.
+> **Enterprise-grade always** — coding, design, architecture, security, testing. Maintainability, correctness, explicitness over convenience.
 
 ---
 
 ## Project Identity
 
-Enterprise Multi-Tenant SaaS Platform (Java 21, Spring Boot 3). Generic, reusable foundation — domain projects (school, hospital, HR) plug in via `spring-boot-starter`.
+Enterprise Multi-Tenant SaaS Platform (Java 25, Spring Boot 4). Generic, reusable foundation — domain projects (school, hospital, HR) plug in via `spring-boot-starter`.
 
 Group ID: `com.altafjava.platform`
 Module names: `core`, `domain`, `infrastructure`, `application`, `api`, `integration`, `spring-boot-starter` — no `platform-` prefix.
@@ -21,7 +21,7 @@ SOLID, DRY, YAGNI, KISS, Fail Fast, Least Astonishment, Composition over Inherit
 
 ## Design Patterns
 
-Use only when the problem demands it. No alternatives.
+Use only when the problem demands it — no invented alternatives.
 
 | Pattern | Location |
 |---------|----------|
@@ -32,7 +32,7 @@ Use only when the problem demands it. No alternatives.
 | Decorator | `TenantContextPropagatingDecorator` |
 | Chain of Responsibility | Tenant resolution fallback |
 | Adapter | `BCryptPasswordEncoderAdapter`, repository adapters |
-| Outbox | Event publishing |
+| Outbox | Event publishing — `TransactionalOutboxEventPublisher` (`infrastructure/.../event/outbox/`), backed by the `outbox_events` table |
 | Saga | `SagaCoordinator` |
 
 ---
@@ -62,7 +62,7 @@ core ← domain ← application ← api
 - `infrastructure`: implements interfaces from `domain`/`application`. No business logic.
 - `api`: depends on `application` + `core`. Controllers, DTOs, mappers, validation only.
 
-**Never violate this.** Need to cross layers? Introduce an interface in the inner layer.
+Never violate this — cross-layer needs go through an interface in the inner layer.
 
 ---
 
@@ -134,6 +134,20 @@ core ← domain ← application ← api
 - Return DTOs (Java records) — never JPA entities.
 - Breaking changes → `/api/v2/`. Deprecated endpoints carry `Deprecation` + `Sunset` headers.
 
+### API Versioning Strategy
+
+| Trigger | Action |
+|---------|--------|
+| New field added to response | Non-breaking — add to v1 response DTO, update `unmappedTargetPolicy` if needed |
+| Existing field renamed or removed | Breaking — introduce `/api/v2/` endpoint, keep v1 running with `Deprecation` + `Sunset` response headers |
+| Request shape changed incompatibly | Breaking — new version required |
+| New endpoint added | Non-breaking — add at current version |
+
+- Deprecate for a minimum 6 months; every response from that endpoint carries `Deprecation: true` + `Sunset: <RFC 7231 date>`.
+- Version the controller package too, not just the URL: `api/rest/v1/`, `api/rest/v2/`.
+- v1 and v2 share the same application services — version differences are isolated to DTOs and mappers only.
+- Document breaking changes in `CHANGELOG.md` under `Breaking Changes` before merging.
+
 ---
 
 ## DTOs
@@ -170,11 +184,26 @@ core ← domain ← application ← api
 
 - Access control: `@PreAuthorize` on controllers. Never manual role checks in services.
 - Input validation: Bean Validation at API boundary only.
-- Secrets: environment variables only — never hardcoded, never in `application.yml`.
+- Secrets: never hardcoded or raw `${VAR:default}` in YAML — via `SecretProvider` (`EnvironmentSecretProvider` dev/test, `VaultSecretProvider` staging/prod).
 - Passwords: `BCryptPasswordEncoderAdapter` only.
 - PII: `@Pii` annotation — never log, never expose raw.
-- Queries: JPQL/named parameters only — no string concatenation.
-- Non-dev profiles: fail startup if `JWT_SECRET` absent or default.
+- Queries: JPQL/named parameters only — no string concatenation, including identifiers (table/column names) built from user input.
+- Non-dev profiles: `SecurityStartupValidator` fails startup if any required secret is absent or default.
+
+---
+
+## Configuration
+
+Three tiers, each with its own store — never collapse into one:
+
+| Tier | Examples | Store |
+|------|----------|-------|
+| Secrets | DB/Redis/RabbitMQ/ES credentials, JWT keys, encryption key, third-party API keys | `SecretProvider` (Vault in staging/prod) |
+| Environment/infra tunables | Pool sizes, circuit-breaker/retry params, actuator exposure, cache TTL regions | Spring profile YAML, reviewed via PR |
+| Tenant/business settings | Feature flags, per-tenant rate limits, branding, notification prefs | DB, key/JSON shape (see `FeatureFlag`), `tenantAwareCacheKeyGenerator` |
+
+- Never add a new tenant- or business-facing value to `application.yml` — it belongs in tier 3.
+- Tier-3 tables owned by `platform-saas` stay domain-generic — no school/hospital/HR-specific columns (extend via key/value, not new platform columns; domain apps own their own keys through `PlatformConfigurer`).
 
 ---
 
@@ -242,16 +271,14 @@ Never: mock repos in integration tests, `@Disabled` placeholders, OpenAPI assert
 
 ## Subagent Discipline
 
-Spawn subagents only when: (1) task requires genuine parallelism, or (2) open-ended search spans many files with no obvious path.
-For single-file reads, symbol lookups, or targeted greps — use Bash/Read directly.
-Explore agent: only for open-ended "find X across the codebase" — never for a known file path.
+Spawn subagents only for genuine parallelism or an open-ended multi-file search with no obvious path — not for single-file reads, symbol lookups, or targeted greps (use Bash/Read directly).
+Explore agent: open-ended search only, never a known file path.
 
 ---
 
 ## Post-Edit Quality Gate
 
-After every edit: `./gradlew compileJava compileTestJava`. Large changes: `./gradlew clean build`. Fix all warnings before stopping.
-Also run: `./gradlew publishToMavenLocal` after structural changes.
+After every edit: `./gradlew compileJava compileTestJava` (large changes: `clean build`); fix all warnings before stopping. Run `publishToMavenLocal` after structural changes.
 
 ---
 
@@ -267,10 +294,32 @@ Also run: `./gradlew publishToMavenLocal` after structural changes.
 | JSON | Jackson (auto-configured) | manual JSON string building |
 | Passwords | `BCryptPasswordEncoderAdapter` | any other hasher |
 | Encryption | `AesEncryptionService` | custom crypto |
+| Secret retrieval | `SecretProvider` | raw `${VAR}` in YAML for anything sensitive |
 | Event publishing | `EventPublisher` (core interface) | `ApplicationContext.publishEvent()` directly |
 | Scheduling | `JobExecutionStrategy` + `@ScheduledJob` | `@Scheduled` |
 | Distributed lock | `@SchedulerLock` (ShedLock) | `synchronized`, `ReentrantLock` across JVMs |
 | External IDs | `UUID.randomUUID()` | sequential/timestamp IDs |
+
+---
+
+## Deliberate Non-Changes
+
+Settled decisions — don't reopen without a new, concrete trigger.
+
+- JPA entities stay mutable classes, never records — Hibernate needs mutable state for proxying/lazy-loading.
+- Never seal `JobExecutionStrategy`, `TenantResolver`, or `ResourceAccessPolicy` — they're consumer extension points.
+- Don't abstract Hibernate annotations (`@SQLRestriction`, `@Filter`, `@Cache`) behind a platform interface in `domain` — no ORM-swap plan.
+- No `StructuredTaskScope` in production code — still a JDK preview feature (JEP 505).
+- No blanket `@Async` → virtual-thread conversion — must be bound-sized and load-tested per executor.
+- No JVM/GC/CDS tuning in-repo — no `Dockerfile` yet; fix the deployment pipeline first.
+- No second extension mechanism alongside `PlatformConfigurer`.
+
+---
+
+## Documentation Policy
+
+- No new dated audit/status/readiness markdown (`*_AUDIT.md`, `*_ASSESSMENT.md`, `PHASE*.md`) — fixes go into code + tests, not point-in-time reports.
+- Update living docs in place, never supersede with a new file: `README.md`, `DEVELOPER_GUIDE.md`, `ROADMAP.md`, `CONTRACTS.md`, `CONFIGURATION_STRATEGY.md`, `TESTING.md`, `CHANGELOG.md`, `MIGRATION.md`.
 
 ---
 
@@ -289,4 +338,4 @@ Also run: `./gradlew publishToMavenLocal` after structural changes.
 11. No `FetchType.EAGER`
 12. No `EnumType.ORDINAL`
 13. No manual `TenantContext` setting outside `TenantContextFilter`
-14. Never `git commit` or `git push` without explicit user instruction
+14. Never `git add`, `git commit` or `git push` without explicit user instruction

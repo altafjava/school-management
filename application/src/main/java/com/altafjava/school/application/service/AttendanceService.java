@@ -11,14 +11,21 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.attendance.model.Attendance;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
+import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.student.repository.StudentRepository;
 
 @Service
 public class AttendanceService {
 
 	private final AttendanceRepository attendanceRepository;
+	private final StudentRepository studentRepository;
+	private final ClassroomRepository classroomRepository;
 
-	public AttendanceService(AttendanceRepository attendanceRepository) {
+	public AttendanceService(AttendanceRepository attendanceRepository, StudentRepository studentRepository,
+			ClassroomRepository classroomRepository) {
 		this.attendanceRepository = attendanceRepository;
+		this.studentRepository = studentRepository;
+		this.classroomRepository = classroomRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -37,6 +44,12 @@ public class AttendanceService {
 	public Attendance mark(Long studentId, Long classroomId, LocalDate attendanceDate,
 			AttendanceStatus status, String markedBy) {
 		Long tenantId = TenantContext.getCurrentTenantId();
+		if (!studentRepository.existsByIdAndTenantId(studentId, tenantId)) {
+			throw new ResourceNotFoundException("Student not found: " + studentId);
+		}
+		if (!classroomRepository.existsByIdAndTenantId(classroomId, tenantId)) {
+			throw new ResourceNotFoundException("Classroom not found: " + classroomId);
+		}
 		if (attendanceRepository.existsByStudentIdAndClassroomIdAndAttendanceDateAndTenantId(
 				studentId, classroomId, attendanceDate, tenantId)) {
 			throw new IllegalArgumentException(

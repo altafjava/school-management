@@ -1,6 +1,7 @@
 [versions]
 pitest = "1.15.0"
 pitest-junit5-plugin = "1.2.1"
+archunit = "1.5.0"
 rest-assured = "5.4.0"
 testcontainers = "2.0.1"
 resilience4j = "2.4.0"
@@ -50,6 +51,9 @@ lombok = { module = "org.projectlombok:lombok" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+mockito-core = { module = "org.mockito:mockito-core" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-api" }
 hibernate-core = { module = "org.hibernate.orm:hibernate-core" }
 hibernate-jcache = { module = "org.hibernate.orm:hibernate-jcache" }

@@ -38,7 +38,22 @@ public class AcademicYearService {
 		if (academicYearRepository.existsByNameAndTenantId(name, tenantId)) {
 			throw new IllegalArgumentException("Academic year already exists: " + name);
 		}
+		if (current) {
+			unsetExistingCurrentYear(tenantId);
+		}
 		AcademicYear academicYear = AcademicYear.create(name, startDate, endDate, current);
 		return academicYearRepository.save(academicYear);
+	}
+
+	/**
+	 * At most one academic year may be current per tenant. Called before saving a new current
+	 * year so the invariant holds regardless of whether the caller is {@link AcademicYearRolloverJob}
+	 * or this service's own create endpoint — previously only the job enforced this.
+	 */
+	private void unsetExistingCurrentYear(Long tenantId) {
+		academicYearRepository.findByCurrentTrueAndTenantId(tenantId).ifPresent(existingCurrent -> {
+			existingCurrent.setCurrent(false);
+			academicYearRepository.save(existingCurrent);
+		});
 	}
 }

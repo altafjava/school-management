@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.student.model.EnrollmentStatus;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 
@@ -46,6 +47,7 @@ public class StudentService {
 	@Transactional
 	public void withdraw(String publicId, String deletedBy) {
 		Student student = findByPublicId(publicId);
+		student.setEnrollmentStatus(EnrollmentStatus.WITHDRAWN);
 		student.softDelete(deletedBy);
 		studentRepository.save(student);
 	}
