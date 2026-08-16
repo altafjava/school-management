@@ -84,16 +84,55 @@ jobs:
             **/build/test-results/
           retention-days: 7
 
-      # Report-only (see TESTING.md §2/§5): no jacocoTestCoverageVerification minimum yet — a real
-      # baseline needs to exist before a threshold means anything. `test` already finalizes into
-      # jacocoTestReport per module (application/api/app build.gradle), so the reports already
-      # exist by this point; this step just makes them visible without gating the build on them.
+      # Blocking — floors recorded in each module's build.gradle (TESTING.md §5 step 5).
+      - name: Coverage Ratchet (JaCoCo)
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          PLATFORM_SAAS_TOKEN: ${{ secrets.PLATFORM_SAAS_TOKEN }}
+        run: ./gradlew jacocoTestCoverageVerification --build-cache
+
       - name: Archive Coverage Reports (JaCoCo)
         uses: actions/upload-artifact@v5
         if: always()
         with:
           name: jacoco-coverage-reports
           path: '**/build/reports/jacoco/'
+          retention-days: 7
+
+      # Blocking — zero-findings baseline (TESTING.md §5 step 7); config/spotbugs/exclude.xml
+      # stays empty until a genuine false positive is found.
+      - name: SpotBugs (static analysis)
+        run: ./gradlew spotbugsMain --build-cache
+
+      - name: Archive SpotBugs Reports
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: spotbugs-reports
+          path: '**/build/reports/spotbugs/'
+          retention-days: 7
+
+      # PIT needs a JDK 25 host JVM, not just a toolchain — see domain/build.gradle. Only this
+      # step's JAVA_HOME changes; steps above ran on JDK 21.
+      - name: Set up JDK 25 (for PIT — see domain/build.gradle)
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      # Blocking, mutationThreshold/coverageThreshold = 70 (TESTING.md §5 step 6; domain/build.gradle).
+      - name: Mutation Testing (PIT)
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          PLATFORM_SAAS_TOKEN: ${{ secrets.PLATFORM_SAAS_TOKEN }}
+        run: ./gradlew :domain:pitest --build-cache
+
+      - name: Archive Mutation Testing Reports (PIT)
+        uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: pitest-reports
+          path: 'domain/build/reports/pitest/'
           retention-days: 7
 
   auto-pr:

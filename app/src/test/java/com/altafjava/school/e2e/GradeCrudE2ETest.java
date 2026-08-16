@@ -135,7 +135,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"studentId\":" + studentId + ",\"subject\":\"Math\",\"examId\":" + examId
-						+ ",\"marks\":85,\"gradeLetter\":\"A\",\"gradedBy\":\"admin\"}")
+						+ ",\"marks\":95,\"gradedBy\":\"admin\"}")
 				.when()
 				.post("/api/v1/grades")
 				.then()
@@ -167,7 +167,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + studentToken)
 				.contentType(ContentType.JSON)
 				.body("{\"studentId\":" + studentId + ",\"subject\":\"Math\",\"examId\":" + examId
-						+ ",\"marks\":90,\"gradeLetter\":\"A\",\"gradedBy\":\"self\"}")
+						+ ",\"marks\":90,\"gradedBy\":\"self\"}")
 				.when()
 				.post("/api/v1/grades")
 				.then()
@@ -184,7 +184,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"studentId\":" + studentId + ",\"subject\":\"Math\",\"examId\":" + examId
-						+ ",\"marks\":75,\"gradeLetter\":\"B\",\"gradedBy\":\"admin\"}")
+						+ ",\"marks\":75,\"gradedBy\":\"admin\"}")
 				.when()
 				.post("/api/v1/grades")
 				.then()

@@ -8,9 +8,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.application.security.StudentDataAccessGuard;
+import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
+import com.altafjava.school.domain.grade.model.GradingScale;
 import com.altafjava.school.domain.grade.repository.GradeRepository;
+import com.altafjava.school.domain.grade.service.GradeCalculator;
+import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 
 @Service
@@ -19,12 +24,18 @@ public class GradeService {
 	private final GradeRepository gradeRepository;
 	private final StudentRepository studentRepository;
 	private final ExamRepository examRepository;
+	private final GradingScaleService gradingScaleService;
+	private final StudentDataAccessGuard studentDataAccessGuard;
+	private final GradeCalculator gradeCalculator = new GradeCalculator();
 
 	public GradeService(GradeRepository gradeRepository, StudentRepository studentRepository,
-			ExamRepository examRepository) {
+			ExamRepository examRepository, GradingScaleService gradingScaleService,
+			StudentDataAccessGuard studentDataAccessGuard) {
 		this.gradeRepository = gradeRepository;
 		this.studentRepository = studentRepository;
 		this.examRepository = examRepository;
+		this.gradingScaleService = gradingScaleService;
+		this.studentDataAccessGuard = studentDataAccessGuard;
 	}
 
 	@Transactional(readOnly = true)
@@ -39,20 +50,29 @@ public class GradeService {
 				.orElseThrow(() -> new ResourceNotFoundException("Grade not found: " + publicId));
 	}
 
+	@Transactional(readOnly = true)
+	public Page<Grade> getStudentGrades(String studentPublicId, Pageable pageable) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		studentDataAccessGuard.assertCanView(tenantId, studentPublicId);
+		return gradeRepository.findByStudentIdAndTenantId(student.getId(), tenantId, pageable);
+	}
+
 	@Transactional
-	public Grade record(Long studentId, String subject, Long examId,
-			BigDecimal marks, String gradeLetter, String gradedBy) {
+	public Grade record(Long studentId, String subject, Long examId, BigDecimal marks, String gradedBy) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (!studentRepository.existsByIdAndTenantId(studentId, tenantId)) {
 			throw new ResourceNotFoundException("Student not found: " + studentId);
 		}
-		if (!examRepository.existsByIdAndTenantId(examId, tenantId)) {
-			throw new ResourceNotFoundException("Exam not found: " + examId);
-		}
+		Exam exam = examRepository.findByIdAndTenantId(examId, tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Exam not found: " + examId));
 		if (gradeRepository.existsByStudentIdAndExamIdAndTenantId(studentId, examId, tenantId)) {
 			throw new IllegalArgumentException(
 					"Grade already recorded for student " + studentId + " in exam " + examId);
 		}
+		GradingScale scale = gradingScaleService.getScale();
+		String gradeLetter = gradeCalculator.calculateLetterGrade(marks, exam.getMaxMarks(), scale);
 		Grade grade = Grade.create(studentId, subject, examId, marks, gradeLetter, gradedBy);
 		return gradeRepository.save(grade);
 	}

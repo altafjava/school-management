@@ -11,15 +11,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import com.altafjava.platform.application.dto.RegisterTenantCommand;
 import com.altafjava.platform.application.service.TenantOnboardingService;
+import com.altafjava.platform.core.security.PasswordEncoder;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.platform.domain.user.model.User;
+import com.altafjava.platform.domain.user.model.UserStatus;
+import com.altafjava.platform.domain.user.repository.UserRepository;
 import com.altafjava.school.application.policy.SchoolResourceAccessPolicy;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.guardian.model.Guardian;
+import com.altafjava.school.domain.guardian.model.RelationshipType;
+import com.altafjava.school.domain.guardian.model.StudentGuardianLink;
+import com.altafjava.school.domain.guardian.repository.GuardianRepository;
+import com.altafjava.school.domain.guardian.repository.StudentGuardianLinkRepository;
+import com.altafjava.school.domain.student.model.Student;
+import com.altafjava.school.domain.student.repository.StudentRepository;
 import com.altafjava.school.domain.teacher.model.Teacher;
 import com.altafjava.school.domain.teacher.repository.TeacherRepository;
 
@@ -42,7 +53,22 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 	private ClassroomRepository classroomRepository;
 
 	@Autowired
+	private StudentRepository studentRepository;
+
+	@Autowired
+	private GuardianRepository guardianRepository;
+
+	@Autowired
+	private StudentGuardianLinkRepository studentGuardianLinkRepository;
+
+	@Autowired
 	private TenantOnboardingService onboardingService;
+
+	@Autowired
+	private UserRepository userRepository;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	private Long testTenantId;
 
@@ -102,9 +128,73 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 	}
 
 	@Test
-	void nonClassroomResources_areAllowedByDefault() {
+	void resourceTypesNotManagedByThePolicy_areAllowedByDefault() {
 		boolean allowed = schoolResourceAccessPolicy.isAllowed(
-				"any-user", testTenantId, "STUDENT", "any-public-id", "READ");
+				"any-user", testTenantId, "EXAM", "any-public-id", "READ");
 		assertTrue(allowed, "Resource types not managed by the school policy must default to allowed");
+	}
+
+	@Test
+	void student_canAccessOwnData() {
+		Long selfUserId = createUser("student-self@test.edu");
+		Student student = studentRepository.save(Student.create(
+				"STU-" + UUID.randomUUID().toString().substring(0, 6), "Alice", "Smith", "alice@test.edu", null));
+		student.setUserId(selfUserId);
+		studentRepository.save(student);
+
+		boolean allowed = schoolResourceAccessPolicy.isAllowed(
+				String.valueOf(selfUserId), testTenantId, "STUDENT", student.getPublicId().toString(), "READ");
+		assertTrue(allowed, "Student must be allowed to READ their own data");
+	}
+
+	@Test
+	void student_cannotAccessAnotherStudentsData() {
+		Long ownerUserId = createUser("student-owner@test.edu");
+		Long otherUserId = createUser("student-other@test.edu");
+		Student student = studentRepository.save(Student.create(
+				"STU-" + UUID.randomUUID().toString().substring(0, 6), "Bob", "Jones", "bob@test.edu", null));
+		student.setUserId(ownerUserId);
+		studentRepository.save(student);
+
+		boolean allowed = schoolResourceAccessPolicy.isAllowed(
+				String.valueOf(otherUserId), testTenantId, "STUDENT", student.getPublicId().toString(), "READ");
+		assertFalse(allowed, "A different student's user ID must be denied READ access");
+	}
+
+	@Test
+	void guardian_canAccessLinkedChildsData() {
+		Long guardianUserId = createUser("guardian-linked@test.edu");
+		Student student = studentRepository.save(Student.create(
+				"STU-" + UUID.randomUUID().toString().substring(0, 6), "Carol", "White", "carol@test.edu", null));
+		Guardian guardian = guardianRepository.save(
+				Guardian.create("Jane", "Doe", "jane@test.edu", "555-0100", guardianUserId));
+		studentGuardianLinkRepository.save(
+				StudentGuardianLink.create(student.getId(), guardian.getId(), RelationshipType.MOTHER, true));
+
+		boolean allowed = schoolResourceAccessPolicy.isAllowed(
+				String.valueOf(guardianUserId), testTenantId, "STUDENT", student.getPublicId().toString(), "READ");
+		assertTrue(allowed, "A linked guardian must be allowed to READ their child's data");
+	}
+
+	@Test
+	void guardian_cannotAccessUnlinkedStudentsData() {
+		Long guardianUserId = createUser("guardian-unlinked@test.edu");
+		Student student = studentRepository.save(Student.create(
+				"STU-" + UUID.randomUUID().toString().substring(0, 6), "Dan", "Brown", "dan@test.edu", null));
+		guardianRepository.save(Guardian.create("Jane", "Doe", "jane2@test.edu", "555-0100", guardianUserId));
+
+		boolean allowed = schoolResourceAccessPolicy.isAllowed(
+				String.valueOf(guardianUserId), testTenantId, "STUDENT", student.getPublicId().toString(), "READ");
+		assertFalse(allowed, "A guardian with no link to this student must be denied READ access");
+	}
+
+	private Long createUser(String email) {
+		User user = User.builder()
+				.email(email)
+				.passwordHash(passwordEncoder.encode("Password123!"))
+				.status(UserStatus.ACTIVE)
+				.emailVerified(true)
+				.build();
+		return userRepository.save(user).getId();
 	}
 }

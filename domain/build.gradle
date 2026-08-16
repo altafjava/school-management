@@ -1,6 +1,38 @@
 plugins {
     id 'java-library'
+    id 'jacoco'
     alias(libs.plugins.pitest)
+}
+
+// Line/branch coverage reporting. See TESTING.md §2/§5.
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+// Coverage ratchet — floor = measured baseline (31.8%, 2026-08-16), not the 85% aspirational
+// target in TESTING.md's table. Raise as coverage improves; never lower to make a change pass.
+jacocoTestCoverageVerification {
+    dependsOn test
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                minimum = 0.31
+            }
+        }
+    }
+}
+
+tasks.named('test') {
+    finalizedBy jacocoTestReport
+}
+
+tasks.named('check') {
+    dependsOn jacocoTestCoverageVerification
 }
 
 dependencies {
@@ -8,16 +40,30 @@ dependencies {
     api 'com.altafjava.platform:core'
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.platform.launcher
     testImplementation libs.pitest.junit5.plugin
 }
 
-// PIT mutation testing — scoped to school domain business logic.
-// Run with: ./gradlew :domain:pitest
-// Targets enrollment rules, grade calculations, fee validations, attendance logic —
-// the richest domain invariants that pure unit tests must protect.
+// PIT mutation testing. Run with: ./gradlew :domain:pitest
+//
+// Scoped to grade calculation and fee balance, not all of `domain` — the rest is still untested
+// Phase 0 entities, and PIT against untested code just reports NO_COVERAGE everywhere. Widen
+// targetClasses/targetTests as more of `domain` gains real tests.
+//
+// pitestVersion overrides the plugin's own bundled default, which predates Java 25 and crashes
+// reading this project's class files ("Unsupported class file major version 69"). This task also
+// needs a JDK 25 *host* JVM (JAVA_HOME), not just the project's toolchain — the plugin has no
+// toolchain support and its subprocess inherits whatever JDK launched Gradle. Full details:
+// TESTING.md §0/§5.
 pitest {
-    targetClasses = ['com.altafjava.school.domain.*']
-    targetTests = ['com.altafjava.school.domain.*']
+    // Exact classes, not a package wildcard — grade.model/fee.model also hold JPA entities
+    // (Grade, FeeStructure, FeePayment) with no dedicated unit tests yet.
+    targetClasses = ['com.altafjava.school.domain.grade.service.*',
+                      'com.altafjava.school.domain.grade.model.GradingScale',
+                      'com.altafjava.school.domain.grade.model.GradeThreshold',
+                      'com.altafjava.school.domain.fee.service.*']
+    targetTests = ['com.altafjava.school.domain.grade.*', 'com.altafjava.school.domain.fee.*']
+    pitestVersion = libs.versions.pitest.core.get()
     junit5PluginVersion = libs.versions.pitest.junit5.plugin.get()
     mutationThreshold = 70
     coverageThreshold = 70

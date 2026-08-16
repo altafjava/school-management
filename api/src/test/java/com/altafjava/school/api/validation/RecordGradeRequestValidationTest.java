@@ -25,7 +25,7 @@ class RecordGradeRequestValidationTest {
 	}
 
 	private RecordGradeRequest valid() {
-		return new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), "A", "teacher@school.com");
+		return new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), "teacher@school.com");
 	}
 
 	@Test
@@ -35,66 +35,57 @@ class RecordGradeRequestValidationTest {
 
 	@Test
 	void studentId_null_failsValidation() {
-		var req = new RecordGradeRequest(null, "Mathematics", 10L, new BigDecimal("85.50"), "A", null);
+		var req = new RecordGradeRequest(null, "Mathematics", 10L, new BigDecimal("85.50"), null);
 		assertFalse(violationsFor(req).isEmpty());
 	}
 
 	@Test
 	void subject_blank_failsValidation() {
-		var req = new RecordGradeRequest(1L, "", 10L, new BigDecimal("85.50"), "A", null);
+		var req = new RecordGradeRequest(1L, "", 10L, new BigDecimal("85.50"), null);
 		assertFalse(violationsFor(req).isEmpty());
 	}
 
 	@Test
 	void subject_tooLong_failsValidation() {
-		var req = new RecordGradeRequest(1L, "S".repeat(101), 10L, new BigDecimal("85.50"), "A", null);
+		var req = new RecordGradeRequest(1L, "S".repeat(101), 10L, new BigDecimal("85.50"), null);
 		assertFalse(violationsFor(req).isEmpty());
 	}
 
 	@Test
 	void examId_null_failsValidation() {
-		var req = new RecordGradeRequest(1L, "Mathematics", null, new BigDecimal("85.50"), "A", null);
+		var req = new RecordGradeRequest(1L, "Mathematics", null, new BigDecimal("85.50"), null);
 		assertFalse(violationsFor(req).isEmpty());
 	}
 
 	@Test
 	void marks_null_failsValidation() {
-		var req = new RecordGradeRequest(1L, "Mathematics", 10L, null, "A", null);
+		var req = new RecordGradeRequest(1L, "Mathematics", 10L, null, null);
 		assertFalse(violationsFor(req).isEmpty());
 	}
 
 	@Test
 	void marks_negative_failsDecimalMinValidation() {
-		var req = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("-1.0"), "A", null);
+		var req = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("-1.0"), null);
 		assertFalse(violationsFor(req).isEmpty());
 	}
 
 	@Test
 	void marks_zero_passesValidation() {
 		// @DecimalMin("0.0") inclusive — zero is valid
-		var req = new RecordGradeRequest(1L, "Mathematics", 10L, BigDecimal.ZERO, "A", null);
+		var req = new RecordGradeRequest(1L, "Mathematics", 10L, BigDecimal.ZERO, null);
 		assertTrue(violationsFor(req).isEmpty());
-	}
-
-	@Test
-	void gradeLetter_blank_failsValidation() {
-		var req = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), "", null);
-		assertFalse(violationsFor(req).isEmpty());
-	}
-
-	@Test
-	void gradeLetter_tooLong_failsValidation() {
-		var req = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), "A++++", null);
-		// exactly at limit (5 chars) passes; 6 chars fails
-		assertTrue(violationsFor(req).isEmpty());
-		var tooLong = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), "A+++++", null);
-		assertFalse(violationsFor(tooLong).isEmpty());
 	}
 
 	@Test
 	void gradedBy_null_passesValidation() {
 		// gradedBy has no @NotNull — it is optional
-		var req = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), "A", null);
+		var req = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), null);
 		assertTrue(violationsFor(req).isEmpty());
+	}
+
+	@Test
+	void gradedBy_tooLong_failsValidation() {
+		var req = new RecordGradeRequest(1L, "Mathematics", 10L, new BigDecimal("85.50"), "T".repeat(101));
+		assertFalse(violationsFor(req).isEmpty());
 	}
 }

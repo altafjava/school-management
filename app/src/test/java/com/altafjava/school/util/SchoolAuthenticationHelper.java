@@ -37,4 +37,14 @@ public class SchoolAuthenticationHelper {
 		return tokenProvider.generateToken("test-" + role.toLowerCase() + "@school.test", tenantId,
 				Map.of("roles", List.of(role), "user_id", -1L));
 	}
+
+	/**
+	 * Mints a token carrying a real platform user's surrogate ID — needed for ownership-based
+	 * RBAC tests (e.g. "a guardian can only view their own linked student's data") where
+	 * {@link #tokenWithRole} synthetic {@code user_id = -1L} would fail
+	 * {@code ResourceAccessPolicy}'s guardian/student lookup by design.
+	 */
+	public String tokenForUser(Long tenantId, Long userId, String email, String role) {
+		return tokenProvider.generateToken(email, tenantId, Map.of("roles", List.of(role), "user_id", userId));
+	}
 }

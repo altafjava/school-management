@@ -24,4 +24,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
 	boolean existsByStudentIdAndClassroomIdAndAttendanceDateAndTenantId(Long studentId, Long classroomId,
 			LocalDate attendanceDate, Long tenantId);
+
+	Page<Attendance> findByStudentIdAndTenantId(Long studentId, Long tenantId, Pageable pageable);
 }

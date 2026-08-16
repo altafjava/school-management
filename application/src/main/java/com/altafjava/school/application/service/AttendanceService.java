@@ -8,10 +8,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.application.security.StudentDataAccessGuard;
 import com.altafjava.school.domain.attendance.model.Attendance;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 
 @Service
@@ -20,12 +22,14 @@ public class AttendanceService {
 	private final AttendanceRepository attendanceRepository;
 	private final StudentRepository studentRepository;
 	private final ClassroomRepository classroomRepository;
+	private final StudentDataAccessGuard studentDataAccessGuard;
 
 	public AttendanceService(AttendanceRepository attendanceRepository, StudentRepository studentRepository,
-			ClassroomRepository classroomRepository) {
+			ClassroomRepository classroomRepository, StudentDataAccessGuard studentDataAccessGuard) {
 		this.attendanceRepository = attendanceRepository;
 		this.studentRepository = studentRepository;
 		this.classroomRepository = classroomRepository;
+		this.studentDataAccessGuard = studentDataAccessGuard;
 	}
 
 	@Transactional(readOnly = true)
@@ -38,6 +42,15 @@ public class AttendanceService {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		return attendanceRepository.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Attendance record not found: " + publicId));
+	}
+
+	@Transactional(readOnly = true)
+	public Page<Attendance> getStudentAttendance(String studentPublicId, Pageable pageable) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		studentDataAccessGuard.assertCanView(tenantId, studentPublicId);
+		return attendanceRepository.findByStudentIdAndTenantId(student.getId(), tenantId, pageable);
 	}
 
 	@Transactional

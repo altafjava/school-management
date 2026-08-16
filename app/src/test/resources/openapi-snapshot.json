@@ -746,6 +746,50 @@
         } ]
       }
     },
+    "/api/v1/grading-scale" : {
+      "get" : {
+        "tags" : [ "grading-scale-controller" ],
+        "operationId" : "get",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingScaleResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "grading-scale-controller" ],
+        "operationId" : "update",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateGradingScaleRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GradingScaleResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/billing/payment-methods/{id}/default" : {
       "put" : {
         "tags" : [ "Billing Management" ],
@@ -3046,10 +3090,109 @@
         } ]
       }
     },
+    "/api/v1/guardians" : {
+      "get" : {
+        "tags" : [ "guardian-controller" ],
+        "operationId" : "list_3",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageGuardianResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "guardian-controller" ],
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateGuardianRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GuardianResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardians/{publicId}/students" : {
+      "post" : {
+        "tags" : [ "guardian-controller" ],
+        "operationId" : "linkStudent",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/LinkGuardianRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentGuardianLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/grades" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "list_3",
+        "operationId" : "list_4",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3169,7 +3312,7 @@
     "/api/v1/fee-structures" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "list_4",
+        "operationId" : "list_5",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3204,7 +3347,7 @@
       },
       "post" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "create_1",
+        "operationId" : "create_2",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3232,7 +3375,7 @@
     "/api/v1/fee-payments" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "list_5",
+        "operationId" : "list_6",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3295,7 +3438,7 @@
     "/api/v1/exams" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "list_6",
+        "operationId" : "list_7",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3426,7 +3569,7 @@
     "/api/v1/classrooms" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "list_7",
+        "operationId" : "list_8",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3461,7 +3604,7 @@
       },
       "post" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "create_2",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4369,7 +4512,7 @@
     "/api/v1/attendance" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "list_8",
+        "operationId" : "list_9",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -6168,7 +6311,7 @@
     "/api/v1/academic-years" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "list_9",
+        "operationId" : "list_10",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -6203,7 +6346,7 @@
       },
       "post" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "create_3",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7457,7 +7600,7 @@
     "/api/v1/terms/{publicId}" : {
       "get" : {
         "tags" : [ "term-controller" ],
-        "operationId" : "get",
+        "operationId" : "get_1",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -7540,7 +7683,7 @@
     "/api/v1/teachers/{publicId}" : {
       "get" : {
         "tags" : [ "teacher-controller" ],
-        "operationId" : "get_1",
+        "operationId" : "get_2",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -7695,7 +7838,7 @@
     "/api/v1/students/{publicId}" : {
       "get" : {
         "tags" : [ "student-controller" ],
-        "operationId" : "get_2",
+        "operationId" : "get_3",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -7711,6 +7854,123 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/StudentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{publicId}/grades" : {
+      "get" : {
+        "tags" : [ "student-controller" ],
+        "operationId" : "grades",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageGradeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{publicId}/fee-balance" : {
+      "get" : {
+        "tags" : [ "student-controller" ],
+        "operationId" : "feeBalance",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/FeeBalanceResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{publicId}/attendance" : {
+      "get" : {
+        "tags" : [ "student-controller" ],
+        "operationId" : "attendance",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageAttendanceResponse"
                 }
               }
             }
@@ -8072,10 +8332,73 @@
         } ]
       }
     },
+    "/api/v1/guardians/{publicId}" : {
+      "get" : {
+        "tags" : [ "guardian-controller" ],
+        "operationId" : "get_4",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GuardianResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardians/me/students" : {
+      "get" : {
+        "tags" : [ "guardian-controller" ],
+        "operationId" : "myStudents",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageStudentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/grades/{publicId}" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "get_3",
+        "operationId" : "get_5",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8190,7 +8513,7 @@
     "/api/v1/fee-structures/{publicId}" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "get_4",
+        "operationId" : "get_6",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8216,7 +8539,7 @@
     "/api/v1/fee-payments/{publicId}" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "get_5",
+        "operationId" : "get_7",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8242,7 +8565,7 @@
     "/api/v1/exams/{publicId}" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "get_6",
+        "operationId" : "get_8",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8292,7 +8615,7 @@
     "/api/v1/classrooms/{publicId}" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "get_7",
+        "operationId" : "get_9",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8779,7 +9102,7 @@
     "/api/v1/attendance/{publicId}" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "get_8",
+        "operationId" : "get_10",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10315,7 +10638,7 @@
     "/api/v1/academic-years/{publicId}" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "get_9",
+        "operationId" : "get_11",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11649,6 +11972,45 @@
           },
           "timeZone" : {
             "type" : "string"
+          }
+        }
+      },
+      "Threshold" : {
+        "type" : "object",
+        "properties" : {
+          "letter" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "minPercentage" : {
+            "type" : "number",
+            "maximum" : 100.0,
+            "minimum" : 0.0
+          }
+        },
+        "required" : [ "letter", "minPercentage" ]
+      },
+      "UpdateGradingScaleRequest" : {
+        "type" : "object",
+        "properties" : {
+          "thresholds" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Threshold"
+            },
+            "minItems" : 1
+          }
+        },
+        "required" : [ "thresholds" ]
+      },
+      "GradingScaleResponse" : {
+        "type" : "object",
+        "properties" : {
+          "thresholds" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Threshold"
+            }
           }
         }
       },
@@ -13745,6 +14107,100 @@
           }
         }
       },
+      "CreateGuardianRequest" : {
+        "type" : "object",
+        "properties" : {
+          "firstName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "lastName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 255,
+            "minLength" : 0
+          },
+          "phone" : {
+            "type" : "string",
+            "maxLength" : 30,
+            "minLength" : 0
+          },
+          "userId" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "firstName", "lastName" ]
+      },
+      "GuardianResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "firstName" : {
+            "type" : "string"
+          },
+          "lastName" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          }
+        }
+      },
+      "LinkGuardianRequest" : {
+        "type" : "object",
+        "properties" : {
+          "studentPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "relationshipType" : {
+            "type" : "string",
+            "enum" : [ "MOTHER", "FATHER", "LEGAL_GUARDIAN", "OTHER" ]
+          },
+          "primaryContact" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "relationshipType", "studentPublicId" ]
+      },
+      "StudentGuardianLinkResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "studentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "guardianId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "relationshipType" : {
+            "type" : "string"
+          },
+          "primaryContact" : {
+            "type" : "boolean"
+          },
+          "consentGivenAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "RecordGradeRequest" : {
         "type" : "object",
         "properties" : {
@@ -13765,18 +14221,13 @@
             "type" : "number",
             "minimum" : 0.0
           },
-          "gradeLetter" : {
-            "type" : "string",
-            "maxLength" : 5,
-            "minLength" : 0
-          },
           "gradedBy" : {
             "type" : "string",
             "maxLength" : 100,
             "minLength" : 0
           }
         },
-        "required" : [ "examId", "gradeLetter", "marks", "studentId", "subject" ]
+        "required" : [ "examId", "marks", "studentId", "subject" ]
       },
       "GradeResponse" : {
         "type" : "object",
@@ -16705,13 +17156,16 @@
       "PageTermResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -16722,9 +17176,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -16759,14 +17210,14 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "unpaged" : {
+            "type" : "boolean"
+          },
           "paged" : {
             "type" : "boolean"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
-          },
-          "unpaged" : {
-            "type" : "boolean"
           },
           "offset" : {
             "type" : "integer",
@@ -16777,10 +17228,10 @@
       "SortObject" : {
         "type" : "object",
         "properties" : {
-          "sorted" : {
+          "unsorted" : {
             "type" : "boolean"
           },
-          "unsorted" : {
+          "sorted" : {
             "type" : "boolean"
           },
           "empty" : {
@@ -16811,13 +17262,16 @@
       "PageTeacherResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -16828,9 +17282,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -16878,13 +17329,16 @@
       "PageStudentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -16895,9 +17349,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -16910,6 +17361,122 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/StudentResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageGradeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GradeResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "FeeBalanceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "feeStructureId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "feeStructureName" : {
+            "type" : "string"
+          },
+          "amountDue" : {
+            "type" : "number"
+          },
+          "amountPaid" : {
+            "type" : "number"
+          },
+          "outstandingBalance" : {
+            "type" : "number"
+          },
+          "overpaidAmount" : {
+            "type" : "number"
+          }
+        }
+      },
+      "PageAttendanceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AttendanceResponse"
             }
           },
           "number" : {
@@ -17003,13 +17570,16 @@
       "PageReportDefinitionResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17020,9 +17590,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -17066,13 +17633,16 @@
       "PageReportExecutionResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17083,9 +17653,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -17412,13 +17979,16 @@
       "PageNotificationTemplateResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17429,9 +17999,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -17521,16 +18088,19 @@
           }
         }
       },
-      "PageGradeResponse" : {
+      "PageGuardianResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17542,9 +18112,6 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
@@ -17555,7 +18122,7 @@
           "content" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/GradeResponse"
+              "$ref" : "#/components/schemas/GuardianResponse"
             }
           },
           "number" : {
@@ -17657,13 +18224,16 @@
       "PageFeeStructureResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17674,9 +18244,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -17703,13 +18270,16 @@
       "PageFeePaymentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17720,9 +18290,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -17749,13 +18316,16 @@
       "PageExamResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17766,9 +18336,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -17851,13 +18418,16 @@
       "PageClassroomResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -17868,9 +18438,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -18395,52 +18962,6 @@
           }
         }
       },
-      "PageAttendanceResponse" : {
-        "type" : "object",
-        "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "first" : {
-            "type" : "boolean"
-          },
-          "last" : {
-            "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "content" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/AttendanceResponse"
-            }
-          },
-          "number" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "empty" : {
-            "type" : "boolean"
-          }
-        }
-      },
       "ApiResponseApprovalRequestResponse" : {
         "type" : "object",
         "properties" : {
@@ -18638,13 +19159,16 @@
       "PageAdminUsageMetricResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -18655,9 +19179,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19764,13 +20285,16 @@
       "PageCriticalErrorResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -19781,9 +20305,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19827,13 +20348,16 @@
       "PageSystemAuditLogResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -19844,9 +20368,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -20052,13 +20573,16 @@
       "PageAcademicYearResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "numberOfElements" : {
             "type" : "integer",
@@ -20069,9 +20593,6 @@
           },
           "last" : {
             "type" : "boolean"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"

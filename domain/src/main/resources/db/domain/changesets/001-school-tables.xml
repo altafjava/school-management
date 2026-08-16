@@ -158,6 +158,7 @@
             <column name="enrollment_status" type="VARCHAR(30)">
                 <constraints nullable="false"/>
             </column>
+            <column name="user_id" type="BIGINT"/>
             <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
@@ -177,12 +178,19 @@
                 constraintName="fk_students_tenant_id"
                 baseTableName="students" baseColumnNames="tenant_id"
                 referencedTableName="tenants" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_students_user_id"
+                baseTableName="students" baseColumnNames="user_id"
+                referencedTableName="users" referencedColumnNames="id"/>
 
         <createIndex indexName="idx_students_tenant_id" tableName="students">
             <column name="tenant_id"/>
         </createIndex>
         <createIndex indexName="idx_students_deleted" tableName="students">
             <column name="deleted"/>
+        </createIndex>
+        <createIndex indexName="idx_students_user_id" tableName="students">
+            <column name="user_id"/>
         </createIndex>
         <createIndex indexName="uq_students_code_tenant" tableName="students" unique="true">
             <column name="student_code"/>

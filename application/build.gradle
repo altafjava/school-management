@@ -3,7 +3,7 @@ plugins {
     id 'jacoco'
 }
 
-// Line/branch coverage reporting for this module — report-only for now, see TESTING.md §2.
+// Line/branch coverage reporting for this module.
 jacocoTestReport {
     dependsOn test
     reports {
@@ -12,14 +12,41 @@ jacocoTestReport {
     }
 }
 
+// Coverage ratchet (TESTING.md §2/§5 step 5) — floor = the line coverage this module actually
+// measures at the end of Phase 1 (47.98%, recorded 2026-08-16), not the 80% aspirational target
+// from TESTING.md's table. See domain/build.gradle for the full rationale.
+jacocoTestCoverageVerification {
+    dependsOn test
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                minimum = 0.47
+            }
+        }
+    }
+}
+
 tasks.named('test') {
     finalizedBy jacocoTestReport
+}
+
+tasks.named('check') {
+    dependsOn jacocoTestCoverageVerification
 }
 
 dependencies {
     api project(':domain')
     // Platform application — exposes JobExecutionStrategy, events, EventPublisher
     api 'com.altafjava.platform:application'
+
+    // Spring Security and Jackson are implementation-scoped in the platform's application module
+    // so they are not transitively visible — declare them explicitly here, matching api/build.gradle.
+    // StudentDataAccessGuard/GuardianService read Authentication/SecurityContextHolder/
+    // AccessDeniedException; GradingScaleService (de)serializes the tenant-configurable grading
+    // scale to/from TenantSettingOverride's JSON value.
+    implementation libs.spring.boot.starter.security
+    implementation libs.jackson.databind
 
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine

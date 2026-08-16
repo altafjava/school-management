@@ -1,0 +1,104 @@
+package com.altafjava.school.application.service;
+
+import java.util.List;
+import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.altafjava.platform.application.event.publisher.EventPublisher;
+import com.altafjava.platform.core.exception.ResourceNotFoundException;
+import com.altafjava.platform.core.security.AuthenticatedUser;
+import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.guardian.event.GuardianLinkedEvent;
+import com.altafjava.school.domain.guardian.model.Guardian;
+import com.altafjava.school.domain.guardian.model.RelationshipType;
+import com.altafjava.school.domain.guardian.model.StudentGuardianLink;
+import com.altafjava.school.domain.guardian.repository.GuardianRepository;
+import com.altafjava.school.domain.guardian.repository.StudentGuardianLinkRepository;
+import com.altafjava.school.domain.student.model.Student;
+import com.altafjava.school.domain.student.repository.StudentRepository;
+
+@Service
+public class GuardianService {
+
+	private final GuardianRepository guardianRepository;
+	private final StudentGuardianLinkRepository studentGuardianLinkRepository;
+	private final StudentRepository studentRepository;
+	private final EventPublisher eventPublisher;
+
+	public GuardianService(GuardianRepository guardianRepository,
+			StudentGuardianLinkRepository studentGuardianLinkRepository, StudentRepository studentRepository,
+			EventPublisher eventPublisher) {
+		this.guardianRepository = guardianRepository;
+		this.studentGuardianLinkRepository = studentGuardianLinkRepository;
+		this.studentRepository = studentRepository;
+		this.eventPublisher = eventPublisher;
+	}
+
+	@Transactional(readOnly = true)
+	public Page<Guardian> listGuardians(Pageable pageable) {
+		return guardianRepository.findAllByTenantId(TenantContext.getCurrentTenantId(), pageable);
+	}
+
+	@Transactional(readOnly = true)
+	public Guardian findByPublicId(String publicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		return guardianRepository.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Guardian not found: " + publicId));
+	}
+
+	@Transactional
+	public Guardian create(String firstName, String lastName, String email, String phone, Long userId) {
+		Guardian guardian = Guardian.create(firstName, lastName, email, phone, userId);
+		return guardianRepository.save(guardian);
+	}
+
+	@Transactional
+	public StudentGuardianLink linkToStudent(String guardianPublicId, String studentPublicId,
+			RelationshipType relationshipType, boolean primaryContact) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Guardian guardian = guardianRepository.findByPublicIdAndTenantId(UUID.fromString(guardianPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Guardian not found: " + guardianPublicId));
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		if (studentGuardianLinkRepository.existsByGuardianIdAndStudentIdAndTenantId(guardian.getId(),
+				student.getId(), tenantId)) {
+			throw new IllegalArgumentException(
+					"Guardian " + guardianPublicId + " is already linked to student " + studentPublicId);
+		}
+		StudentGuardianLink link = StudentGuardianLink.create(student.getId(), guardian.getId(), relationshipType,
+				primaryContact);
+		StudentGuardianLink saved = studentGuardianLinkRepository.save(link);
+		eventPublisher.publish(new GuardianLinkedEvent(tenantId, student.getId(), guardian.getId(),
+				relationshipType));
+		return saved;
+	}
+
+	@Transactional(readOnly = true)
+	public Page<Student> listLinkedStudentsForCurrentUser(Pageable pageable) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Long userId = currentUserId();
+		Guardian guardian = guardianRepository.findByUserIdAndTenantId(userId, tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("No guardian record linked to the current user"));
+		Page<StudentGuardianLink> links = studentGuardianLinkRepository.findByGuardianId(tenantId, guardian.getId(),
+				pageable);
+		List<Student> students = links.getContent().stream()
+				.map(link -> studentRepository.findByIdAndTenantId(link.getStudentId(), tenantId)
+						.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + link.getStudentId())))
+				.toList();
+		return new PageImpl<>(students, pageable, links.getTotalElements());
+	}
+
+	private Long currentUserId() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication != null && authentication.getPrincipal() instanceof AuthenticatedUser user) {
+			return user.getId();
+		}
+		throw new AccessDeniedException("Authenticated principal missing");
+	}
+}

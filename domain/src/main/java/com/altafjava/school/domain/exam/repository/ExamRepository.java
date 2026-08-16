@@ -23,4 +23,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 			@Param("to") LocalDateTime to);
 
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
+
+	Optional<Exam> findByIdAndTenantId(Long id, Long tenantId);
 }
