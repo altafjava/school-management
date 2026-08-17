@@ -12,6 +12,27 @@ spring:
       max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:1800000}
       connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:30000}
 
+scheduler:
+  datasource:
+    # Quartz's job-store pool is independent of the main app datasource (see spring.datasource
+    # above) and platform-defaults.yml intentionally ships no DB_NAME default — school-saas owns
+    # this value explicitly, matching the main datasource above.
+    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:school_saas}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+tenant:
+  resolution:
+    # platform-saas ships no default (domain-neutral) — school-saas is the school domain, so a
+    # school.local dev default is appropriate here, owned by school-saas, not by the platform.
+    base-domain: school.local
+
+security:
+  cors:
+    # Local dev frontend origins (Vite/CRA default ports). platform-saas ships no default.
+    allowed-origins: http://localhost:3000,http://localhost:5173
+
 app:
   security:
     jwt:

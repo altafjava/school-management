@@ -12,5 +12,6 @@
     <include file="db/domain/changesets/005-timetable.xml"/>
     <include file="db/domain/changesets/006-admissions.xml"/>
     <include file="db/domain/changesets/007-report-cards.xml"/>
+    <include file="db/domain/changesets/008-seed-school-roles.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd">
+
+    <!-- Global system-role templates (tenant_id = NULL), like platform-saas's TENANT_ADMIN — see Role.java. -->
+    <changeSet id="school-018-seed-school-roles" author="school">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM roles WHERE name = 'TEACHER' AND tenant_id IS NULL</sqlCheck>
+        </preConditions>
+        <insert tableName="roles">
+            <column name="name" value="TEACHER"/>
+            <column name="description" value="Class management, student grades, attendance"/>
+            <column name="is_system_role" valueBoolean="true"/>
+            <column name="permissions_json" value='["CLASSROOM_READ", "STUDENT_READ", "STUDENT_GRADES_READ", "STUDENT_GRADES_WRITE", "STUDENT_ATTENDANCE_READ", "STUDENT_ATTENDANCE_WRITE"]'/>
+            <column name="created_by" type="VARCHAR(100)"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="roles">
+            <column name="name" value="STUDENT"/>
+            <column name="description" value="View own grades, attendance, timetable"/>
+            <column name="is_system_role" valueBoolean="true"/>
+            <column name="permissions_json" value='["STUDENT_GRADES_READ", "STUDENT_ATTENDANCE_READ", "CLASSROOM_READ"]'/>
+            <column name="created_by" type="VARCHAR(100)"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+
+        <insert tableName="roles">
+            <column name="name" value="PARENT"/>
+            <column name="description" value="View linked children's grades, attendance, fees"/>
+            <column name="is_system_role" valueBoolean="true"/>
+            <column name="permissions_json" value='["STUDENT_GRADES_READ", "STUDENT_ATTENDANCE_READ", "STUDENT_FEE_BALANCE_READ"]'/>
+            <column name="created_by" type="VARCHAR(100)"/>
+            <column name="created_at" valueDate="NOW()"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

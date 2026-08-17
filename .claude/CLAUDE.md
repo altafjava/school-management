@@ -235,10 +235,11 @@ Never: mock repos in integration tests, `@Disabled` placeholders, OpenAPI assert
 
 ## Logging
 
-- SLF4J only. Structured `key=value` pairs: `tenant={} plan={}`.
-- Levels: `INFO` business events, `WARN` expected failures, `ERROR` unexpected failures.
-- Never log PII, secrets, tokens, or passwords — even at DEBUG.
-- Always include `tenantId` where available.
+- SLF4J only; use `key=value`, include `tenantId` where available.
+- `INFO` business, `WARN` expected, `ERROR` unexpected.
+- Never log PII, secrets, tokens, passwords—even DEBUG.
+- Use `@Slf4j`; no manual loggers. Exception: abstract bases needing subclass runtime logging may use `LoggerFactory.getLogger(getClass())` with a comment.
+- `log` is reserved for the logger; rename conflicting vars/params.
 
 ---
 
@@ -311,7 +312,7 @@ Settled decisions — don't reopen without a new, concrete trigger.
 - Don't abstract Hibernate annotations (`@SQLRestriction`, `@Filter`, `@Cache`) behind a platform interface in `domain` — no ORM-swap plan.
 - No `StructuredTaskScope` in production code — still a JDK preview feature (JEP 505).
 - No blanket `@Async` → virtual-thread conversion — must be bound-sized and load-tested per executor.
-- No JVM/GC/CDS tuning in-repo — no `Dockerfile` yet; fix the deployment pipeline first.
+- No JVM/GC/CDS tuning in-repo — `Dockerfile` (added Phase 0, 2026-08-17) builds `:app:bootJar` into a minimal, non-root runtime image; `JAVA_OPTS` is environment-overridable and empty by default rather than baked in. CI builds it (`docker-build` job in `ci.yml`) but does not yet push to a registry — no registry has been provisioned.
 - No second extension mechanism alongside `PlatformConfigurer`.
 
 ---

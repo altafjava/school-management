@@ -139,8 +139,9 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 	private Long createTeacherUser(String email) {
 		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null, TenantType.SHARED);
 		try {
+			// TEACHER is a global role (tenant_id = NULL) — see Role.java.
 			var role = roleRepository.findAll().stream()
-					.filter(r -> tenantId.equals(r.getTenantId()) && "TEACHER".equals(r.getName()))
+					.filter(r -> r.getTenantId() == null && "TEACHER".equals(r.getName()))
 					.findFirst()
 					.orElseThrow(() -> new IllegalStateException("TEACHER role not seeded"));
 			User user = User.builder()

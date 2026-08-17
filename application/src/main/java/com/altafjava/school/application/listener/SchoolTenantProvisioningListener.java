@@ -11,39 +11,20 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantContextSnapshot;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Reacts to a new tenant being provisioned by the platform.
- * Seeds school-specific default data: academic year, default fee structure names, grade categories.
- *
- * <p>
- * {@code TenantCreatedEvent} is published via the platform's outbox-backed {@code EventPublisher},
- * whose afterCommit dispatch already only ever runs post-commit — so this is plain
- * {@code @EventListener}, not {@code @TransactionalEventListener}, matching the same reasoning
- * documented on platform-saas's own {@code TenantProvisioningListener}. Runs on
- * {@code platformTaskExecutor} specifically (not a bare {@code @Async}), matching every other
- * platform-aware async listener in this codebase.
- *
- * <p>
- * <b>There is no tenant context to propagate here, by construction.</b> A brand-new tenant is
- * being created — no request thread ever had it "current," so the tenant-context-propagating
- * {@code TaskDecorator} correctly propagates "no tenant," not this one. The fix is not more
- * propagation; it's to bind the new tenant explicitly, for the scope of this handler, from the
- * event payload itself via {@link TenantContext#runAsTenant} — the platform's own sanctioned API
- * for exactly this "system-level code needs to act as tenant X for a bounded scope" case (see its
- * use in {@code AbstractBaseJob}), not a manual {@code TenantContext} mutation of the kind
- * {@code CLAUDE.md}'s hard rule forbids scattering through business logic.
+ * Reacts to a new tenant being provisioned by the platform. Seeds school-specific default data
+ * (currently: academic year). Role seeding is not needed here — TEACHER/STUDENT/PARENT are global
+ * system-role templates seeded once via Liquibase, see {@code Role.java}.
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SchoolTenantProvisioningListener {
 
 	private final AcademicYearRepository academicYearRepository;
-
-	public SchoolTenantProvisioningListener(AcademicYearRepository academicYearRepository) {
-		this.academicYearRepository = academicYearRepository;
-	}
 
 	@Async("platformTaskExecutor")
 	@Transactional(propagation = Propagation.REQUIRES_NEW)

@@ -45,7 +45,6 @@ public class SchoolPlatformConfigurer implements PlatformConfigurer {
 
 	@Override
 	public List<String> domainTenantChangelogPaths() {
-		// Run school domain migrations against every new SCHEMA-mode tenant schema
 		return List.of("db/domain/changelog-master.xml");
 	}
 
