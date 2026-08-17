@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.fee.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,4 +21,9 @@ public interface FeePaymentRepository extends JpaRepository<FeePayment, Long> {
 	List<FeePayment> findByStudentId(@Param("tenantId") Long tenantId, @Param("studentId") Long studentId);
 
 	boolean existsByReceiptNumberAndTenantId(String receiptNumber, Long tenantId);
+
+	// Campus-level aggregate for the multi-campus rollup report — summed at the DB rather than
+	// pulled row-by-row, since a campus can have thousands of payments (see OrganizationRollupService).
+	@Query("SELECT COALESCE(SUM(fp.paidAmount), 0) FROM FeePayment fp WHERE fp.tenantId = :tenantId")
+	BigDecimal sumPaidAmountByTenantId(@Param("tenantId") Long tenantId);
 }
