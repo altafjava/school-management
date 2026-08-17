@@ -1,8 +1,11 @@
 name: CI — Compile & Test
 
 on:
+  # main deliberately excluded from push: a merge to main is the same commit the pull_request
+  # trigger below already ran full CI against — re-running on the post-merge push is a redundant
+  # third execution of an unchanged tree, not new signal. Matches platform-saas/.github/workflows/ci.yml.
   push:
-    branches: [ "develop", "main" ]
+    branches: [ "develop" ]
     paths-ignore:
       - '**/*.md'
       - 'docs/**'

@@ -8747,6 +8747,48 @@
         }
       }
     },
+    "/api/v1/organizations/{organizationPublicId}/rollup-report" : {
+      "get" : {
+        "tags" : [ "organization-rollup-controller" ],
+        "operationId" : "get_7",
+        "parameters" : [ {
+          "name" : "organizationPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "from",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }, {
+          "name" : "to",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizationRollupResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{id}" : {
       "get" : {
         "tags" : [ "Organization Management" ],
@@ -8896,7 +8938,7 @@
     "/api/v1/guardians/{publicId}" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "get_7",
+        "operationId" : "get_8",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8959,7 +9001,7 @@
     "/api/v1/grades/{publicId}" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "get_8",
+        "operationId" : "get_9",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9074,7 +9116,7 @@
     "/api/v1/fee-structures/{publicId}" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "get_9",
+        "operationId" : "get_10",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9100,7 +9142,7 @@
     "/api/v1/fee-payments/{publicId}" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "get_10",
+        "operationId" : "get_11",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9126,7 +9168,7 @@
     "/api/v1/exams/{publicId}" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "get_11",
+        "operationId" : "get_12",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9176,7 +9218,7 @@
     "/api/v1/classrooms/{publicId}" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "get_12",
+        "operationId" : "get_13",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9692,7 +9734,7 @@
     "/api/v1/attendance/{publicId}" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "get_13",
+        "operationId" : "get_14",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9836,7 +9878,7 @@
     "/api/v1/admissions/{publicId}" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "get_14",
+        "operationId" : "get_15",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11254,7 +11296,7 @@
     "/api/v1/academic-years/{publicId}" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "get_15",
+        "operationId" : "get_16",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -18119,19 +18161,19 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
-          "pageNumber" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "pageSize" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "paged" : {
             "type" : "boolean"
           },
           "unpaged" : {
             "type" : "boolean"
+          },
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pageNumber" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "offset" : {
             "type" : "integer",
@@ -18974,6 +19016,112 @@
           },
           "meta" : {
             "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "AttendanceRollupResponse" : {
+        "type" : "object",
+        "properties" : {
+          "present" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "absent" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "late" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "excused" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "CampusRollupResponse" : {
+        "type" : "object",
+        "properties" : {
+          "tenantPublicId" : {
+            "type" : "string"
+          },
+          "tenantName" : {
+            "type" : "string"
+          },
+          "activeStudentCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "attendance" : {
+            "$ref" : "#/components/schemas/AttendanceRollupResponse"
+          },
+          "fees" : {
+            "$ref" : "#/components/schemas/FeeRollupResponse"
+          }
+        }
+      },
+      "FeeRollupResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalDue" : {
+            "type" : "number"
+          },
+          "totalPaid" : {
+            "type" : "number"
+          },
+          "outstandingBalance" : {
+            "type" : "number"
+          },
+          "overpaidAmount" : {
+            "type" : "number"
+          }
+        }
+      },
+      "OrganizationRollupResponse" : {
+        "type" : "object",
+        "properties" : {
+          "organizationPublicId" : {
+            "type" : "string"
+          },
+          "organizationName" : {
+            "type" : "string"
+          },
+          "periodStart" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "periodEnd" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "campuses" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CampusRollupResponse"
+            }
+          },
+          "totals" : {
+            "$ref" : "#/components/schemas/RollupTotalsResponse"
+          }
+        }
+      },
+      "RollupTotalsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "activeStudentCount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "attendance" : {
+            "$ref" : "#/components/schemas/AttendanceRollupResponse"
+          },
+          "fees" : {
+            "$ref" : "#/components/schemas/FeeRollupResponse"
           }
         }
       },

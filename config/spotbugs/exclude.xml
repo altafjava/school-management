@@ -35,4 +35,17 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on OrganizationRollupService's 5-arg constructor: flags storing the injected
+      OrganizationService (platform application-layer service) and the four school repository
+      interfaces into fields. Same standard constructor-injection pattern as
+      TenantAdminNotifier/ReportCardService above — investigated 2026-08-17: none of these fields
+      hold mutable state that could leak, and none is ever handed back to a caller. Consistent
+      detector noise on ordinary DI, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.application.rollup.OrganizationRollupService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>
