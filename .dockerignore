@@ -1,0 +1,27 @@
+# Keeps the Docker build context small and the build reproducible from source only —
+# nothing here should ever influence the image (build outputs, IDE state, local secrets).
+
+.git/
+.gradle/
+**/build/
+**/bin/
+out/
+*.class
+
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.factorypath
+.vscode/
+
+docker-compose.yml
+*.md
+docs/
+
+# Never bake local dev secrets into the build context.
+.env
+.env.*

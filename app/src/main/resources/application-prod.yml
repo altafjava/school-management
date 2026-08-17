@@ -23,6 +23,27 @@ spring:
         order_updates: true
         generate_statistics: false
 
+scheduler:
+  datasource:
+    # Quartz's job-store pool is independent of the main app datasource (see spring.datasource
+    # above); platform-defaults.yml ships no DB_NAME default, so it is required here too.
+    url: jdbc:mariadb://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.mariadb.jdbc.Driver
+
+tenant:
+  resolution:
+    # Required — platform-saas ships no default. Must resolve to the public base domain
+    # school-saas is served on in this environment (e.g. school-saas.example.com).
+    base-domain: ${TENANT_BASE_DOMAIN}
+
+security:
+  cors:
+    # Required — platform-saas ships no default. Comma-separated frontend origin(s) for this
+    # environment, e.g. https://app.school-saas.example.com
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
 app:
   security:
     jwt:

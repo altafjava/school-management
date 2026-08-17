@@ -263,10 +263,9 @@ class StudentDataAccessE2ETest extends SchoolIntegrationTestBase {
 
 	private Long createUserWithRole(String email, String roleName) {
 		return withTenant(() -> {
-			// findByName relies on a Hibernate filter only enabled for real HTTP requests — filter by tenantId
-			// explicitly here.
+			// STUDENT/PARENT are global roles (tenant_id = NULL) — see Role.java.
 			var role = roleRepository.findAll().stream()
-					.filter(r -> tenantId.equals(r.getTenantId()) && roleName.equals(r.getName()))
+					.filter(r -> r.getTenantId() == null && roleName.equals(r.getName()))
 					.findFirst()
 					.orElseThrow(() -> new IllegalStateException("Role not seeded for tenant: " + roleName));
 			User user = User.builder()
