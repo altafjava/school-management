@@ -17,6 +17,7 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
+import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.attendance.model.Attendance;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
@@ -34,13 +35,15 @@ class AttendanceServiceTest {
 	private ClassroomRepository classroomRepository;
 	@Mock
 	private StudentDataAccessGuard studentDataAccessGuard;
+	@Mock
+	private TeacherClassroomScopeResolver teacherClassroomScopeResolver;
 
 	private AttendanceService attendanceService;
 
 	@BeforeEach
 	void setUp() {
 		attendanceService = new AttendanceService(attendanceRepository, studentRepository, classroomRepository,
-				studentDataAccessGuard);
+				studentDataAccessGuard, teacherClassroomScopeResolver);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -92,6 +95,35 @@ class AttendanceServiceTest {
 
 		assertDoesNotThrow(() -> attendanceService.mark(1L, 10L, LocalDate.now(), AttendanceStatus.PRESENT,
 				"teacher"));
+	}
+
+	@Test
+	void listAttendance_asTenantAdmin_returnsAllTenantAttendance() {
+		when(teacherClassroomScopeResolver.resolveClassroomIdsIfTeacherScoped(1L))
+				.thenReturn(java.util.Optional.empty());
+		var expected = org.springframework.data.domain.Page.<Attendance>empty();
+		when(attendanceRepository.findAllByTenantId(1L, org.springframework.data.domain.PageRequest.of(0, 20)))
+				.thenReturn(expected);
+
+		attendanceService.listAttendance(org.springframework.data.domain.PageRequest.of(0, 20));
+
+		verify(attendanceRepository).findAllByTenantId(1L, org.springframework.data.domain.PageRequest.of(0, 20));
+		verify(attendanceRepository, never()).findByClassroomIdInAndTenantId(any(), any(), any());
+	}
+
+	@Test
+	void listAttendance_asScopedTeacher_filtersByTheirClassroomIds() {
+		when(teacherClassroomScopeResolver.resolveClassroomIdsIfTeacherScoped(1L))
+				.thenReturn(java.util.Optional.of(java.util.List.of(10L, 11L)));
+		var expected = org.springframework.data.domain.Page.<Attendance>empty();
+		when(attendanceRepository.findByClassroomIdInAndTenantId(java.util.List.of(10L, 11L), 1L,
+				org.springframework.data.domain.PageRequest.of(0, 20))).thenReturn(expected);
+
+		attendanceService.listAttendance(org.springframework.data.domain.PageRequest.of(0, 20));
+
+		verify(attendanceRepository).findByClassroomIdInAndTenantId(java.util.List.of(10L, 11L), 1L,
+				org.springframework.data.domain.PageRequest.of(0, 20));
+		verify(attendanceRepository, never()).findAllByTenantId(any(), any());
 	}
 
 	@Test

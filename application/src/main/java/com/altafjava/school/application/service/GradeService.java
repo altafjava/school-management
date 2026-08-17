@@ -1,6 +1,7 @@
 package com.altafjava.school.application.service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
+import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
@@ -26,21 +28,32 @@ public class GradeService {
 	private final ExamRepository examRepository;
 	private final GradingScaleService gradingScaleService;
 	private final StudentDataAccessGuard studentDataAccessGuard;
+	private final TeacherClassroomScopeResolver teacherClassroomScopeResolver;
 	private final GradeCalculator gradeCalculator = new GradeCalculator();
 
 	public GradeService(GradeRepository gradeRepository, StudentRepository studentRepository,
 			ExamRepository examRepository, GradingScaleService gradingScaleService,
-			StudentDataAccessGuard studentDataAccessGuard) {
+			StudentDataAccessGuard studentDataAccessGuard,
+			TeacherClassroomScopeResolver teacherClassroomScopeResolver) {
 		this.gradeRepository = gradeRepository;
 		this.studentRepository = studentRepository;
 		this.examRepository = examRepository;
 		this.gradingScaleService = gradingScaleService;
 		this.studentDataAccessGuard = studentDataAccessGuard;
+		this.teacherClassroomScopeResolver = teacherClassroomScopeResolver;
 	}
 
+	// TENANT_ADMIN sees every grade; TEACHER sees only grades from exams in classrooms they
+	// teach (resolved via TeacherClassroomScopeResolver — see ROADMAP.md Phase 3).
 	@Transactional(readOnly = true)
 	public Page<Grade> listGrades(Pageable pageable) {
-		return gradeRepository.findAllByTenantId(TenantContext.getCurrentTenantId(), pageable);
+		Long tenantId = TenantContext.getCurrentTenantId();
+		return teacherClassroomScopeResolver.resolveClassroomIdsIfTeacherScoped(tenantId)
+				.map(classroomIds -> {
+					List<Long> examIds = examRepository.findIdsByClassroomIdInAndTenantId(classroomIds, tenantId);
+					return gradeRepository.findByExamIdInAndTenantId(examIds, tenantId, pageable);
+				})
+				.orElseGet(() -> gradeRepository.findAllByTenantId(tenantId, pageable));
 	}
 
 	@Transactional(readOnly = true)

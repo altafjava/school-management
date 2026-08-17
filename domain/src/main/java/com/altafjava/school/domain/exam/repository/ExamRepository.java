@@ -25,4 +25,8 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
 
 	Optional<Exam> findByIdAndTenantId(Long id, Long tenantId);
+
+	@Query("SELECT e.id FROM Exam e WHERE e.tenantId = :tenantId AND e.classroomId IN :classroomIds")
+	List<Long> findIdsByClassroomIdInAndTenantId(@Param("classroomIds") List<Long> classroomIds,
+			@Param("tenantId") Long tenantId);
 }

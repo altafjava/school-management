@@ -8,6 +8,7 @@ import com.altafjava.school.domain.guardian.repository.GuardianRepository;
 import com.altafjava.school.domain.guardian.repository.StudentGuardianLinkRepository;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
+import com.altafjava.school.domain.teacher.repository.TeacherRepository;
 
 // School-specific rules applied after platform RBAC passes; other resource types default to allowed.
 @Component
@@ -17,13 +18,16 @@ public class SchoolResourceAccessPolicy implements ResourceAccessPolicy {
 	private final StudentRepository studentRepository;
 	private final GuardianRepository guardianRepository;
 	private final StudentGuardianLinkRepository studentGuardianLinkRepository;
+	private final TeacherRepository teacherRepository;
 
 	public SchoolResourceAccessPolicy(ClassroomRepository classroomRepository, StudentRepository studentRepository,
-			GuardianRepository guardianRepository, StudentGuardianLinkRepository studentGuardianLinkRepository) {
+			GuardianRepository guardianRepository, StudentGuardianLinkRepository studentGuardianLinkRepository,
+			TeacherRepository teacherRepository) {
 		this.classroomRepository = classroomRepository;
 		this.studentRepository = studentRepository;
 		this.guardianRepository = guardianRepository;
 		this.studentGuardianLinkRepository = studentGuardianLinkRepository;
+		this.teacherRepository = teacherRepository;
 	}
 
 	@Override
@@ -40,8 +44,12 @@ public class SchoolResourceAccessPolicy implements ResourceAccessPolicy {
 	private boolean isTeacherAssignedToClassroom(String userId, String classroomPublicId, Long tenantId) {
 		try {
 			UUID classroomUuid = UUID.fromString(classroomPublicId);
-			return classroomRepository.findByPublicIdAndTenantId(classroomUuid, tenantId)
-					.map(classroom -> userId.equals(String.valueOf(classroom.getClassTeacherId())))
+			Long actingUserId = Long.valueOf(userId);
+			// classroom.classTeacherId is a Teacher.id, not a platform users.id — resolve the
+			// caller's own Teacher record first, then compare Teacher.id to Teacher.id.
+			return teacherRepository.findByUserIdAndTenantId(actingUserId, tenantId)
+					.flatMap(teacher -> classroomRepository.findByPublicIdAndTenantId(classroomUuid, tenantId)
+							.map(classroom -> teacher.getId().equals(classroom.getClassTeacherId())))
 					.orElse(false);
 		} catch (IllegalArgumentException e) {
 			return false;

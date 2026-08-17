@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-5.0.xsd">
+
+    <changeSet id="school-015-admissions" author="school">
+        <createTable tableName="admissions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="public_id" type="VARCHAR(36)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tenant_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="applicant_first_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="applicant_last_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="applicant_date_of_birth" type="DATE"/>
+            <column name="guardian_first_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="guardian_last_name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="guardian_email" type="VARCHAR(255)"/>
+            <column name="guardian_phone" type="VARCHAR(30)"/>
+            <column name="applied_grade" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="submitted_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="enrollment_saga_id" type="VARCHAR(36)"/>
+            <column name="enrolled_student_id" type="BIGINT"/>
+            <column name="enrolled_guardian_id" type="BIGINT"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="TIMESTAMP"/>
+            <column name="deleted_by" type="VARCHAR(100)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(100)"/>
+            <column name="updated_by" type="VARCHAR(100)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                constraintName="fk_admissions_tenant_id"
+                baseTableName="admissions" baseColumnNames="tenant_id"
+                referencedTableName="tenants" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_admissions_enrolled_student_id"
+                baseTableName="admissions" baseColumnNames="enrolled_student_id"
+                referencedTableName="students" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_admissions_enrolled_guardian_id"
+                baseTableName="admissions" baseColumnNames="enrolled_guardian_id"
+                referencedTableName="guardians" referencedColumnNames="id"/>
+
+        <createIndex indexName="idx_admissions_tenant_id" tableName="admissions">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex indexName="idx_admissions_deleted" tableName="admissions">
+            <column name="deleted"/>
+        </createIndex>
+        <createIndex indexName="idx_admissions_status" tableName="admissions">
+            <column name="status"/>
+        </createIndex>
+        <createIndex indexName="idx_admissions_enrolled_student_id" tableName="admissions">
+            <column name="enrolled_student_id"/>
+        </createIndex>
+        <createIndex indexName="idx_admissions_enrollment_saga_id" tableName="admissions">
+            <column name="enrollment_saga_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="school-016-admission-decisions" author="school">
+        <createTable tableName="admission_decisions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="public_id" type="VARCHAR(36)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tenant_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="admission_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="outcome" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="decided_by" type="VARCHAR(100)"/>
+            <column name="decided_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="notes" type="VARCHAR(1000)"/>
+            <column name="deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deleted_at" type="TIMESTAMP"/>
+            <column name="deleted_by" type="VARCHAR(100)"/>
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(100)"/>
+            <column name="updated_by" type="VARCHAR(100)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                constraintName="fk_admission_decisions_tenant_id"
+                baseTableName="admission_decisions" baseColumnNames="tenant_id"
+                referencedTableName="tenants" referencedColumnNames="id"/>
+        <addForeignKeyConstraint
+                constraintName="fk_admission_decisions_admission_id"
+                baseTableName="admission_decisions" baseColumnNames="admission_id"
+                referencedTableName="admissions" referencedColumnNames="id"/>
+
+        <createIndex indexName="idx_admission_decisions_tenant_id" tableName="admission_decisions">
+            <column name="tenant_id"/>
+        </createIndex>
+        <createIndex indexName="idx_admission_decisions_deleted" tableName="admission_decisions">
+            <column name="deleted"/>
+        </createIndex>
+        <createIndex indexName="idx_admission_decisions_admission_id" tableName="admission_decisions">
+            <column name="admission_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

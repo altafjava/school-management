@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
+import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.attendance.model.Attendance;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
@@ -23,18 +24,27 @@ public class AttendanceService {
 	private final StudentRepository studentRepository;
 	private final ClassroomRepository classroomRepository;
 	private final StudentDataAccessGuard studentDataAccessGuard;
+	private final TeacherClassroomScopeResolver teacherClassroomScopeResolver;
 
 	public AttendanceService(AttendanceRepository attendanceRepository, StudentRepository studentRepository,
-			ClassroomRepository classroomRepository, StudentDataAccessGuard studentDataAccessGuard) {
+			ClassroomRepository classroomRepository, StudentDataAccessGuard studentDataAccessGuard,
+			TeacherClassroomScopeResolver teacherClassroomScopeResolver) {
 		this.attendanceRepository = attendanceRepository;
 		this.studentRepository = studentRepository;
 		this.classroomRepository = classroomRepository;
 		this.studentDataAccessGuard = studentDataAccessGuard;
+		this.teacherClassroomScopeResolver = teacherClassroomScopeResolver;
 	}
 
+	// TENANT_ADMIN sees every attendance record; TEACHER sees only records for classrooms they
+	// teach (resolved via TeacherClassroomScopeResolver — see ROADMAP.md Phase 3).
 	@Transactional(readOnly = true)
 	public Page<Attendance> listAttendance(Pageable pageable) {
-		return attendanceRepository.findAllByTenantId(TenantContext.getCurrentTenantId(), pageable);
+		Long tenantId = TenantContext.getCurrentTenantId();
+		return teacherClassroomScopeResolver.resolveClassroomIdsIfTeacherScoped(tenantId)
+				.map(classroomIds -> attendanceRepository.findByClassroomIdInAndTenantId(classroomIds, tenantId,
+						pageable))
+				.orElseGet(() -> attendanceRepository.findAllByTenantId(tenantId, pageable));
 	}
 
 	@Transactional(readOnly = true)

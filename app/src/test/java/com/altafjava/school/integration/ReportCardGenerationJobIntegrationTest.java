@@ -26,17 +26,24 @@ import com.altafjava.platform.domain.tenant.model.Tenant;
 import com.altafjava.platform.domain.user.model.User;
 import com.altafjava.platform.domain.user.repository.UserRepository;
 import com.altafjava.school.application.scheduler.ReportCardGenerationJob;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.application.service.StudentService;
+import com.altafjava.school.application.service.TermService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
+import com.altafjava.school.config.TestStorageConfig;
+import com.altafjava.school.domain.academicyear.model.AcademicYear;
+import com.altafjava.school.domain.reportcard.repository.ReportCardRepository;
+import com.altafjava.school.domain.term.model.Term;
 
 /**
- * Proves the ReportCardGeneration scheduler job is genuinely wired to NotificationService end to
- * end: running it against real tenant/student data persists a real Notification row with
- * verifiably correct content, not just a mocked interaction (ROADMAP.md Phase 2 "Validate").
+ * Proves the ReportCardGeneration scheduler job is genuinely wired end to end: running it against
+ * a real tenant/student/term persists a real PDF (via the in-memory {@link TestStorageConfig})
+ * tracked by a real ReportCard row, and notifies tenant admins with a real, persisted
+ * Notification whose content reflects the real generated count.
  */
-@Import({ TestRedisConfig.class, TestPaymentConfig.class })
+@Import({ TestRedisConfig.class, TestPaymentConfig.class, TestStorageConfig.class })
 class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 
 	@Autowired
@@ -44,6 +51,12 @@ class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private StudentService studentService;
+
+	@Autowired
+	private AcademicYearService academicYearService;
+
+	@Autowired
+	private TermService termService;
 
 	@Autowired
 	private TenantOnboardingService onboardingService;
@@ -54,19 +67,29 @@ class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 	@Autowired
 	private NotificationRepository notificationRepository;
 
+	@Autowired
+	private ReportCardRepository reportCardRepository;
+
 	private Tenant tenant;
 	private String adminEmail;
+	private Term currentTerm;
 
 	@BeforeEach
 	void createTenant() {
 		TenantContext.ForTesting.clear();
 		String suffix = UUID.randomUUID().toString().substring(0, 8);
-		adminEmail = "admin@rpc-" + suffix + ".test";
+		adminEmail = "admin@rc-" + suffix + ".test";
 		tenant = onboardingService.registerTenant(
-				new RegisterTenantCommand("Report Card School", "rpc-" + suffix, 1L, adminEmail, "Password123!",
+				new RegisterTenantCommand("Report Card School", "rc-" + suffix, 1L, adminEmail, "Password123!",
 						"USD"));
 		TenantContext.ForTesting.setCurrentTenant(tenant.getId(), tenant.getPublicId(), tenant.getSubdomain(),
 				tenant.getType());
+		// A fresh tenant already gets a default "current year" academic year seeded by
+		// SchoolTenantProvisioningListener — use a distinct name here to avoid colliding with it.
+		AcademicYear academicYear = academicYearService.create("AY-" + suffix, LocalDate.now().minusMonths(6),
+				LocalDate.now().plusMonths(6), true);
+		currentTerm = termService.create("Term 1", LocalDate.now().minusDays(30), LocalDate.now().plusDays(30),
+				academicYear.getId());
 	}
 
 	@AfterEach
@@ -80,15 +103,24 @@ class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 	}
 
 	@Test
-	void execute_withActiveStudents_persistsRealNotificationForTenantAdmin() {
-		studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6), "Alice", "Smith",
-				"alice@rpc.test", LocalDate.of(2010, 1, 1));
-		studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6), "Bob", "Jones", "bob@rpc.test",
-				LocalDate.of(2011, 2, 2));
+	void execute_withActiveStudentsAndCurrentTerm_generatesRealReportCardsAndNotifiesAdmin() {
+		var student1 = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6), "Alice", "Smith",
+				"alice@rc.test", LocalDate.of(2010, 1, 1));
+		var student2 = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6), "Bob", "Jones",
+				"bob@rc.test", LocalDate.of(2011, 2, 2));
 
 		JobExecutionResult result = reportCardGenerationJob.execute(context());
 
 		assertTrue(result instanceof JobExecutionResult.Success, "Job must report success: " + result);
+		var pageRequest = org.springframework.data.domain.PageRequest.of(0, 10);
+		assertEquals(1,
+				reportCardRepository.findByStudentIdAndTenantId(student1.getId(), tenant.getId(), pageRequest)
+						.getTotalElements(),
+				"A real ReportCard row must be persisted for student 1");
+		assertEquals(1,
+				reportCardRepository.findByStudentIdAndTenantId(student2.getId(), tenant.getId(), pageRequest)
+						.getTotalElements(),
+				"A real ReportCard row must be persisted for student 2");
 
 		User admin = userRepository.findByEmail(adminEmail)
 				.orElseThrow(() -> new IllegalStateException("Admin user not found: " + adminEmail));
@@ -96,17 +128,17 @@ class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 
 		Notification notification = notifications.content().stream()
 				.filter(n -> n.getType() == NotificationType.ANNOUNCEMENT)
-				.filter(n -> "Report Card Generation Due".equals(n.getTitle()))
+				.filter(n -> "Report Cards Generated".equals(n.getTitle()))
 				.findFirst()
-				.orElseThrow(() -> new AssertionError("Expected a persisted Report Card Generation Due notification"));
+				.orElseThrow(() -> new AssertionError("Expected a persisted Report Cards Generated notification"));
 
 		assertEquals(tenant.getId(), notification.getTenantId());
-		assertTrue(notification.getMessage().contains("2 active student"),
-				"Notification message must reference the real active-student count: " + notification.getMessage());
+		assertTrue(notification.getMessage().contains("2 of 2"),
+				"Notification message must reference the real generated count: " + notification.getMessage());
 	}
 
 	@Test
-	void execute_withNoActiveStudents_persistsNoNotification() {
+	void execute_withNoActiveStudents_generatesNoReportCardsAndDoesNotNotify() {
 		JobExecutionResult result = reportCardGenerationJob.execute(context());
 
 		assertTrue(result instanceof JobExecutionResult.Success, "Job must report success: " + result);
@@ -116,7 +148,7 @@ class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 		Page<Notification> notifications = notificationRepository.findByUserId(admin.getId(), Pageable.of(0, 10));
 
 		boolean found = notifications.content().stream()
-				.anyMatch(n -> "Report Card Generation Due".equals(n.getTitle()));
+				.anyMatch(n -> "Report Cards Generated".equals(n.getTitle()));
 		assertFalse(found, "No notification must be sent when there are zero active students");
 	}
 }

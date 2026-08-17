@@ -10,5 +10,7 @@
     <include file="db/domain/changesets/003-terms.xml"/>
     <include file="db/domain/changesets/004-guardians.xml"/>
     <include file="db/domain/changesets/005-timetable.xml"/>
+    <include file="db/domain/changesets/006-admissions.xml"/>
+    <include file="db/domain/changesets/007-report-cards.xml"/>
 
 </databaseChangeLog>
