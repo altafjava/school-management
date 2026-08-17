@@ -97,34 +97,65 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 
 	@Test
 	void teacher_canAccessOwnClassroom() {
+		// classroom.classTeacherId is a Teacher.id, not a platform users.id — the policy must
+		// bridge the acting user to their own Teacher record via Teacher.userId (added Phase 2)
+		// before comparing, so this needs a real linked User, not the Teacher's own raw id.
+		Long teacherUserId = createUser("johnson-" + UUID.randomUUID().toString().substring(0, 6) + "@test.edu");
 		Teacher teacher = teacherRepository.save(Teacher.create(
 				"EMP-" + UUID.randomUUID().toString().substring(0, 6),
 				"Ms", "Johnson", "johnson@test.edu", null));
+		teacher.setUserId(teacherUserId);
+		teacherRepository.save(teacher);
 		Classroom classroom = classroomRepository.save(Classroom.create(
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6),
 				"Grade 5", "A", "2024-25", teacher.getId()));
 
 		boolean allowed = schoolResourceAccessPolicy.isAllowed(
-				String.valueOf(teacher.getId()), testTenantId, "CLASSROOM", classroom.getPublicId().toString(), "READ");
+				String.valueOf(teacherUserId), testTenantId, "CLASSROOM", classroom.getPublicId().toString(), "READ");
 		assertTrue(allowed, "Teacher must be allowed to READ their own classroom");
 	}
 
 	@Test
 	void teacher_cannotAccessAnotherTeachersClassroom() {
+		Long teacher1UserId = createUser("smith-" + UUID.randomUUID().toString().substring(0, 6) + "@test.edu");
+		Long teacher2UserId = createUser("lee-" + UUID.randomUUID().toString().substring(0, 6) + "@test.edu");
 		Teacher teacher1 = teacherRepository.save(Teacher.create(
 				"EMP-" + UUID.randomUUID().toString().substring(0, 6),
 				"Mr", "Smith", "smith@test.edu", null));
+		teacher1.setUserId(teacher1UserId);
+		teacherRepository.save(teacher1);
 		Teacher teacher2 = teacherRepository.save(Teacher.create(
 				"EMP-" + UUID.randomUUID().toString().substring(0, 6),
 				"Mrs", "Lee", "lee@test.edu", null));
+		teacher2.setUserId(teacher2UserId);
+		teacherRepository.save(teacher2);
 		Classroom classroom = classroomRepository.save(Classroom.create(
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6),
 				"Grade 6", "B", "2024-25", teacher1.getId()));
 
 		boolean allowed = schoolResourceAccessPolicy.isAllowed(
-				String.valueOf(teacher2.getId()), testTenantId, "CLASSROOM", classroom.getPublicId().toString(),
+				String.valueOf(teacher2UserId), testTenantId, "CLASSROOM", classroom.getPublicId().toString(),
 				"READ");
 		assertFalse(allowed, "Teacher2 must be denied READ access to teacher1's classroom");
+	}
+
+	@Test
+	void teacher_withNoLinkedUserAccount_cannotAccessTheirOwnClassroom() {
+		// Documents the fail-closed behavior a not-yet-linked TEACHER account gets — see
+		// TeacherClassroomScopeResolverTest for the equivalent unit-level coverage.
+		Teacher teacher = teacherRepository.save(Teacher.create(
+				"EMP-" + UUID.randomUUID().toString().substring(0, 6),
+				"Mr", "Unlinked", "unlinked@test.edu", null));
+		Classroom classroom = classroomRepository.save(Classroom.create(
+				"CLS-" + UUID.randomUUID().toString().substring(0, 6),
+				"Grade 7", "C", "2024-25", teacher.getId()));
+
+		boolean allowed = schoolResourceAccessPolicy.isAllowed(
+				String.valueOf(teacher.getId()), testTenantId, "CLASSROOM", classroom.getPublicId().toString(),
+				"READ");
+		assertFalse(allowed,
+				"A caller with no Teacher.userId link must be denied, even if their raw id happens to equal "
+						+ "the classroom's classTeacherId");
 	}
 
 	@Test

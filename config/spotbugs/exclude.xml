@@ -20,4 +20,19 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on ReportCardService's 10-arg constructor: flags storing the injected
+      StorageService (a platform interface) and ReportCardPdfGenerator (a stateless, school-local
+      formatting component) references into fields. Same standard constructor-injection pattern
+      as every other service in this module — investigated 2026-08-16, alongside the
+      TenantAdminNotifier finding above: this detector flags EI_EXPOSE_REP2 inconsistently across
+      structurally identical constructors (interface-typed and concrete-typed alike) elsewhere in
+      this exact module, which is detector noise, not a real defect — neither field holds mutable
+      state that could leak, and neither is ever handed back to a caller.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.application.service.ReportCardService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

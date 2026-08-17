@@ -2,12 +2,16 @@ package com.altafjava.school.application.scheduler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,8 +25,12 @@ import com.altafjava.platform.domain.scheduler.model.JobExecutionContext;
 import com.altafjava.platform.domain.scheduler.model.JobExecutionResult;
 import com.altafjava.platform.domain.scheduler.model.TriggerType;
 import com.altafjava.school.application.scheduler.support.TenantAdminNotifier;
+import com.altafjava.school.application.service.ReportCardService;
 import com.altafjava.school.domain.student.model.EnrollmentStatus;
+import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
+import com.altafjava.school.domain.term.model.Term;
+import com.altafjava.school.domain.term.repository.TermRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ReportCardGenerationJobTest {
@@ -30,13 +38,17 @@ class ReportCardGenerationJobTest {
 	@Mock
 	private StudentRepository studentRepository;
 	@Mock
+	private TermRepository termRepository;
+	@Mock
+	private ReportCardService reportCardService;
+	@Mock
 	private TenantAdminNotifier tenantAdminNotifier;
 
 	private ReportCardGenerationJob job;
 
 	@BeforeEach
 	void setUp() {
-		job = new ReportCardGenerationJob(studentRepository, tenantAdminNotifier);
+		job = new ReportCardGenerationJob(studentRepository, termRepository, reportCardService, tenantAdminNotifier);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -50,25 +62,74 @@ class ReportCardGenerationJobTest {
 				TriggerType.SCHEDULED, null, Instant.now(), null);
 	}
 
+	private Term termWithId(long id, String name) {
+		Term term = Term.create(name, LocalDate.now().minusDays(30), LocalDate.now().plusDays(30), 1L);
+		term.setId(id);
+		return term;
+	}
+
+	private Student studentWithId(long id) {
+		Student student = Student.create("STU-" + id, "Alice", "Smith", "alice@school.test", null);
+		student.setId(id);
+		return student;
+	}
+
 	@Test
-	void execute_withActiveStudents_notifiesAdminsWithRealCount() {
-		when(studentRepository.countByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L)).thenReturn(37L);
+	void execute_withCurrentTermAndActiveStudents_generatesReportCardsAndNotifiesAdmins() {
+		Term term = termWithId(5L, "Term 1");
+		Student student1 = studentWithId(1L);
+		Student student2 = studentWithId(2L);
+		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.of(term));
+		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
+				.thenReturn(List.of(student1, student2));
 		when(tenantAdminNotifier.notifyAll(eq(1L), any(), any())).thenReturn(1);
 
 		JobExecutionResult result = job.execute(context());
 
-		verify(tenantAdminNotifier).notifyAll(eq(1L), any(),
-				org.mockito.ArgumentMatchers.contains("37"));
-		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 37L, "notifiedCount", 1), null), result);
+		verify(reportCardService).generate(1L, 5L);
+		verify(reportCardService).generate(2L, 5L);
+		verify(tenantAdminNotifier).notifyAll(eq(1L), any(), org.mockito.ArgumentMatchers.contains("2"));
+		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 2, "notifiedCount", 1), null), result);
+	}
+
+	@Test
+	void execute_withNoCurrentTerm_skipsWithoutError() {
+		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.empty());
+
+		JobExecutionResult result = job.execute(context());
+
+		verify(reportCardService, never()).generate(anyLong(), anyLong());
+		verify(tenantAdminNotifier, never()).notifyAll(any(), any(), any());
+		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 0, "notifiedCount", 0), null), result);
 	}
 
 	@Test
 	void execute_withNoActiveStudents_doesNotNotify() {
-		when(studentRepository.countByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L)).thenReturn(0L);
+		Term term = termWithId(5L, "Term 1");
+		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.of(term));
+		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
+				.thenReturn(List.of());
 
 		JobExecutionResult result = job.execute(context());
 
 		verify(tenantAdminNotifier, never()).notifyAll(any(), any(), any());
-		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 0L, "notifiedCount", 0), null), result);
+		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 0, "notifiedCount", 0), null), result);
+	}
+
+	@Test
+	void execute_whenOneStudentGenerationFails_continuesWithRemainingStudents() {
+		Term term = termWithId(5L, "Term 1");
+		Student student1 = studentWithId(1L);
+		Student student2 = studentWithId(2L);
+		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.of(term));
+		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
+				.thenReturn(List.of(student1, student2));
+		when(reportCardService.generate(1L, 5L)).thenThrow(new RuntimeException("storage unavailable"));
+		when(tenantAdminNotifier.notifyAll(eq(1L), any(), any())).thenReturn(1);
+
+		JobExecutionResult result = job.execute(context());
+
+		verify(reportCardService).generate(2L, 5L);
+		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 1, "notifiedCount", 1), null), result);
 	}
 }

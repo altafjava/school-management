@@ -13,7 +13,7 @@ jacocoTestReport {
 }
 
 // Coverage ratchet (TESTING.md §2/§5 step 5) — floor = the line coverage this module actually
-// measures at the end of Phase 2 (62.76%, recorded 2026-08-16), not the 80% aspirational target
+// measures at the end of Phase 3 (74.9%, recorded 2026-08-16), not the 80% aspirational target
 // from TESTING.md's table. See domain/build.gradle for the full rationale.
 jacocoTestCoverageVerification {
     dependsOn test
@@ -21,7 +21,7 @@ jacocoTestCoverageVerification {
         rule {
             limit {
                 counter = 'LINE'
-                minimum = 0.62
+                minimum = 0.74
             }
         }
     }
@@ -47,6 +47,11 @@ dependencies {
     // scale to/from TenantSettingOverride's JSON value.
     implementation libs.spring.boot.starter.security
     implementation libs.jackson.databind
+
+    // Report card PDF generation (ReportCardService) and bulk student-roster CSV import
+    // (StudentBulkImportService) — see ROADMAP.md Phase 3.
+    implementation libs.openpdf
+    implementation libs.commons.csv
 
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine

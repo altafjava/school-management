@@ -22,4 +22,6 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
 	Page<Grade> findByStudentIdAndTenantId(Long studentId, Long tenantId, Pageable pageable);
 
 	boolean existsByStudentIdAndExamIdAndTenantId(Long studentId, Long examId, Long tenantId);
+
+	Page<Grade> findByExamIdInAndTenantId(List<Long> examIds, Long tenantId, Pageable pageable);
 }

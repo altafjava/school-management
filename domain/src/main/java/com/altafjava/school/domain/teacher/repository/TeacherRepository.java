@@ -18,4 +18,6 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
 
 	Optional<Teacher> findByIdAndTenantId(Long id, Long tenantId);
+
+	Optional<Teacher> findByUserIdAndTenantId(Long userId, Long tenantId);
 }

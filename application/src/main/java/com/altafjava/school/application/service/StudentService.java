@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.student.model.EnrollmentStatus;
@@ -38,7 +39,7 @@ public class StudentService {
 			String email, LocalDate dateOfBirth) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (studentRepository.existsByStudentCodeAndTenantId(studentCode, tenantId)) {
-			throw new IllegalArgumentException("Student code already exists: " + studentCode);
+			throw new BusinessException("Student code already exists: " + studentCode);
 		}
 		Student student = Student.create(studentCode, firstName, lastName, email, dateOfBirth);
 		return studentRepository.save(student);

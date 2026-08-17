@@ -20,6 +20,7 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
+import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
@@ -40,13 +41,15 @@ class GradeServiceTest {
 	private GradingScaleService gradingScaleService;
 	@Mock
 	private StudentDataAccessGuard studentDataAccessGuard;
+	@Mock
+	private TeacherClassroomScopeResolver teacherClassroomScopeResolver;
 
 	private GradeService gradeService;
 
 	@BeforeEach
 	void setUp() {
 		gradeService = new GradeService(gradeRepository, studentRepository, examRepository, gradingScaleService,
-				studentDataAccessGuard);
+				studentDataAccessGuard, teacherClassroomScopeResolver);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -101,6 +104,36 @@ class GradeServiceTest {
 
 		assertEquals("A", grade.getGradeLetter());
 		assertEquals(5L, grade.getSubjectId());
+	}
+
+	@Test
+	void listGrades_asTenantAdmin_returnsAllTenantGrades() {
+		when(teacherClassroomScopeResolver.resolveClassroomIdsIfTeacherScoped(1L)).thenReturn(Optional.empty());
+		org.springframework.data.domain.Page<Grade> expected = org.springframework.data.domain.Page.empty();
+		when(gradeRepository.findAllByTenantId(1L, org.springframework.data.domain.PageRequest.of(0, 20)))
+				.thenReturn(expected);
+
+		gradeService.listGrades(org.springframework.data.domain.PageRequest.of(0, 20));
+
+		verify(gradeRepository).findAllByTenantId(1L, org.springframework.data.domain.PageRequest.of(0, 20));
+		verify(examRepository, never()).findIdsByClassroomIdInAndTenantId(any(), any());
+	}
+
+	@Test
+	void listGrades_asScopedTeacher_filtersByTheirClassroomsExamIds() {
+		when(teacherClassroomScopeResolver.resolveClassroomIdsIfTeacherScoped(1L))
+				.thenReturn(Optional.of(java.util.List.of(10L, 11L)));
+		when(examRepository.findIdsByClassroomIdInAndTenantId(java.util.List.of(10L, 11L), 1L))
+				.thenReturn(java.util.List.of(50L, 51L));
+		org.springframework.data.domain.Page<Grade> expected = org.springframework.data.domain.Page.empty();
+		when(gradeRepository.findByExamIdInAndTenantId(java.util.List.of(50L, 51L), 1L,
+				org.springframework.data.domain.PageRequest.of(0, 20))).thenReturn(expected);
+
+		gradeService.listGrades(org.springframework.data.domain.PageRequest.of(0, 20));
+
+		verify(gradeRepository).findByExamIdInAndTenantId(java.util.List.of(50L, 51L), 1L,
+				org.springframework.data.domain.PageRequest.of(0, 20));
+		verify(gradeRepository, never()).findAllByTenantId(any(), any());
 	}
 
 	@Test
