@@ -18,6 +18,7 @@ import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.PeriodService;
 import com.altafjava.school.application.service.SubjectService;
@@ -45,6 +46,9 @@ class TimetableTenantIsolationIntegrationTest extends SchoolIntegrationTestBase 
 
 	@Autowired
 	private ClassroomService classroomService;
+
+	@Autowired
+	private AcademicYearService academicYearService;
 
 	@Autowired
 	private SubjectService subjectService;
@@ -89,7 +93,10 @@ class TimetableTenantIsolationIntegrationTest extends SchoolIntegrationTestBase 
 		String suffix = UUID.randomUUID().toString().substring(0, 6);
 		Period period = periodService.create(prefix + "-Period-" + suffix, LocalTime.of(9, 0), LocalTime.of(9, 45),
 				1);
-		Classroom classroom = classroomService.create(prefix + "-CLS-" + suffix, "Grade 5", "A", "2025-26", null);
+		var academicYear = academicYearService.create(prefix + "-2025-26-" + suffix, LocalDate.of(2025, 6, 1),
+				LocalDate.of(2026, 5, 31), true);
+		Classroom classroom = classroomService.create(prefix + "-CLS-" + suffix, "Grade 5", "A",
+				academicYear.getPublicId().toString(), null);
 		Subject subject = subjectService.create(prefix + "-SUB-" + suffix, "Mathematics", null);
 		Teacher teacher = teacherService.hire(prefix + "-EMP-" + suffix, "Jane", "Doe", prefix + "-jane@test.edu",
 				LocalDate.of(2020, 1, 1));

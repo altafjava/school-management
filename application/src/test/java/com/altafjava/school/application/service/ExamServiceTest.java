@@ -1,6 +1,7 @@
 package com.altafjava.school.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -8,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +24,7 @@ import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
+import com.altafjava.school.domain.term.repository.TermRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ExamServiceTest {
@@ -31,12 +35,14 @@ class ExamServiceTest {
 	private ClassroomRepository classroomRepository;
 	@Mock
 	private SubjectRepository subjectRepository;
+	@Mock
+	private TermRepository termRepository;
 
 	private ExamService examService;
 
 	@BeforeEach
 	void setUp() {
-		examService = new ExamService(examRepository, classroomRepository, subjectRepository);
+		examService = new ExamService(examRepository, classroomRepository, subjectRepository, termRepository);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -51,7 +57,7 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 5L, 99L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100)));
+						BigDecimal.valueOf(100), null));
 
 		verify(examRepository, never()).save(any());
 	}
@@ -63,7 +69,7 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 99L, 10L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100)));
+						BigDecimal.valueOf(100), null));
 
 		verify(examRepository, never()).save(any());
 	}
@@ -75,6 +81,61 @@ class ExamServiceTest {
 		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		assertDoesNotThrow(() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
-				BigDecimal.valueOf(100)));
+				BigDecimal.valueOf(100), null));
+	}
+
+	@Test
+	void schedule_withNonExistentTerm_throwsResourceNotFound() {
+		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
+		when(subjectRepository.existsByIdAndTenantId(5L, 1L)).thenReturn(true);
+		when(termRepository.existsByIdAndTenantId(99L, 1L)).thenReturn(false);
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
+						BigDecimal.valueOf(100), 99L));
+
+		verify(examRepository, never()).save(any());
+	}
+
+	private Exam examWithPublicId(UUID publicId) {
+		Exam exam = Exam.create("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100), null);
+		exam.setPublicId(publicId);
+		return exam;
+	}
+
+	@Test
+	void reschedule_updatesScheduledAt() {
+		UUID publicId = UUID.randomUUID();
+		Exam exam = examWithPublicId(publicId);
+		LocalDateTime newTime = LocalDateTime.now().plusDays(14);
+		when(examRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(exam));
+		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Exam rescheduled = examService.reschedule(publicId.toString(), newTime);
+
+		assertEquals(newTime, rescheduled.getScheduledAt());
+	}
+
+	@Test
+	void assignTerm_withExistingTerm_succeeds() {
+		UUID publicId = UUID.randomUUID();
+		Exam exam = examWithPublicId(publicId);
+		when(examRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(exam));
+		when(termRepository.existsByIdAndTenantId(7L, 1L)).thenReturn(true);
+		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Exam updated = examService.assignTerm(publicId.toString(), 7L);
+
+		assertEquals(7L, updated.getTermId());
+	}
+
+	@Test
+	void assignTerm_withNonExistentTerm_throwsResourceNotFound() {
+		UUID publicId = UUID.randomUUID();
+		Exam exam = examWithPublicId(publicId);
+		when(examRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(exam));
+		when(termRepository.existsByIdAndTenantId(99L, 1L)).thenReturn(false);
+
+		assertThrows(ResourceNotFoundException.class, () -> examService.assignTerm(publicId.toString(), 99L));
 	}
 }

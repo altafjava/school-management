@@ -23,6 +23,7 @@ import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.organization.model.Organization;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.application.service.AttendanceService;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.FeePaymentService;
@@ -76,6 +77,9 @@ class OrganizationRollupE2ETest extends SchoolIntegrationTestBase {
 	private ClassroomService classroomService;
 
 	@Autowired
+	private AcademicYearService academicYearService;
+
+	@Autowired
 	private AttendanceService attendanceService;
 
 	@Autowired
@@ -122,8 +126,11 @@ class OrganizationRollupE2ETest extends SchoolIntegrationTestBase {
 	private void seedCampus(Tenant campus, int studentCount, BigDecimal feeAmount, BigDecimal paidPerStudent) {
 		TenantContext.ForTesting.setCurrentTenant(campus.getId(), campus.getPublicId(), campus.getSubdomain(),
 				campus.getType());
+		var academicYear = academicYearService.create("2024-25-" + UUID.randomUUID().toString().substring(0, 6),
+				LocalDate.of(2024, 6, 1), LocalDate.of(2025, 5, 31), true);
 		String classCode = "CLS-" + UUID.randomUUID().toString().substring(0, 6);
-		var classroom = classroomService.create(classCode, "Grade 4", "A", "2024-25", null);
+		var classroom = classroomService.create(classCode, "Grade 4", "A", academicYear.getPublicId().toString(),
+				null);
 		FeeStructure feeStructure = feeStructureService.create(
 				"Tuition-" + UUID.randomUUID().toString().substring(0, 6), feeAmount, FeeFrequency.MONTHLY,
 				"Standard");
@@ -132,6 +139,8 @@ class OrganizationRollupE2ETest extends SchoolIntegrationTestBase {
 					"First" + i, "Last" + i,
 					"student" + UUID.randomUUID().toString().substring(0, 6) + "@campus.test",
 					LocalDate.of(2012, 1, 1));
+			classroomService.enrollStudent(classroom.getPublicId().toString(), student.getPublicId().toString(),
+					academicYear.getPublicId().toString());
 			attendanceService.mark(student.getId(), classroom.getId(), LocalDate.of(2026, 2, 10),
 					AttendanceStatus.PRESENT, "teacher");
 			feePaymentService.record(student.getId(), feeStructure.getId(), paidPerStudent,

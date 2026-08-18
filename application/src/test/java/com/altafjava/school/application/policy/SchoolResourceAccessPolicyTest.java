@@ -44,7 +44,7 @@ class SchoolResourceAccessPolicyTest {
 		UUID classroomPublicId = UUID.randomUUID();
 		Teacher teacher = Teacher.create("EMP-1", "Jane", "Doe", "jane@school.test", null);
 		teacher.setId(20L);
-		Classroom classroom = Classroom.create("CLS-1", "Grade 5", "A", "2025-26", 20L);
+		Classroom classroom = Classroom.create("CLS-1", "Grade 5", "A", 1L, "2025-26", 20L);
 		when(teacherRepository.findByUserIdAndTenantId(9L, 1L)).thenReturn(Optional.of(teacher));
 		when(classroomRepository.findByPublicIdAndTenantId(classroomPublicId, 1L)).thenReturn(Optional.of(classroom));
 
@@ -60,7 +60,7 @@ class SchoolResourceAccessPolicyTest {
 		UUID classroomPublicId = UUID.randomUUID();
 		Teacher teacher = Teacher.create("EMP-1", "Jane", "Doe", "jane@school.test", null);
 		teacher.setId(20L);
-		Classroom classroom = Classroom.create("CLS-1", "Grade 5", "A", "2025-26", 99L);
+		Classroom classroom = Classroom.create("CLS-1", "Grade 5", "A", 1L, "2025-26", 99L);
 		when(teacherRepository.findByUserIdAndTenantId(9L, 1L)).thenReturn(Optional.of(teacher));
 		when(classroomRepository.findByPublicIdAndTenantId(classroomPublicId, 1L)).thenReturn(Optional.of(classroom));
 

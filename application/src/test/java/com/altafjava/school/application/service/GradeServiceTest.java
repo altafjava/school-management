@@ -81,7 +81,7 @@ class GradeServiceTest {
 
 	@Test
 	void record_duplicateForSameStudentExam_throwsIllegalArgument() {
-		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100));
+		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100), null);
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(exam));
 		when(gradeRepository.existsByStudentIdAndExamIdAndTenantId(1L, 2L, 1L)).thenReturn(true);
@@ -92,7 +92,7 @@ class GradeServiceTest {
 
 	@Test
 	void record_withValidReferences_computesLetterGradeFromDefaultScale() {
-		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100));
+		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100), null);
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(exam));
 		when(gradeRepository.existsByStudentIdAndExamIdAndTenantId(1L, 2L, 1L)).thenReturn(false);

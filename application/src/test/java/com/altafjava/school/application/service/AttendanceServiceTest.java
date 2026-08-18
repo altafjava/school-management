@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,9 @@ import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.attendance.model.Attendance;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
+import com.altafjava.school.domain.classroom.model.StudentClassroomLink;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +37,8 @@ class AttendanceServiceTest {
 	@Mock
 	private ClassroomRepository classroomRepository;
 	@Mock
+	private StudentClassroomLinkRepository studentClassroomLinkRepository;
+	@Mock
 	private StudentDataAccessGuard studentDataAccessGuard;
 	@Mock
 	private TeacherClassroomScopeResolver teacherClassroomScopeResolver;
@@ -43,7 +48,7 @@ class AttendanceServiceTest {
 	@BeforeEach
 	void setUp() {
 		attendanceService = new AttendanceService(attendanceRepository, studentRepository, classroomRepository,
-				studentDataAccessGuard, teacherClassroomScopeResolver);
+				studentClassroomLinkRepository, studentDataAccessGuard, teacherClassroomScopeResolver);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -74,9 +79,23 @@ class AttendanceServiceTest {
 	}
 
 	@Test
+	void mark_studentNotEnrolledInClassroom_throwsResourceNotFound() {
+		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
+		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
+		when(studentClassroomLinkRepository.findByStudentIdAndClassroomId(1L, 1L, 10L)).thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> attendanceService.mark(1L, 10L, LocalDate.now(), AttendanceStatus.PRESENT, "teacher"));
+
+		verify(attendanceRepository, never()).save(any());
+	}
+
+	@Test
 	void mark_duplicateForSameStudentClassroomDate_throwsIllegalArgument() {
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
+		when(studentClassroomLinkRepository.findByStudentIdAndClassroomId(1L, 1L, 10L))
+				.thenReturn(Optional.of(StudentClassroomLink.create(1L, 10L, 5L, LocalDate.now())));
 		LocalDate date = LocalDate.now();
 		when(attendanceRepository.existsByStudentIdAndClassroomIdAndAttendanceDateAndTenantId(1L, 10L, date, 1L))
 				.thenReturn(true);
@@ -89,6 +108,8 @@ class AttendanceServiceTest {
 	void mark_withValidReferences_succeeds() {
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
+		when(studentClassroomLinkRepository.findByStudentIdAndClassroomId(1L, 1L, 10L))
+				.thenReturn(Optional.of(StudentClassroomLink.create(1L, 10L, 5L, LocalDate.now())));
 		when(attendanceRepository.existsByStudentIdAndClassroomIdAndAttendanceDateAndTenantId(
 				any(), any(), any(), any())).thenReturn(false);
 		when(attendanceRepository.save(any(Attendance.class))).thenAnswer(inv -> inv.getArgument(0));

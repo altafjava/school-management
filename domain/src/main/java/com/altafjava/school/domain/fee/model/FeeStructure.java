@@ -43,4 +43,8 @@ public class FeeStructure extends SoftDeletableEntity {
 				.planType(planType)
 				.build();
 	}
+
+	public void reviseAmount(BigDecimal amount) {
+		this.amount = amount;
+	}
 }

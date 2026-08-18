@@ -4,7 +4,8 @@ import java.math.BigDecimal;
 import com.altafjava.school.domain.fee.model.FeeBalance;
 import com.altafjava.school.domain.fee.model.FeeStructure;
 
-// Every FeeStructure is assumed to apply to every student — no assignment table exists yet.
+// Computes the balance for a single FeeStructure already known to apply to the student — the
+// selection of *which* structures apply (via FeeAssignment) happens in FeePaymentService.
 public class FeeBalanceCalculator {
 
 	public FeeBalance calculate(FeeStructure feeStructure, BigDecimal totalPaid) {

@@ -93,7 +93,7 @@ Never violate this — cross-layer needs go through an interface in the inner la
 
 - Methods: one thing, one abstraction level, max ~20 lines. No boolean params. Max 3 params (else introduce a parameter object).
 - Classes: one reason to change. No `Utils`/`Helper` names — name for what they do. No static mutable state.
-- Comments: WHY only, never WHAT. No TODO in production code.
+- Comments: WHY only, never WHAT. One line, max two. No TODO, no change history ("added for X fix", dates, before/after narration) — that belongs in the commit message.
 - Conditionals: positive form (`isActive()` not `!isInactive()`), guard clauses over nested ifs, enums over `instanceof` chains.
 - Errors: catch only what you can handle, never swallow silently, throw specific types, never use for control flow.
 

@@ -100,7 +100,7 @@ class ReportCardServiceTest {
 	}
 
 	private Exam examAt(long id, LocalDateTime scheduledAt) {
-		Exam exam = Exam.create("Midterm", 5L, 2L, scheduledAt, BigDecimal.valueOf(100));
+		Exam exam = Exam.create("Midterm", 5L, 2L, scheduledAt, BigDecimal.valueOf(100), null);
 		exam.setId(id);
 		return exam;
 	}

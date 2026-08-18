@@ -2,6 +2,7 @@ package com.altafjava.school.integration;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,7 @@ import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
@@ -29,6 +31,9 @@ class ClassroomTenantIsolationIntegrationTest extends SchoolIntegrationTestBase 
 
 	@Autowired
 	private ClassroomService classroomService;
+
+	@Autowired
+	private AcademicYearService academicYearService;
 
 	@Autowired
 	private TenantOnboardingService onboardingService;
@@ -57,11 +62,17 @@ class ClassroomTenantIsolationIntegrationTest extends SchoolIntegrationTestBase 
 		TenantContext.ForTesting.clear();
 	}
 
+	private String createAcademicYear(String name) {
+		var academicYear = academicYearService.create(name, LocalDate.of(2024, 6, 1), LocalDate.of(2025, 5, 31),
+				true);
+		return academicYear.getPublicId().toString();
+	}
+
 	@Test
 	void classroomCreatedUnderTenantA_isNotVisibleToTenantB() {
 		activateTenant(tenantA);
 		String code = "CLS-" + UUID.randomUUID().toString().substring(0, 6);
-		classroomService.create(code, "Grade 5", "A", "2024-25", null);
+		classroomService.create(code, "Grade 5", "A", createAcademicYear("2024-25"), null);
 
 		activateTenant(tenantB);
 		Page<Classroom> tenantBClassrooms = classroomService.listClassrooms(PageRequest.of(0, 100));
@@ -75,7 +86,7 @@ class ClassroomTenantIsolationIntegrationTest extends SchoolIntegrationTestBase 
 	void classroomPublicId_notAccessibleAcrossTenants() {
 		activateTenant(tenantA);
 		String code = "CLS-" + UUID.randomUUID().toString().substring(0, 6);
-		Classroom classroom = classroomService.create(code, "Grade 6", "B", "2024-25", null);
+		Classroom classroom = classroomService.create(code, "Grade 6", "B", createAcademicYear("2024-25"), null);
 		String publicId = classroom.getPublicId().toString();
 
 		activateTenant(tenantB);

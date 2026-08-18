@@ -42,4 +42,11 @@ public class TeacherService {
 		Teacher teacher = Teacher.create(employeeCode, firstName, lastName, email, joinDate);
 		return teacherRepository.save(teacher);
 	}
+
+	@Transactional
+	public Teacher updateContactDetails(String publicId, String firstName, String lastName, String email) {
+		Teacher teacher = findByPublicId(publicId);
+		teacher.updateContactDetails(firstName, lastName, email);
+		return teacherRepository.save(teacher);
+	}
 }

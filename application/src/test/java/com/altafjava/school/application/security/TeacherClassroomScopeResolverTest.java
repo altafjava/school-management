@@ -112,7 +112,7 @@ class TeacherClassroomScopeResolverTest {
 	}
 
 	private Classroom classroomWithId(long id) {
-		Classroom classroom = Classroom.create("CLS-" + id, "Grade 5", "A", "2025-26", null);
+		Classroom classroom = Classroom.create("CLS-" + id, "Grade 5", "A", 1L, "2025-26", null);
 		classroom.setId(id);
 		return classroom;
 	}

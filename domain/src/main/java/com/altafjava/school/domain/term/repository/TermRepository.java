@@ -18,6 +18,8 @@ public interface TermRepository extends JpaRepository<Term, Long> {
 
 	boolean existsByNameAndAcademicYearIdAndTenantId(String name, Long academicYearId, Long tenantId);
 
+	boolean existsByIdAndTenantId(Long id, Long tenantId);
+
 	Optional<Term> findByIdAndTenantId(Long id, Long tenantId);
 
 	// Terms have no isCurrent flag (unlike AcademicYear) — "the current term" is derived from

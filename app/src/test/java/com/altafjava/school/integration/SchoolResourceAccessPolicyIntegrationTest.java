@@ -3,6 +3,7 @@ package com.altafjava.school.integration;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,8 @@ import com.altafjava.school.application.policy.SchoolResourceAccessPolicy;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
+import com.altafjava.school.domain.academicyear.model.AcademicYear;
+import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
 import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.guardian.model.Guardian;
@@ -53,6 +56,9 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 	private ClassroomRepository classroomRepository;
 
 	@Autowired
+	private AcademicYearRepository academicYearRepository;
+
+	@Autowired
 	private StudentRepository studentRepository;
 
 	@Autowired
@@ -71,6 +77,7 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 	private PasswordEncoder passwordEncoder;
 
 	private Long testTenantId;
+	private Long academicYearId;
 
 	@BeforeEach
 	void createTenantContext() {
@@ -82,6 +89,8 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 		testTenantId = tenant.getId();
 		TenantContext.ForTesting.setCurrentTenant(testTenantId, tenant.getPublicId(), "policy-" + suffix,
 				TenantType.SHARED);
+		academicYearId = academicYearRepository.save(AcademicYear.create("2024-25",
+				LocalDate.of(2024, 6, 1), LocalDate.of(2025, 5, 31), true)).getId();
 	}
 
 	@AfterEach
@@ -108,7 +117,7 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 		teacherRepository.save(teacher);
 		Classroom classroom = classroomRepository.save(Classroom.create(
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6),
-				"Grade 5", "A", "2024-25", teacher.getId()));
+				"Grade 5", "A", academicYearId, "2024-25", teacher.getId()));
 
 		boolean allowed = schoolResourceAccessPolicy.isAllowed(
 				String.valueOf(teacherUserId), testTenantId, "CLASSROOM", classroom.getPublicId().toString(), "READ");
@@ -131,7 +140,7 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 		teacherRepository.save(teacher2);
 		Classroom classroom = classroomRepository.save(Classroom.create(
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6),
-				"Grade 6", "B", "2024-25", teacher1.getId()));
+				"Grade 6", "B", academicYearId, "2024-25", teacher1.getId()));
 
 		boolean allowed = schoolResourceAccessPolicy.isAllowed(
 				String.valueOf(teacher2UserId), testTenantId, "CLASSROOM", classroom.getPublicId().toString(),
@@ -148,7 +157,7 @@ class SchoolResourceAccessPolicyIntegrationTest extends SchoolIntegrationTestBas
 				"Mr", "Unlinked", "unlinked@test.edu", null));
 		Classroom classroom = classroomRepository.save(Classroom.create(
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6),
-				"Grade 7", "C", "2024-25", teacher.getId()));
+				"Grade 7", "C", academicYearId, "2024-25", teacher.getId()));
 
 		boolean allowed = schoolResourceAccessPolicy.isAllowed(
 				String.valueOf(teacher.getId()), testTenantId, "CLASSROOM", classroom.getPublicId().toString(),

@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.fee.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,6 +14,8 @@ public interface FeeStructureRepository extends JpaRepository<FeeStructure, Long
 	Page<FeeStructure> findAllByTenantId(Long tenantId, Pageable pageable);
 
 	List<FeeStructure> findAllByTenantId(Long tenantId);
+
+	List<FeeStructure> findAllByIdInAndTenantId(Collection<Long> ids, Long tenantId);
 
 	Optional<FeeStructure> findByPublicIdAndTenantId(UUID publicId, Long tenantId);
 

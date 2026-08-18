@@ -16,6 +16,7 @@ import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
@@ -61,6 +62,9 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 	@Autowired
 	private TeacherRepository teacherRepository;
 
+	@Autowired
+	private AcademicYearService academicYearService;
+
 	private Long tenantId;
 	private String adminEmail;
 	private String adminPassword;
@@ -80,7 +84,18 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 	private record Fixture(Long periodId, Long classroomId, Long subjectId, Long teacherId) {
 	}
 
+	private String createAcademicYear(String name) {
+		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null, TenantType.SHARED);
+		try {
+			return academicYearService.create(name, java.time.LocalDate.of(2025, 6, 1),
+					java.time.LocalDate.of(2026, 5, 31), true).getPublicId().toString();
+		} finally {
+			TenantContext.ForTesting.clear();
+		}
+	}
+
 	private Fixture createFixture(String accessToken, String suffix) {
+		String academicYearPublicId = createAcademicYear(suffix + "-2025-26");
 		String periodPublicId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
@@ -98,7 +113,7 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"classCode\":\"CLS-" + suffix + "\",\"grade\":\"Grade 5\",\"section\":\"A\","
-						+ "\"academicYear\":\"2025-26\"}")
+						+ "\"academicYearPublicId\":\"" + academicYearPublicId + "\"}")
 				.when()
 				.post("/api/v1/classrooms")
 				.then()

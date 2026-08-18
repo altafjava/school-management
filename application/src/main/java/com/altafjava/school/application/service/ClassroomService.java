@@ -1,14 +1,26 @@
 package com.altafjava.school.application.service;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.altafjava.platform.application.event.publisher.EventPublisher;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.academicyear.model.AcademicYear;
+import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
+import com.altafjava.school.domain.classroom.event.StudentEnrolledInClassroomEvent;
 import com.altafjava.school.domain.classroom.model.Classroom;
+import com.altafjava.school.domain.classroom.model.StudentClassroomLink;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
+import com.altafjava.school.domain.student.model.Student;
+import com.altafjava.school.domain.student.repository.StudentRepository;
 import com.altafjava.school.domain.teacher.repository.TeacherRepository;
 
 @Service
@@ -16,10 +28,21 @@ public class ClassroomService {
 
 	private final ClassroomRepository classroomRepository;
 	private final TeacherRepository teacherRepository;
+	private final AcademicYearRepository academicYearRepository;
+	private final StudentClassroomLinkRepository studentClassroomLinkRepository;
+	private final StudentRepository studentRepository;
+	private final EventPublisher eventPublisher;
 
-	public ClassroomService(ClassroomRepository classroomRepository, TeacherRepository teacherRepository) {
+	public ClassroomService(ClassroomRepository classroomRepository, TeacherRepository teacherRepository,
+			AcademicYearRepository academicYearRepository,
+			StudentClassroomLinkRepository studentClassroomLinkRepository, StudentRepository studentRepository,
+			EventPublisher eventPublisher) {
 		this.classroomRepository = classroomRepository;
 		this.teacherRepository = teacherRepository;
+		this.academicYearRepository = academicYearRepository;
+		this.studentClassroomLinkRepository = studentClassroomLinkRepository;
+		this.studentRepository = studentRepository;
+		this.eventPublisher = eventPublisher;
 	}
 
 	@Transactional(readOnly = true)
@@ -36,14 +59,93 @@ public class ClassroomService {
 
 	@Transactional
 	public Classroom create(String classCode, String grade, String section,
-			String academicYear, Long classTeacherId) {
-		if (classTeacherId != null) {
-			Long tenantId = TenantContext.getCurrentTenantId();
-			if (!teacherRepository.existsByIdAndTenantId(classTeacherId, tenantId)) {
-				throw new ResourceNotFoundException("Teacher not found: " + classTeacherId);
-			}
+			String academicYearPublicId, Long classTeacherId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		AcademicYear academicYear = academicYearRepository
+				.findByPublicIdAndTenantId(UUID.fromString(academicYearPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Academic year not found: " + academicYearPublicId));
+		if (classTeacherId != null && !teacherRepository.existsByIdAndTenantId(classTeacherId, tenantId)) {
+			throw new ResourceNotFoundException("Teacher not found: " + classTeacherId);
 		}
-		Classroom classroom = Classroom.create(classCode, grade, section, academicYear, classTeacherId);
+		Classroom classroom = Classroom.create(classCode, grade, section, academicYear.getId(),
+				academicYear.getName(), classTeacherId);
 		return classroomRepository.save(classroom);
+	}
+
+	@Transactional
+	public Classroom reassignTeacher(String publicId, Long classTeacherId) {
+		Classroom classroom = findByPublicId(publicId);
+		Long tenantId = TenantContext.getCurrentTenantId();
+		if (classTeacherId != null && !teacherRepository.existsByIdAndTenantId(classTeacherId, tenantId)) {
+			throw new ResourceNotFoundException("Teacher not found: " + classTeacherId);
+		}
+		classroom.reassignTeacher(classTeacherId);
+		return classroomRepository.save(classroom);
+	}
+
+	@Transactional
+	public Classroom moveToAcademicYear(String publicId, String academicYearPublicId) {
+		Classroom classroom = findByPublicId(publicId);
+		Long tenantId = TenantContext.getCurrentTenantId();
+		AcademicYear academicYear = academicYearRepository
+				.findByPublicIdAndTenantId(UUID.fromString(academicYearPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Academic year not found: " + academicYearPublicId));
+		classroom.reassignAcademicYear(academicYear.getId(), academicYear.getName());
+		return classroomRepository.save(classroom);
+	}
+
+	@Transactional
+	public StudentClassroomLink enrollStudent(String classroomPublicId, String studentPublicId,
+			String academicYearPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Classroom classroom = classroomRepository
+				.findByPublicIdAndTenantId(UUID.fromString(classroomPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Classroom not found: " + classroomPublicId));
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		AcademicYear academicYear = academicYearRepository
+				.findByPublicIdAndTenantId(UUID.fromString(academicYearPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Academic year not found: " + academicYearPublicId));
+		if (studentClassroomLinkRepository.existsByStudentIdAndAcademicYearIdAndTenantId(student.getId(),
+				academicYear.getId(), tenantId)) {
+			throw new BusinessException(
+					"Student " + studentPublicId + " is already enrolled in a classroom for academic year "
+							+ academicYearPublicId);
+		}
+		StudentClassroomLink link = StudentClassroomLink.create(student.getId(), classroom.getId(),
+				academicYear.getId(), LocalDate.now());
+		StudentClassroomLink saved = studentClassroomLinkRepository.save(link);
+		eventPublisher.publish(new StudentEnrolledInClassroomEvent(tenantId, student.getId(), classroom.getId(),
+				academicYear.getId()));
+		return saved;
+	}
+
+	@Transactional
+	public void withdrawStudentFromClassroom(String classroomPublicId, String studentPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Classroom classroom = classroomRepository
+				.findByPublicIdAndTenantId(UUID.fromString(classroomPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Classroom not found: " + classroomPublicId));
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		StudentClassroomLink link = studentClassroomLinkRepository
+				.findByStudentIdAndClassroomId(tenantId, student.getId(), classroom.getId())
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"Student " + studentPublicId + " is not enrolled in classroom " + classroomPublicId));
+		link.softDelete("classroom-withdrawal");
+		studentClassroomLinkRepository.save(link);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<Student> listRoster(String classroomPublicId, Pageable pageable) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Classroom classroom = findByPublicId(classroomPublicId);
+		Page<StudentClassroomLink> links = studentClassroomLinkRepository.findByClassroomId(tenantId,
+				classroom.getId(), pageable);
+		List<Student> students = links.getContent().stream()
+				.map(link -> studentRepository.findByIdAndTenantId(link.getStudentId(), tenantId)
+						.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + link.getStudentId())))
+				.toList();
+		return new PageImpl<>(students, pageable, links.getTotalElements());
 	}
 }

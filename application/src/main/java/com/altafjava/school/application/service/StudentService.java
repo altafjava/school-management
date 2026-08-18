@@ -28,6 +28,15 @@ public class StudentService {
 	}
 
 	@Transactional(readOnly = true)
+	public Page<Student> listStudents(Pageable pageable, EnrollmentStatus status) {
+		if (status == null) {
+			return listStudents(pageable);
+		}
+		return studentRepository.findAllByTenantIdAndEnrollmentStatus(TenantContext.getCurrentTenantId(), status,
+				pageable);
+	}
+
+	@Transactional(readOnly = true)
 	public Student findByPublicId(String publicId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		return studentRepository.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId)
@@ -46,10 +55,24 @@ public class StudentService {
 	}
 
 	@Transactional
-	public void withdraw(String publicId, String deletedBy) {
+	public Student withdraw(String publicId) {
 		Student student = findByPublicId(publicId);
-		student.setEnrollmentStatus(EnrollmentStatus.WITHDRAWN);
-		student.softDelete(deletedBy);
-		studentRepository.save(student);
+		student.withdraw();
+		return studentRepository.save(student);
+	}
+
+	@Transactional
+	public Student graduate(String publicId) {
+		Student student = findByPublicId(publicId);
+		student.graduate();
+		return studentRepository.save(student);
+	}
+
+	@Transactional
+	public Student updateContactDetails(String publicId, String firstName, String lastName, String email,
+			LocalDate dateOfBirth) {
+		Student student = findByPublicId(publicId);
+		student.updateContactDetails(firstName, lastName, email, dateOfBirth);
+		return studentRepository.save(student);
 	}
 }

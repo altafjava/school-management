@@ -7,6 +7,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
 import com.altafjava.platform.core.security.annotation.Pii;
 import lombok.Getter;
@@ -59,5 +60,26 @@ public class Student extends SoftDeletableEntity {
 				.dateOfBirth(dateOfBirth)
 				.enrollmentStatus(EnrollmentStatus.ACTIVE)
 				.build();
+	}
+
+	public void withdraw() {
+		if (this.enrollmentStatus == EnrollmentStatus.GRADUATED) {
+			throw new BusinessException("Cannot withdraw a graduated student");
+		}
+		this.enrollmentStatus = EnrollmentStatus.WITHDRAWN;
+	}
+
+	public void graduate() {
+		if (this.enrollmentStatus == EnrollmentStatus.WITHDRAWN) {
+			throw new BusinessException("Cannot graduate a withdrawn student");
+		}
+		this.enrollmentStatus = EnrollmentStatus.GRADUATED;
+	}
+
+	public void updateContactDetails(String firstName, String lastName, String email, LocalDate dateOfBirth) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.email = email;
+		this.dateOfBirth = dateOfBirth;
 	}
 }

@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.dto.request.AssignExamTermRequest;
+import com.altafjava.school.api.dto.request.RescheduleExamRequest;
 import com.altafjava.school.api.dto.request.ScheduleExamRequest;
 import com.altafjava.school.api.dto.response.ExamResponse;
 import com.altafjava.school.api.mapper.ExamMapper;
@@ -56,6 +59,19 @@ public class ExamController {
 				request.subjectId(),
 				request.classroomId(),
 				request.scheduledAt(),
-				request.maxMarks()));
+				request.maxMarks(),
+				request.termId()));
+	}
+
+	@PatchMapping("/{publicId}/schedule")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public ExamResponse reschedule(@PathVariable String publicId, @Valid @RequestBody RescheduleExamRequest request) {
+		return examMapper.toResponse(examService.reschedule(publicId, request.scheduledAt()));
+	}
+
+	@PatchMapping("/{publicId}/term")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public ExamResponse assignTerm(@PathVariable String publicId, @Valid @RequestBody AssignExamTermRequest request) {
+		return examMapper.toResponse(examService.assignTerm(publicId, request.termId()));
 	}
 }

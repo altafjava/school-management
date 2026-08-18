@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateTeacherRequest;
+import com.altafjava.school.api.dto.request.UpdateTeacherContactDetailsRequest;
 import com.altafjava.school.api.dto.response.TeacherResponse;
 import com.altafjava.school.api.mapper.TeacherMapper;
 import com.altafjava.school.application.service.TeacherService;
@@ -56,5 +58,13 @@ public class TeacherController {
 				request.lastName(),
 				request.email(),
 				request.joinDate()));
+	}
+
+	@PatchMapping("/{publicId}/contact-details")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public TeacherResponse updateContactDetails(@PathVariable String publicId,
+			@Valid @RequestBody UpdateTeacherContactDetailsRequest request) {
+		return teacherMapper.toResponse(teacherService.updateContactDetails(publicId, request.firstName(),
+				request.lastName(), request.email()));
 	}
 }

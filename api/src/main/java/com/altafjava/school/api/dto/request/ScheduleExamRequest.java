@@ -12,5 +12,6 @@ public record ScheduleExamRequest(
 		@NotNull Long subjectId,
 		@NotNull Long classroomId,
 		@NotNull LocalDateTime scheduledAt,
-		@NotNull @DecimalMin("1.0") BigDecimal maxMarks) {
+		@NotNull @DecimalMin("1.0") BigDecimal maxMarks,
+		Long termId) {
 }
