@@ -200,6 +200,17 @@ class StudentDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + adminToken)
 				.contentType(ContentType.JSON)
+				.body("{\"studentPublicId\":\"" + studentAPublicId + "\"}")
+				.when()
+				.post("/api/v1/fee-structures/" + feeStructurePublicId + "/assignments")
+				.then()
+				.statusCode(HttpStatus.CREATED.value());
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + adminToken)
+				.header("Idempotency-Key", UUID.randomUUID().toString())
+				.contentType(ContentType.JSON)
 				.body("{\"studentId\":" + studentAId + ",\"feeStructureId\":" + feeStructureId
 						+ ",\"paidAmount\":400.00,\"paidAt\":\"2026-02-01T10:00:00\","
 						+ "\"receiptNumber\":\"RCPT-BAL-1\"}")

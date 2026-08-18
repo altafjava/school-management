@@ -9,5 +9,6 @@ public record ExamResponse(
 		Long subjectId,
 		Long classroomId,
 		LocalDateTime scheduledAt,
-		BigDecimal maxMarks) {
+		BigDecimal maxMarks,
+		Long termId) {
 }

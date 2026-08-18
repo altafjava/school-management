@@ -42,4 +42,11 @@ public class FeeStructureService {
 		FeeStructure feeStructure = FeeStructure.create(name, amount, frequency, planType);
 		return feeStructureRepository.save(feeStructure);
 	}
+
+	@Transactional
+	public FeeStructure reviseAmount(String publicId, BigDecimal amount) {
+		FeeStructure feeStructure = findByPublicId(publicId);
+		feeStructure.reviseAmount(amount);
+		return feeStructureRepository.save(feeStructure);
+	}
 }

@@ -13,5 +13,9 @@
     <include file="db/domain/changesets/006-admissions.xml"/>
     <include file="db/domain/changesets/007-report-cards.xml"/>
     <include file="db/domain/changesets/008-seed-school-roles.xml"/>
+    <include file="db/domain/changesets/009-exam-term.xml"/>
+    <include file="db/domain/changesets/010-classroom-academic-year.xml"/>
+    <include file="db/domain/changesets/011-classroom-roster.xml"/>
+    <include file="db/domain/changesets/012-fee-assignments.xml"/>
 
 </databaseChangeLog>

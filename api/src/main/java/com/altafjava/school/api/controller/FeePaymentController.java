@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.core.idempotency.RequireIdempotencyKey;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.RecordFeePaymentRequest;
 import com.altafjava.school.api.dto.response.FeePaymentResponse;
@@ -49,6 +50,7 @@ public class FeePaymentController {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@RequireIdempotencyKey
 	public FeePaymentResponse record(@Valid @RequestBody RecordFeePaymentRequest request) {
 		return feePaymentMapper.toResponse(feePaymentService.record(
 				request.studentId(),

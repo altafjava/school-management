@@ -15,6 +15,9 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
 	Page<Student> findAllByTenantId(Long tenantId, Pageable pageable);
 
+	Page<Student> findAllByTenantIdAndEnrollmentStatus(Long tenantId, EnrollmentStatus enrollmentStatus,
+			Pageable pageable);
+
 	List<Student> findAllByEnrollmentStatusAndTenantId(EnrollmentStatus enrollmentStatus, Long tenantId);
 
 	long countByEnrollmentStatusAndTenantId(EnrollmentStatus enrollmentStatus, Long tenantId);

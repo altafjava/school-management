@@ -13,6 +13,7 @@ import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
+import com.altafjava.school.domain.term.repository.TermRepository;
 
 @Service
 public class ExamService {
@@ -20,12 +21,14 @@ public class ExamService {
 	private final ExamRepository examRepository;
 	private final ClassroomRepository classroomRepository;
 	private final SubjectRepository subjectRepository;
+	private final TermRepository termRepository;
 
 	public ExamService(ExamRepository examRepository, ClassroomRepository classroomRepository,
-			SubjectRepository subjectRepository) {
+			SubjectRepository subjectRepository, TermRepository termRepository) {
 		this.examRepository = examRepository;
 		this.classroomRepository = classroomRepository;
 		this.subjectRepository = subjectRepository;
+		this.termRepository = termRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -42,7 +45,7 @@ public class ExamService {
 
 	@Transactional
 	public Exam schedule(String title, Long subjectId, Long classroomId,
-			LocalDateTime scheduledAt, BigDecimal maxMarks) {
+			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (!classroomRepository.existsByIdAndTenantId(classroomId, tenantId)) {
 			throw new ResourceNotFoundException("Classroom not found: " + classroomId);
@@ -50,7 +53,28 @@ public class ExamService {
 		if (!subjectRepository.existsByIdAndTenantId(subjectId, tenantId)) {
 			throw new ResourceNotFoundException("Subject not found: " + subjectId);
 		}
-		Exam exam = Exam.create(title, subjectId, classroomId, scheduledAt, maxMarks);
+		if (termId != null && !termRepository.existsByIdAndTenantId(termId, tenantId)) {
+			throw new ResourceNotFoundException("Term not found: " + termId);
+		}
+		Exam exam = Exam.create(title, subjectId, classroomId, scheduledAt, maxMarks, termId);
+		return examRepository.save(exam);
+	}
+
+	@Transactional
+	public Exam reschedule(String publicId, LocalDateTime scheduledAt) {
+		Exam exam = findByPublicId(publicId);
+		exam.reschedule(scheduledAt);
+		return examRepository.save(exam);
+	}
+
+	@Transactional
+	public Exam assignTerm(String publicId, Long termId) {
+		Exam exam = findByPublicId(publicId);
+		Long tenantId = TenantContext.getCurrentTenantId();
+		if (!termRepository.existsByIdAndTenantId(termId, tenantId)) {
+			throw new ResourceNotFoundException("Term not found: " + termId);
+		}
+		exam.assignTerm(termId);
 		return examRepository.save(exam);
 	}
 }

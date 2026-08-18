@@ -16,6 +16,7 @@ import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
@@ -49,6 +50,9 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 	@Autowired
 	private StudentRepository studentRepository;
 
+	@Autowired
+	private AcademicYearService academicYearService;
+
 	private Long tenantId;
 	private String adminEmail;
 	private String adminPassword;
@@ -65,23 +69,47 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 		tenantId = tenant.getId();
 	}
 
-	private Long createClassroomId(String accessToken, String classCode) {
-		String publicId = given()
+	private String createAcademicYear(String name) {
+		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null, TenantType.SHARED);
+		try {
+			return academicYearService.create(name, java.time.LocalDate.of(2025, 6, 1),
+					java.time.LocalDate.of(2026, 5, 31), true).getPublicId().toString();
+		} finally {
+			TenantContext.ForTesting.clear();
+		}
+	}
+
+	private String createClassroomPublicId(String accessToken, String classCode) {
+		String academicYearPublicId = createAcademicYear(classCode + "-2025-26");
+		return given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"classCode\":\"" + classCode + "\",\"grade\":\"Grade 5\",\"section\":\"A\","
-						+ "\"academicYear\":\"2025-26\"}")
+						+ "\"academicYearPublicId\":\"" + academicYearPublicId + "\"}")
 				.when()
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
 				.extract().path("publicId");
-		return resolveClassroomId(publicId);
 	}
 
-	private Long createStudentId(String accessToken, String studentCode) {
-		String publicId = given()
+	private void enrollStudent(String accessToken, String classroomPublicId, String studentPublicId) {
+		String academicYearPublicId = createAcademicYear("enroll-" + UUID.randomUUID().toString().substring(0, 8));
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"studentPublicId\":\"" + studentPublicId + "\",\"academicYearPublicId\":\""
+						+ academicYearPublicId + "\"}")
+				.when()
+				.post("/api/v1/classrooms/" + classroomPublicId + "/students")
+				.then()
+				.statusCode(HttpStatus.CREATED.value());
+	}
+
+	private String createStudentPublicId(String accessToken, String studentCode) {
+		return given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
@@ -92,7 +120,13 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
 				.extract().path("publicId");
-		return resolveStudentId(publicId);
+	}
+
+	private long[] createEnrolledClassroomAndStudent(String accessToken, String suffix) {
+		String classroomPublicId = createClassroomPublicId(accessToken, "CLS-" + suffix);
+		String studentPublicId = createStudentPublicId(accessToken, "STU-" + suffix);
+		enrollStudent(accessToken, classroomPublicId, studentPublicId);
+		return new long[] { resolveClassroomId(classroomPublicId), resolveStudentId(studentPublicId) };
 	}
 
 	private Long resolveClassroomId(String publicId) {
@@ -118,8 +152,9 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void markAttendance_asTenantAdmin_returns201() {
 		String accessToken = login();
-		Long classroomId = createClassroomId(accessToken, "CLS-AT1");
-		Long studentId = createStudentId(accessToken, "STU-AT1");
+		long[] ids = createEnrolledClassroomAndStudent(accessToken, "AT1");
+		long classroomId = ids[0];
+		long studentId = ids[1];
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -138,8 +173,9 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void markAttendance_withInvalidStatus_returns400NotServerError() {
 		String accessToken = login();
-		Long classroomId = createClassroomId(accessToken, "CLS-AT2");
-		Long studentId = createStudentId(accessToken, "STU-AT2");
+		long[] ids = createEnrolledClassroomAndStudent(accessToken, "AT2");
+		long classroomId = ids[0];
+		long studentId = ids[1];
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -167,8 +203,9 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void markAttendance_asStudentRole_returns403() {
 		String accessToken = login();
-		Long classroomId = createClassroomId(accessToken, "CLS-AT3");
-		Long studentId = createStudentId(accessToken, "STU-AT3");
+		long[] ids = createEnrolledClassroomAndStudent(accessToken, "AT3");
+		long classroomId = ids[0];
+		long studentId = ids[1];
 		String studentToken = authHelper.tokenWithRole(tenantId, "STUDENT");
 
 		given()
@@ -186,8 +223,9 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void attendanceCreatedUnderOneTenant_returns404ForAnotherTenant() {
 		String accessToken = login();
-		Long classroomId = createClassroomId(accessToken, "CLS-AT4");
-		Long studentId = createStudentId(accessToken, "STU-AT4");
+		long[] ids = createEnrolledClassroomAndStudent(accessToken, "AT4");
+		long classroomId = ids[0];
+		long studentId = ids[1];
 		String publicId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)

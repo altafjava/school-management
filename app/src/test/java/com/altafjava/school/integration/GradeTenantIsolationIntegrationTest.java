@@ -18,6 +18,7 @@ import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.ExamService;
 import com.altafjava.school.application.service.GradeService;
@@ -26,6 +27,7 @@ import com.altafjava.school.application.service.SubjectService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
+import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.grade.model.Grade;
@@ -46,6 +48,9 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private ClassroomService classroomService;
+
+	@Autowired
+	private AcademicYearService academicYearService;
 
 	@Autowired
 	private ExamService examService;
@@ -80,14 +85,21 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		TenantContext.ForTesting.clear();
 	}
 
+	private String createAcademicYear(String name) {
+		AcademicYear academicYear = academicYearService.create(name, LocalDate.of(2024, 6, 1),
+				LocalDate.of(2025, 5, 31), true);
+		return academicYear.getPublicId().toString();
+	}
+
 	@Test
 	void gradeRecordedUnderTenantA_isNotVisibleToTenantB() {
 		activateTenant(tenantA);
+		String academicYearPublicId = createAcademicYear("2024-25");
 		Classroom classroom = classroomService.create(
-				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 5", "A", "2024-25", null);
+				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 5", "A", academicYearPublicId, null);
 		Subject subject = subjectService.create("MATH-" + UUID.randomUUID().toString().substring(0, 6), "Math", null);
 		Exam exam = examService.schedule("Midterm", subject.getId(), classroom.getId(),
-				LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100));
+				LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100), null);
 		Student student = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6),
 				"Alice", "Smith", "alice@a.edu", LocalDate.of(2010, 1, 1));
 		gradeService.record(student.getId(), exam.getId(), BigDecimal.valueOf(85), "teacher-a");
@@ -103,12 +115,13 @@ class GradeTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 	@Test
 	void gradePublicId_notAccessibleAcrossTenants() {
 		activateTenant(tenantA);
+		String academicYearPublicId = createAcademicYear("2024-25");
 		Classroom classroom = classroomService.create(
-				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 6", "B", "2024-25", null);
+				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 6", "B", academicYearPublicId, null);
 		Subject subject = subjectService.create("SCI-" + UUID.randomUUID().toString().substring(0, 6), "Science",
 				null);
 		Exam exam = examService.schedule("Final", subject.getId(), classroom.getId(),
-				LocalDateTime.now().plusDays(14), BigDecimal.valueOf(100));
+				LocalDateTime.now().plusDays(14), BigDecimal.valueOf(100), null);
 		Student student = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6),
 				"Bob", "Jones", "bob@a.edu", LocalDate.of(2011, 3, 20));
 		Grade grade = gradeService.record(student.getId(), exam.getId(),

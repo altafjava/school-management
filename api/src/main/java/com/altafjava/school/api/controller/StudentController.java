@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateStudentRequest;
+import com.altafjava.school.api.dto.request.UpdateStudentContactDetailsRequest;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
 import com.altafjava.school.api.dto.response.BulkImportResponse;
 import com.altafjava.school.api.dto.response.FeeBalanceResponse;
@@ -44,6 +46,7 @@ import com.altafjava.school.application.service.StudentBulkImportService;
 import com.altafjava.school.application.service.StudentService;
 import com.altafjava.school.application.service.TermService;
 import com.altafjava.school.domain.reportcard.model.ReportCard;
+import com.altafjava.school.domain.student.model.EnrollmentStatus;
 import com.altafjava.school.domain.student.model.Student;
 
 @RestController
@@ -88,8 +91,9 @@ public class StudentController {
 	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
 	public Page<StudentResponse> list(
 			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
-		return studentService.listStudents(PageRequest.of(page, Math.min(size, 100)))
+			@RequestParam(defaultValue = "20") int size,
+			@RequestParam(required = false) EnrollmentStatus status) {
+		return studentService.listStudents(PageRequest.of(page, Math.min(size, 100)), status)
 				.map(studentMapper::toResponse);
 	}
 
@@ -120,6 +124,26 @@ public class StudentController {
 				request.email(),
 				request.dateOfBirth());
 		return studentMapper.toResponse(student);
+	}
+
+	@PatchMapping("/{publicId}/withdraw")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public StudentResponse withdraw(@PathVariable String publicId) {
+		return studentMapper.toResponse(studentService.withdraw(publicId));
+	}
+
+	@PatchMapping("/{publicId}/graduate")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public StudentResponse graduate(@PathVariable String publicId) {
+		return studentMapper.toResponse(studentService.graduate(publicId));
+	}
+
+	@PatchMapping("/{publicId}/contact-details")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public StudentResponse updateContactDetails(@PathVariable String publicId,
+			@Valid @RequestBody UpdateStudentContactDetailsRequest request) {
+		return studentMapper.toResponse(studentService.updateContactDetails(publicId, request.firstName(),
+				request.lastName(), request.email(), request.dateOfBirth()));
 	}
 
 	@GetMapping("/{publicId}/grades")

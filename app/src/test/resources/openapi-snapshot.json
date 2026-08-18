@@ -2424,6 +2424,14 @@
             "format" : "int32",
             "default" : 20
           }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "ACTIVE", "SUSPENDED", "GRADUATED", "WITHDRAWN" ]
+          }
         } ],
         "responses" : {
           "200" : {
@@ -3670,6 +3678,84 @@
         }
       }
     },
+    "/api/v1/fee-structures/{publicId}/assignments" : {
+      "get" : {
+        "tags" : [ "fee-structure-controller" ],
+        "operationId" : "listAssignments",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageFeeAssignmentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "fee-structure-controller" ],
+        "operationId" : "assign",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssignFeeStructureRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeeAssignmentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/fee-payments" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
@@ -3920,6 +4006,84 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ClassroomResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classrooms/{publicId}/students" : {
+      "get" : {
+        "tags" : [ "classroom-controller" ],
+        "operationId" : "roster",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageStudentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "classroom-controller" ],
+        "operationId" : "enrollStudent",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EnrollStudentInClassroomRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentClassroomLinkResponse"
                 }
               }
             }
@@ -7383,6 +7547,42 @@
         } ]
       }
     },
+    "/api/v1/teachers/{publicId}/contact-details" : {
+      "patch" : {
+        "tags" : [ "teacher-controller" ],
+        "operationId" : "updateContactDetails",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateTeacherContactDetailsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TeacherResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/subjects/{publicId}/deactivate" : {
       "patch" : {
         "tags" : [ "subject-controller" ],
@@ -7402,6 +7602,326 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/SubjectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{publicId}/withdraw" : {
+      "patch" : {
+        "tags" : [ "student-controller" ],
+        "operationId" : "withdraw",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{publicId}/graduate" : {
+      "patch" : {
+        "tags" : [ "student-controller" ],
+        "operationId" : "graduate",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{publicId}/contact-details" : {
+      "patch" : {
+        "tags" : [ "student-controller" ],
+        "operationId" : "updateContactDetails_1",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateStudentContactDetailsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fee-structures/{publicId}/assignments/{assignmentPublicId}/revoke" : {
+      "patch" : {
+        "tags" : [ "fee-structure-controller" ],
+        "operationId" : "revokeAssignment",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "assignmentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/fee-structures/{publicId}/amount" : {
+      "patch" : {
+        "tags" : [ "fee-structure-controller" ],
+        "operationId" : "reviseAmount",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReviseFeeAmountRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeeStructureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exams/{publicId}/term" : {
+      "patch" : {
+        "tags" : [ "exam-controller" ],
+        "operationId" : "assignTerm",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssignExamTermRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exams/{publicId}/schedule" : {
+      "patch" : {
+        "tags" : [ "exam-controller" ],
+        "operationId" : "reschedule",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RescheduleExamRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classrooms/{publicId}/teacher" : {
+      "patch" : {
+        "tags" : [ "classroom-controller" ],
+        "operationId" : "reassignTeacher",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReassignClassTeacherRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClassroomResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/classrooms/{publicId}/students/{studentPublicId}/withdraw" : {
+      "patch" : {
+        "tags" : [ "classroom-controller" ],
+        "operationId" : "withdrawStudent",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/classrooms/{publicId}/academic-year" : {
+      "patch" : {
+        "tags" : [ "classroom-controller" ],
+        "operationId" : "moveToAcademicYear",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MoveClassroomAcademicYearRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ClassroomResponse"
                 }
               }
             }
@@ -15184,6 +15704,40 @@
           }
         }
       },
+      "AssignFeeStructureRequest" : {
+        "type" : "object",
+        "properties" : {
+          "studentPublicId" : {
+            "type" : "string"
+          },
+          "classroomPublicId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "FeeAssignmentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "feeStructureId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "scope" : {
+            "type" : "string"
+          },
+          "studentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "classroomId" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
       "RecordFeePaymentRequest" : {
         "type" : "object",
         "properties" : {
@@ -15260,6 +15814,10 @@
           "maxMarks" : {
             "type" : "number",
             "minimum" : 1.0
+          },
+          "termId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         },
         "required" : [ "classroomId", "maxMarks", "scheduledAt", "subjectId", "title" ]
@@ -15287,6 +15845,10 @@
           },
           "maxMarks" : {
             "type" : "number"
+          },
+          "termId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -15369,17 +15931,16 @@
             "maxLength" : 10,
             "minLength" : 0
           },
-          "academicYear" : {
+          "academicYearPublicId" : {
             "type" : "string",
-            "maxLength" : 20,
-            "minLength" : 0
+            "minLength" : 1
           },
           "classTeacherId" : {
             "type" : "integer",
             "format" : "int64"
           }
         },
-        "required" : [ "academicYear", "classCode", "grade", "section" ]
+        "required" : [ "academicYearPublicId", "classCode", "grade", "section" ]
       },
       "ClassroomResponse" : {
         "type" : "object",
@@ -15402,6 +15963,41 @@
           "classTeacherId" : {
             "type" : "integer",
             "format" : "int64"
+          }
+        }
+      },
+      "EnrollStudentInClassroomRequest" : {
+        "type" : "object",
+        "properties" : {
+          "studentPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "academicYearPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "academicYearPublicId", "studentPublicId" ]
+      },
+      "StudentClassroomLinkResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "studentPublicId" : {
+            "type" : "string"
+          },
+          "classroomPublicId" : {
+            "type" : "string"
+          },
+          "academicYearPublicId" : {
+            "type" : "string"
+          },
+          "enrolledAt" : {
+            "type" : "string",
+            "format" : "date"
           }
         }
       },
@@ -17623,6 +18219,103 @@
           }
         }
       },
+      "UpdateTeacherContactDetailsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "firstName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "lastName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 255,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "email", "firstName", "lastName" ]
+      },
+      "UpdateStudentContactDetailsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "firstName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "lastName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 255,
+            "minLength" : 0
+          },
+          "dateOfBirth" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "dateOfBirth", "firstName", "lastName" ]
+      },
+      "ReviseFeeAmountRequest" : {
+        "type" : "object",
+        "properties" : {
+          "amount" : {
+            "type" : "number",
+            "minimum" : 0.01
+          }
+        },
+        "required" : [ "amount" ]
+      },
+      "AssignExamTermRequest" : {
+        "type" : "object",
+        "properties" : {
+          "termId" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "termId" ]
+      },
+      "RescheduleExamRequest" : {
+        "type" : "object",
+        "properties" : {
+          "scheduledAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "scheduledAt" ]
+      },
+      "ReassignClassTeacherRequest" : {
+        "type" : "object",
+        "properties" : {
+          "teacherId" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "MoveClassroomAcademicYearRequest" : {
+        "type" : "object",
+        "properties" : {
+          "academicYearPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "academicYearPublicId" ]
+      },
       "DecideAdmissionRequest" : {
         "type" : "object",
         "properties" : {
@@ -18158,6 +18851,14 @@
       "PageableObject" : {
         "type" : "object",
         "properties" : {
+          "pageNumber" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
@@ -18166,14 +18867,6 @@
           },
           "unpaged" : {
             "type" : "boolean"
-          },
-          "pageSize" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "pageNumber" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "offset" : {
             "type" : "integer",
@@ -19502,6 +20195,52 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/FeeStructureResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageFeeAssignmentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FeeAssignmentResponse"
             }
           },
           "number" : {

@@ -38,14 +38,28 @@ public class Exam extends SoftDeletableEntity {
 	@Column(name = "max_marks", nullable = false, precision = 10, scale = 2)
 	private BigDecimal maxMarks;
 
+	// FK to terms.id — nullable: existing exams predate this field and have no reliable source
+	// to backfill from (ReportCardService derives term membership from scheduledAt, not an FK).
+	@Column(name = "term_id")
+	private Long termId;
+
 	public static Exam create(String title, Long subjectId, Long classroomId,
-			LocalDateTime scheduledAt, BigDecimal maxMarks) {
+			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId) {
 		return Exam.builder()
 				.title(title)
 				.subjectId(subjectId)
 				.classroomId(classroomId)
 				.scheduledAt(scheduledAt)
 				.maxMarks(maxMarks)
+				.termId(termId)
 				.build();
+	}
+
+	public void reschedule(LocalDateTime scheduledAt) {
+		this.scheduledAt = scheduledAt;
+	}
+
+	public void assignTerm(Long termId) {
+		this.termId = termId;
 	}
 }

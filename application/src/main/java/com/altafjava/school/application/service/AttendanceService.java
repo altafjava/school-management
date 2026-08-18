@@ -14,6 +14,7 @@ import com.altafjava.school.domain.attendance.model.Attendance;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 
@@ -23,15 +24,18 @@ public class AttendanceService {
 	private final AttendanceRepository attendanceRepository;
 	private final StudentRepository studentRepository;
 	private final ClassroomRepository classroomRepository;
+	private final StudentClassroomLinkRepository studentClassroomLinkRepository;
 	private final StudentDataAccessGuard studentDataAccessGuard;
 	private final TeacherClassroomScopeResolver teacherClassroomScopeResolver;
 
 	public AttendanceService(AttendanceRepository attendanceRepository, StudentRepository studentRepository,
-			ClassroomRepository classroomRepository, StudentDataAccessGuard studentDataAccessGuard,
+			ClassroomRepository classroomRepository, StudentClassroomLinkRepository studentClassroomLinkRepository,
+			StudentDataAccessGuard studentDataAccessGuard,
 			TeacherClassroomScopeResolver teacherClassroomScopeResolver) {
 		this.attendanceRepository = attendanceRepository;
 		this.studentRepository = studentRepository;
 		this.classroomRepository = classroomRepository;
+		this.studentClassroomLinkRepository = studentClassroomLinkRepository;
 		this.studentDataAccessGuard = studentDataAccessGuard;
 		this.teacherClassroomScopeResolver = teacherClassroomScopeResolver;
 	}
@@ -72,6 +76,11 @@ public class AttendanceService {
 		}
 		if (!classroomRepository.existsByIdAndTenantId(classroomId, tenantId)) {
 			throw new ResourceNotFoundException("Classroom not found: " + classroomId);
+		}
+		if (studentClassroomLinkRepository.findByStudentIdAndClassroomId(tenantId, studentId, classroomId)
+				.isEmpty()) {
+			throw new ResourceNotFoundException(
+					"Student " + studentId + " is not enrolled in classroom " + classroomId);
 		}
 		if (attendanceRepository.existsByStudentIdAndClassroomIdAndAttendanceDateAndTenantId(
 				studentId, classroomId, attendanceDate, tenantId)) {

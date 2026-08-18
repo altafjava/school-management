@@ -115,6 +115,7 @@ class FeePaymentCrudE2ETest extends SchoolIntegrationTestBase {
 		given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
+				.header("Idempotency-Key", UUID.randomUUID().toString())
 				.contentType(ContentType.JSON)
 				.body("{\"studentId\":" + studentId + ",\"feeStructureId\":" + feeStructureId
 						+ ",\"paidAmount\":500.00,\"paidAt\":\"2026-02-01T10:00:00\","
@@ -148,6 +149,7 @@ class FeePaymentCrudE2ETest extends SchoolIntegrationTestBase {
 		given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + teacherToken)
+				.header("Idempotency-Key", UUID.randomUUID().toString())
 				.contentType(ContentType.JSON)
 				.body("{\"studentId\":" + studentId + ",\"feeStructureId\":" + feeStructureId
 						+ ",\"paidAmount\":500.00,\"paidAt\":\"2026-02-01T10:00:00\","
@@ -166,6 +168,7 @@ class FeePaymentCrudE2ETest extends SchoolIntegrationTestBase {
 		String publicId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
+				.header("Idempotency-Key", UUID.randomUUID().toString())
 				.contentType(ContentType.JSON)
 				.body("{\"studentId\":" + studentId + ",\"feeStructureId\":" + feeStructureId
 						+ ",\"paidAmount\":500.00,\"paidAt\":\"2026-02-01T10:00:00\","

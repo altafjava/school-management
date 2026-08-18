@@ -19,6 +19,7 @@ import com.altafjava.platform.domain.user.model.User;
 import com.altafjava.platform.domain.user.model.UserStatus;
 import com.altafjava.platform.domain.user.repository.RoleRepository;
 import com.altafjava.platform.domain.user.repository.UserRepository;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
@@ -74,6 +75,9 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	@Autowired
+	private AcademicYearService academicYearService;
+
 	private Long tenantId;
 	private String adminToken;
 
@@ -99,17 +103,23 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 		linkTeacherToUser(teacherAPublicId, teacherAUserId);
 		Long teacherAId = internalTeacherId(teacherAPublicId);
 
-		Long classroomAId = internalClassroomId(createClassroom("CLS-A-" + suffix, teacherAId));
-		Long classroomBId = internalClassroomId(createClassroom("CLS-B-" + suffix, null));
+		String classroomAPublicId = createClassroom("CLS-A-" + suffix, teacherAId);
+		String classroomBPublicId = createClassroom("CLS-B-" + suffix, null);
+		Long classroomAId = internalClassroomId(classroomAPublicId);
+		Long classroomBId = internalClassroomId(classroomBPublicId);
 
 		Long subjectId = internalSubjectId(createSubject("SUB-" + suffix));
-		Long studentAId = internalStudentIdFromPublicId(createStudent("STU-A-" + suffix));
-		Long studentBId = internalStudentIdFromPublicId(createStudent("STU-B-" + suffix));
+		String studentAPublicId = createStudent("STU-A-" + suffix);
+		String studentBPublicId = createStudent("STU-B-" + suffix);
+		Long studentAId = internalStudentIdFromPublicId(studentAPublicId);
+		Long studentBId = internalStudentIdFromPublicId(studentBPublicId);
 
 		Long examAId = internalExamId(createExam("Exam A", subjectId, classroomAId));
 		Long examBId = internalExamId(createExam("Exam B", subjectId, classroomBId));
 		recordGrade(studentAId, examAId);
 		recordGrade(studentBId, examBId);
+		enrollStudent(classroomAPublicId, studentAPublicId);
+		enrollStudent(classroomBPublicId, studentBPublicId);
 		markAttendance(studentAId, classroomAId);
 		markAttendance(studentBId, classroomBId);
 
@@ -195,7 +205,8 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + adminToken)
 				.contentType(ContentType.JSON)
 				.body("{\"classCode\":\"" + classCode + "\",\"grade\":\"Grade 5\",\"section\":\"A\","
-						+ "\"academicYear\":\"2025-26\"" + teacherField + "}")
+						+ "\"academicYearPublicId\":\"" + createAcademicYear(classCode + "-2025-26") + "\""
+						+ teacherField + "}")
 				.when()
 				.post("/api/v1/classrooms")
 				.then()
@@ -273,6 +284,25 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 						+ "\"admin\"}")
 				.when()
 				.post("/api/v1/grades")
+				.then()
+				.statusCode(HttpStatus.CREATED.value());
+	}
+
+	private String createAcademicYear(String name) {
+		return withTenant(() -> academicYearService.create(name, java.time.LocalDate.of(2025, 6, 1),
+				java.time.LocalDate.of(2026, 5, 31), true).getPublicId().toString());
+	}
+
+	private void enrollStudent(String classroomPublicId, String studentPublicId) {
+		String academicYearPublicId = createAcademicYear("enroll-" + UUID.randomUUID().toString().substring(0, 8));
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + adminToken)
+				.contentType(ContentType.JSON)
+				.body("{\"studentPublicId\":\"" + studentPublicId + "\",\"academicYearPublicId\":\""
+						+ academicYearPublicId + "\"}")
+				.when()
+				.post("/api/v1/classrooms/" + classroomPublicId + "/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value());
 	}

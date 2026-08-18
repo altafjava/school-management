@@ -53,4 +53,10 @@ public class Teacher extends SoftDeletableEntity {
 				.joinDate(joinDate)
 				.build();
 	}
+
+	public void updateContactDetails(String firstName, String lastName, String email) {
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.email = email;
+	}
 }

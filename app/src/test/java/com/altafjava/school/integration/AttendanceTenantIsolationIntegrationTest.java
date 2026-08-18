@@ -16,14 +16,17 @@ import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.application.service.AttendanceService;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.StudentService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
+import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.attendance.model.Attendance;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
+import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.student.model.Student;
 
 /**
@@ -42,6 +45,9 @@ class AttendanceTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 
 	@Autowired
 	private ClassroomService classroomService;
+
+	@Autowired
+	private AcademicYearService academicYearService;
 
 	@Autowired
 	private TenantOnboardingService onboardingService;
@@ -70,14 +76,30 @@ class AttendanceTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 		TenantContext.ForTesting.clear();
 	}
 
+	private String createAcademicYear(String name) {
+		AcademicYear academicYear = academicYearService.create(name, LocalDate.of(2024, 6, 1),
+				LocalDate.of(2025, 5, 31), true);
+		return academicYear.getPublicId().toString();
+	}
+
+	private Student enrollStudentInClassroom(String studentCode, String firstName, String lastName, String email,
+			Classroom classroom, String academicYearPublicId) {
+		Student student = studentService.enroll(studentCode, firstName, lastName, email, LocalDate.of(2010, 1, 1));
+		classroomService.enrollStudent(classroom.getPublicId().toString(), student.getPublicId().toString(),
+				academicYearPublicId);
+		return student;
+	}
+
 	@Test
 	void attendanceMarkedUnderTenantA_isNotVisibleToTenantB() {
 		// Given — create classroom and student under tenant A, mark attendance
 		activateTenant(tenantA);
+		String academicYearPublicId = createAcademicYear("2024-25");
 		String classCode = "CLS-" + UUID.randomUUID().toString().substring(0, 6);
-		var classroom = classroomService.create(classCode, "Grade 5", "A", "2024-25", null);
+		var classroom = classroomService.create(classCode, "Grade 5", "A", academicYearPublicId, null);
 		String studentCode = "STU-" + UUID.randomUUID().toString().substring(0, 6);
-		Student student = studentService.enroll(studentCode, "Alice", "Smith", "alice@a.edu", LocalDate.of(2010, 1, 1));
+		Student student = enrollStudentInClassroom(studentCode, "Alice", "Smith", "alice@a.edu", classroom,
+				academicYearPublicId);
 		attendanceService.mark(student.getId(), classroom.getId(), LocalDate.now(),
 				AttendanceStatus.PRESENT, "teacher-a");
 
@@ -95,11 +117,11 @@ class AttendanceTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 	void attendancePublicId_notAccessibleAcrossTenants() {
 		// Given — mark attendance under tenant A
 		activateTenant(tenantA);
+		String academicYearPublicId = createAcademicYear("2024-25");
 		String classCode = "CLS-" + UUID.randomUUID().toString().substring(0, 6);
-		var classroom = classroomService.create(classCode, "Grade 6", "B", "2024-25", null);
-		Student student = studentService.enroll(
-				"STU-" + UUID.randomUUID().toString().substring(0, 6),
-				"Bob", "Jones", "bob@a.edu", LocalDate.of(2011, 3, 20));
+		var classroom = classroomService.create(classCode, "Grade 6", "B", academicYearPublicId, null);
+		Student student = enrollStudentInClassroom("STU-" + UUID.randomUUID().toString().substring(0, 6),
+				"Bob", "Jones", "bob@a.edu", classroom, academicYearPublicId);
 		Attendance attendance = attendanceService.mark(student.getId(), classroom.getId(),
 				LocalDate.now().minusDays(1), AttendanceStatus.ABSENT, "teacher-a");
 		String publicId = attendance.getPublicId().toString();

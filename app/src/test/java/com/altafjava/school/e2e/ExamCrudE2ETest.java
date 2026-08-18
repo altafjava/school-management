@@ -15,6 +15,7 @@ import com.altafjava.platform.application.dto.RegisterTenantCommand;
 import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
@@ -54,6 +55,9 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 	@Autowired
 	private SubjectRepository subjectRepository;
 
+	@Autowired
+	private AcademicYearService academicYearService;
+
 	private Long tenantId;
 	private String adminEmail;
 	private String adminPassword;
@@ -70,13 +74,25 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 		tenantId = tenant.getId();
 	}
 
+	private String createAcademicYear(String name) {
+		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null,
+				com.altafjava.platform.core.tenant.TenantType.SHARED);
+		try {
+			return academicYearService.create(name, java.time.LocalDate.of(2025, 6, 1),
+					java.time.LocalDate.of(2026, 5, 31), true).getPublicId().toString();
+		} finally {
+			TenantContext.ForTesting.clear();
+		}
+	}
+
 	private Long createClassroomAndGetInternalId(String accessToken, String classCode) {
+		String academicYearPublicId = createAcademicYear(classCode + "-2025-26");
 		String publicId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"classCode\":\"" + classCode + "\",\"grade\":\"Grade 5\",\"section\":\"A\","
-						+ "\"academicYear\":\"2025-26\"}")
+						+ "\"academicYearPublicId\":\"" + academicYearPublicId + "\"}")
 				.when()
 				.post("/api/v1/classrooms")
 				.then()

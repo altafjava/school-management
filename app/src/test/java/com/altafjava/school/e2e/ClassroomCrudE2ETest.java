@@ -3,6 +3,7 @@ package com.altafjava.school.e2e;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import com.altafjava.platform.application.dto.RegisterTenantCommand;
 import com.altafjava.platform.application.service.TenantOnboardingService;
+import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.school.application.service.AcademicYearService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
@@ -38,6 +42,9 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 	@Autowired
 	private SchoolAuthenticationHelper authHelper;
 
+	@Autowired
+	private AcademicYearService academicYearService;
+
 	private Long tenantId;
 	private String adminEmail;
 	private String adminPassword;
@@ -57,6 +64,7 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void createClassroom_asTenantAdmin_returns201() {
 		String accessToken = login();
+		String academicYearPublicId = createAcademicYear(tenantId, "2025-26");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -67,9 +75,9 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 						  "classCode": "CLS-001",
 						  "grade": "Grade 5",
 						  "section": "A",
-						  "academicYear": "2025-26"
+						  "academicYearPublicId": "%s"
 						}
-						""")
+						""".formatted(academicYearPublicId))
 				.when()
 				.post("/api/v1/classrooms")
 				.then()
@@ -92,6 +100,7 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void createClassroom_asTeacherRole_returns403() {
 		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+		String academicYearPublicId = createAcademicYear(tenantId, "2025-26");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -102,9 +111,9 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 						  "classCode": "CLS-002",
 						  "grade": "Grade 6",
 						  "section": "B",
-						  "academicYear": "2025-26"
+						  "academicYearPublicId": "%s"
 						}
-						""")
+						""".formatted(academicYearPublicId))
 				.when()
 				.post("/api/v1/classrooms")
 				.then()
@@ -114,6 +123,7 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void classroomCreatedUnderOneTenant_returns404ForAnotherTenant() {
 		String accessToken = login();
+		String academicYearPublicId = createAcademicYear(tenantId, "2025-26");
 		String publicId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
@@ -123,9 +133,9 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 						  "classCode": "CLS-003",
 						  "grade": "Grade 7",
 						  "section": "C",
-						  "academicYear": "2025-26"
+						  "academicYearPublicId": "%s"
 						}
-						""")
+						""".formatted(academicYearPublicId))
 				.when()
 				.post("/api/v1/classrooms")
 				.then()
@@ -146,6 +156,16 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/classrooms/" + publicId)
 				.then()
 				.statusCode(HttpStatus.NOT_FOUND.value());
+	}
+
+	private String createAcademicYear(Long forTenantId, String name) {
+		TenantContext.ForTesting.setCurrentTenant(forTenantId, null, null, TenantType.SHARED);
+		try {
+			return academicYearService.create(name, LocalDate.of(2025, 6, 1), LocalDate.of(2026, 5, 31), true)
+					.getPublicId().toString();
+		} finally {
+			TenantContext.ForTesting.clear();
+		}
 	}
 
 	private String login() {

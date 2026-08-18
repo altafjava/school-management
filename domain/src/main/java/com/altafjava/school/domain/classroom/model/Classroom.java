@@ -28,21 +28,38 @@ public class Classroom extends SoftDeletableEntity {
 	@Column(name = "section", nullable = false, length = 10)
 	private String section;
 
+	// Deprecated — superseded by academicYearId (a real FK). Kept only for the migration/rollback
+	// window (see ROADMAP.md Phase 1.1 cleanup); never read for new logic, only written to keep
+	// legacy readers of this column working during the transition.
 	@Column(name = "academic_year", nullable = false, length = 20)
 	private String academicYear;
+
+	// FK to academic_years.id — stored as Long to avoid cross-entity coupling in domain layer
+	@Column(name = "academic_year_id", nullable = false)
+	private Long academicYearId;
 
 	// FK to teachers.id — stored as Long to avoid cross-entity coupling in domain layer
 	@Column(name = "class_teacher_id")
 	private Long classTeacherId;
 
 	public static Classroom create(String classCode, String grade, String section,
-			String academicYear, Long classTeacherId) {
+			Long academicYearId, String academicYearName, Long classTeacherId) {
 		return Classroom.builder()
 				.classCode(classCode)
 				.grade(grade)
 				.section(section)
-				.academicYear(academicYear)
+				.academicYearId(academicYearId)
+				.academicYear(academicYearName)
 				.classTeacherId(classTeacherId)
 				.build();
+	}
+
+	public void reassignTeacher(Long classTeacherId) {
+		this.classTeacherId = classTeacherId;
+	}
+
+	public void reassignAcademicYear(Long academicYearId, String academicYearName) {
+		this.academicYearId = academicYearId;
+		this.academicYear = academicYearName;
 	}
 }

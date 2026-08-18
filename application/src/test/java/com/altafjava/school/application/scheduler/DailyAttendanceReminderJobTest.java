@@ -64,7 +64,7 @@ class DailyAttendanceReminderJobTest {
 	}
 
 	private Classroom classroomWithTeacher(long id, Long teacherId) {
-		Classroom classroom = Classroom.create("CLS-" + id, "Grade 5", "A", "2025-26", teacherId);
+		Classroom classroom = Classroom.create("CLS-" + id, "Grade 5", "A", 1L, "2025-26", teacherId);
 		classroom.setId(id);
 		return classroom;
 	}
