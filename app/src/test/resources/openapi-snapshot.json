@@ -34,6 +34,9 @@
     "name" : "AdminBilling Management",
     "description" : "APIs for managing AdminBilling operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
+    "name" : "Email Providers (Tenant)",
+    "description" : "Per-tenant email provider override"
+  }, {
     "name" : "Approval Workflow Definitions",
     "description" : "Manage approval workflow definitions"
   }, {
@@ -57,6 +60,9 @@
   }, {
     "name" : "Offline Sync API",
     "description" : "Endpoints for mobile offline sync"
+  }, {
+    "name" : "Email Providers (Admin)",
+    "description" : "Platform-wide default email provider configuration"
   }, {
     "name" : "Job Observability",
     "description" : "Endpoints for monitoring and observability"
@@ -428,6 +434,91 @@
         "responses" : {
           "200" : {
             "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/email-providers/{providerType}" : {
+      "put" : {
+        "tags" : [ "Email Providers (Tenant)" ],
+        "summary" : "Upsert Tenant Email Provider Config",
+        "description" : "Creates or updates the calling tenant's own config for one provider type. A blank/omitted secret leaves the currently-stored secret untouched.",
+        "operationId" : "upsertTenantEmailProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertEmailProviderConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseEmailProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "Email Providers (Tenant)" ],
+        "summary" : "Delete Tenant Email Provider Config",
+        "description" : "Removes the calling tenant's own config for one provider type — reverts to the platform default if it was active.",
+        "operationId" : "deleteTenantEmailProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
           }
         },
         "security" : [ {
@@ -1105,6 +1196,91 @@
                 }
               }
             }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/email-providers/{providerType}" : {
+      "put" : {
+        "tags" : [ "Email Providers (Admin)" ],
+        "summary" : "Upsert Email Provider Config",
+        "description" : "Creates or updates the platform-default config for one provider type. A blank/omitted secret leaves the currently-stored secret untouched.",
+        "operationId" : "upsertEmailProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertEmailProviderConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseEmailProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "Email Providers (Admin)" ],
+        "summary" : "Delete Email Provider Config",
+        "description" : "Removes the platform-default config for one provider type.",
+        "operationId" : "deleteEmailProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
           }
         },
         "security" : [ {
@@ -7547,6 +7723,55 @@
         } ]
       }
     },
+    "/api/v1/tenant-settings/email-providers/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "Email Providers (Tenant)" ],
+        "summary" : "Activate Tenant Email Provider Config",
+        "description" : "Marks the given provider type as this tenant's active override, deactivating any other active provider for this tenant.",
+        "operationId" : "activateTenantEmailProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseEmailProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/teachers/{publicId}/contact-details" : {
       "patch" : {
         "tags" : [ "teacher-controller" ],
@@ -8325,6 +8550,55 @@
         } ]
       }
     },
+    "/api/v1/admin/email-providers/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "Email Providers (Admin)" ],
+        "summary" : "Activate Email Provider Config",
+        "description" : "Marks the given provider type as the platform default, deactivating any other active provider.",
+        "operationId" : "activateEmailProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseEmailProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/users/me/sessions" : {
       "get" : {
         "tags" : [ "Session Management" ],
@@ -8673,6 +8947,64 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/tenant-settings/email-providers" : {
+      "get" : {
+        "tags" : [ "Email Providers (Tenant)" ],
+        "summary" : "List Tenant Email Provider Configs",
+        "description" : "Lists the calling tenant's own configured email provider rows.",
+        "operationId" : "getTenantEmailProviderConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/email-providers/effective" : {
+      "get" : {
+        "tags" : [ "Email Providers (Tenant)" ],
+        "summary" : "Get Effective Email Provider",
+        "description" : "The provider actually in effect for the calling tenant right now — its own override if active, else the platform default.",
+        "operationId" : "getEffectiveEmailProvider",
+        "responses" : {
+          "200" : {
+            "description" : "Effective provider resolved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
       }
     },
     "/api/v1/teachers/{publicId}" : {
@@ -11485,6 +11817,35 @@
         } ]
       }
     },
+    "/api/v1/admin/email-providers" : {
+      "get" : {
+        "tags" : [ "Email Providers (Admin)" ],
+        "summary" : "List Email Provider Configs",
+        "description" : "Lists all configured platform-default email provider rows.",
+        "operationId" : "getEmailProviderConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/admin/elasticsearch/sync/status" : {
       "get" : {
         "tags" : [ "Admin Elasticsearch" ],
@@ -12878,6 +13239,112 @@
           }
         }
       },
+      "UpsertEmailProviderConfigRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fromAddress" : {
+            "type" : "string"
+          },
+          "smtpHost" : {
+            "type" : "string"
+          },
+          "smtpPort" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "smtpUsername" : {
+            "type" : "string"
+          },
+          "sesRegion" : {
+            "type" : "string"
+          },
+          "sesAccessKeyId" : {
+            "type" : "string"
+          },
+          "sesUseDefaultCredentialChain" : {
+            "type" : "boolean"
+          },
+          "secret" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ApiResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : { },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "ApiResponseEmailProviderConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/EmailProviderConfigResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "EmailProviderConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "providerType" : {
+            "type" : "string",
+            "enum" : [ "CONSOLE", "SMTP", "SES" ]
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "fromAddress" : {
+            "type" : "string"
+          },
+          "smtpHost" : {
+            "type" : "string"
+          },
+          "smtpPort" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "smtpUsername" : {
+            "type" : "string"
+          },
+          "sesRegion" : {
+            "type" : "string"
+          },
+          "sesAccessKeyId" : {
+            "type" : "string"
+          },
+          "sesUseDefaultCredentialChain" : {
+            "type" : "boolean"
+          },
+          "secretConfigured" : {
+            "type" : "boolean"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "ReportDefinitionRequest" : {
         "type" : "object",
         "properties" : {
@@ -13730,21 +14197,6 @@
           }
         },
         "required" : [ "adminEmail", "adminPassword", "name", "planId", "subdomain" ]
-      },
-      "ApiResponse" : {
-        "type" : "object",
-        "properties" : {
-          "success" : {
-            "type" : "boolean"
-          },
-          "data" : { },
-          "error" : {
-            "$ref" : "#/components/schemas/Error"
-          },
-          "meta" : {
-            "$ref" : "#/components/schemas/Meta"
-          }
-        }
       },
       "ApiResponseTenantResponse" : {
         "type" : "object",
@@ -18805,17 +19257,16 @@
       "PageTimetableEntryResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -18826,8 +19277,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -18851,6 +19303,12 @@
       "PageableObject" : {
         "type" : "object",
         "properties" : {
+          "paged" : {
+            "type" : "boolean"
+          },
+          "unpaged" : {
+            "type" : "boolean"
+          },
           "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
@@ -18861,12 +19319,6 @@
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
-          },
-          "paged" : {
-            "type" : "boolean"
-          },
-          "unpaged" : {
-            "type" : "boolean"
           },
           "offset" : {
             "type" : "integer",
@@ -18891,17 +19343,16 @@
       "PageTermResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -18912,8 +19363,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -18957,17 +19409,16 @@
       "PageTeacherResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -18978,8 +19429,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19024,17 +19476,16 @@
       "PageSubjectResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19045,8 +19496,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19070,17 +19522,16 @@
       "PageStudentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19091,8 +19542,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19116,17 +19568,16 @@
       "PageReportCardResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19137,8 +19588,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19162,17 +19614,16 @@
       "PageGradeResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19183,8 +19634,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19232,17 +19684,16 @@
       "PageAttendanceResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19253,8 +19704,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19357,17 +19809,16 @@
       "PageReportDefinitionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19378,8 +19829,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19420,17 +19872,16 @@
       "PageReportExecutionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19441,8 +19892,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19649,17 +20101,16 @@
       "PagePeriodResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19670,8 +20121,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19918,17 +20370,16 @@
       "PageNotificationTemplateResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -19939,8 +20390,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20030,17 +20482,16 @@
       "PageGuardianResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -20051,8 +20502,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20163,17 +20615,16 @@
       "PageFeeStructureResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -20184,8 +20635,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20209,17 +20661,16 @@
       "PageFeeAssignmentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -20230,8 +20681,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20255,17 +20707,16 @@
       "PageFeePaymentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -20276,8 +20727,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20301,17 +20753,16 @@
       "PageExamResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -20322,8 +20773,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20403,17 +20855,16 @@
       "PageClassroomResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -20424,8 +20875,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -21095,17 +21547,16 @@
       "PageAdmissionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -21116,8 +21567,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -21190,17 +21642,16 @@
       "PageAdminUsageMetricResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -21211,8 +21662,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -22316,17 +22768,16 @@
       "PageCriticalErrorResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -22337,8 +22788,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -22379,17 +22831,16 @@
       "PageSystemAuditLogResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -22400,8 +22851,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -22604,17 +23056,16 @@
       "PageAcademicYearResponse" : {
         "type" : "object",
         "properties" : {
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "numberOfElements" : {
+          "totalElements" : {
             "type" : "integer",
-            "format" : "int32"
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
           },
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
@@ -22625,8 +23076,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
