@@ -91,6 +91,8 @@ class FeePaymentReminderJobTest {
 		assertEquals(NotificationType.FEE_DUE, sent.getType());
 		assertTrue(sent.getMessage().contains("600"));
 		assertTrue(sent.getMessage().contains("Alice"));
+		assertEquals("Alice Smith", sent.getTemplateVariables().get("studentName"));
+		assertEquals("600", sent.getTemplateVariables().get("amount"));
 
 		assertEquals(new JobExecutionResult.Success(java.util.Map.of("remindedCount", 1), null), result);
 	}

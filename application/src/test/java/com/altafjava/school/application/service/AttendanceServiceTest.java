@@ -159,4 +159,39 @@ class AttendanceServiceTest {
 
 		verify(studentDataAccessGuard).assertCanView(1L, "11111111-1111-1111-1111-111111111111");
 	}
+
+	@Test
+	void calculatePercentage_delegatesToAccessGuardAndCalculator() {
+		var student = com.altafjava.school.domain.student.model.Student.create(
+				"STU-1", "Alice", "Smith", "alice@school.test", null);
+		student.setId(42L);
+		String studentPublicId = "11111111-1111-1111-1111-111111111111";
+		LocalDate from = LocalDate.of(2026, 1, 1);
+		LocalDate to = LocalDate.of(2026, 1, 31);
+		when(studentRepository.findByPublicIdAndTenantId(any(), any())).thenReturn(Optional.of(student));
+		org.mockito.Mockito.doNothing().when(studentDataAccessGuard).assertCanView(any(), any());
+		when(attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetween(42L, 1L, from, to))
+				.thenReturn(20L);
+		when(attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(42L, 1L, from, to,
+				AttendanceStatus.PRESENT)).thenReturn(18L);
+
+		var result = attendanceService.calculatePercentage(studentPublicId, from, to);
+
+		verify(studentDataAccessGuard).assertCanView(1L, studentPublicId);
+		org.junit.jupiter.api.Assertions.assertEquals(18L, result.presentDays());
+		org.junit.jupiter.api.Assertions.assertEquals(20L, result.totalMarkedDays());
+		org.junit.jupiter.api.Assertions.assertEquals(0,
+				java.math.BigDecimal.valueOf(90.00).compareTo(result.percentage()));
+	}
+
+	@Test
+	void calculatePercentage_withNonExistentStudent_throwsResourceNotFound() {
+		when(studentRepository.findByPublicIdAndTenantId(any(), any())).thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> attendanceService.calculatePercentage("11111111-1111-1111-1111-111111111111",
+						LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31)));
+
+		verify(studentDataAccessGuard, never()).assertCanView(any(), any());
+	}
 }

@@ -109,14 +109,20 @@ public class ExamScheduleReminderJob implements JobExecutionStrategy {
 	private boolean notifyRecipient(Long tenantId, Exam exam, Subject subject, Student student) {
 		return recipientResolver.resolve(tenantId, student)
 				.map(userId -> {
+					String studentName = student.getFirstName() + " " + student.getLastName();
+					String scheduledAt = exam.getScheduledAt().format(DATE_TIME_FORMAT);
 					notificationService.send(SendNotificationCommand.builder()
 							.tenantId(tenantId)
 							.userId(userId)
 							.type(NotificationType.EXAM_SCHEDULED)
 							.title("Upcoming Exam: " + exam.getTitle())
-							.message(subject.getName() + " exam for " + student.getFirstName() + " "
-									+ student.getLastName() + " is scheduled for "
-									+ exam.getScheduledAt().format(DATE_TIME_FORMAT) + ".")
+							.message(subject.getName() + " exam for " + studentName + " is scheduled for "
+									+ scheduledAt + ".")
+							.templateVariables(Map.of(
+									"studentName", studentName,
+									"examTitle", exam.getTitle(),
+									"subjectName", subject.getName(),
+									"scheduledAt", scheduledAt))
 							.priority(NotificationPriority.NORMAL)
 							.build());
 					return true;

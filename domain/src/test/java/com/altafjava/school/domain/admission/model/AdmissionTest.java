@@ -2,9 +2,12 @@ package com.altafjava.school.domain.admission.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import com.altafjava.platform.core.exception.BusinessException;
 
 class AdmissionTest {
 
@@ -81,5 +84,76 @@ class AdmissionTest {
 		assertNull(admission.getEnrolledStudentId());
 		assertNull(admission.getEnrolledGuardianId());
 		assertNull(admission.getEnrollmentSagaId());
+	}
+
+	@Test
+	void recordEntranceTestScore_fromUnderReview_setsScoreFields() {
+		Admission admission = submitted();
+		admission.markUnderReview();
+
+		admission.recordEntranceTestScore(BigDecimal.valueOf(88), BigDecimal.valueOf(100));
+
+		assertEquals(BigDecimal.valueOf(88), admission.getEntranceTestScore());
+		assertEquals(BigDecimal.valueOf(100), admission.getEntranceTestMaxScore());
+	}
+
+	@Test
+	void recordEntranceTestScore_fromSubmitted_throwsBusinessException() {
+		Admission admission = submitted();
+
+		assertThrows(BusinessException.class,
+				() -> admission.recordEntranceTestScore(BigDecimal.valueOf(88), BigDecimal.valueOf(100)));
+	}
+
+	@Test
+	void assignMeritRank_setsRank() {
+		Admission admission = submitted();
+
+		admission.assignMeritRank(3);
+
+		assertEquals(3, admission.getMeritRank());
+	}
+
+	@Test
+	void assignMeritRank_withNonPositiveRank_throwsBusinessException() {
+		Admission admission = submitted();
+
+		assertThrows(BusinessException.class, () -> admission.assignMeritRank(0));
+	}
+
+	@Test
+	void waitlist_fromUnderReview_transitionsStatus() {
+		Admission admission = submitted();
+		admission.markUnderReview();
+
+		admission.waitlist();
+
+		assertEquals(AdmissionStatus.WAITLISTED, admission.getStatus());
+	}
+
+	@Test
+	void waitlist_fromSubmitted_throwsBusinessException() {
+		Admission admission = submitted();
+
+		assertThrows(BusinessException.class, admission::waitlist);
+	}
+
+	@Test
+	void promoteFromWaitlist_fromWaitlisted_transitionsToUnderReview() {
+		Admission admission = submitted();
+		admission.markUnderReview();
+		admission.waitlist();
+
+		admission.promoteFromWaitlist();
+
+		assertEquals(AdmissionStatus.UNDER_REVIEW, admission.getStatus());
+	}
+
+	@Test
+	void promoteFromWaitlist_fromUnderReview_throwsBusinessException() {
+		Admission admission = submitted();
+		admission.markUnderReview();
+
+		assertThrows(BusinessException.class, admission::promoteFromWaitlist);
 	}
 }

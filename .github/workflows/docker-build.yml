@@ -1,0 +1,44 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  packages: read    # required to pull com.altafjava.platform:* from GitHub Packages
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  docker-build:
+    name: Docker Build
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout school-saas
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build-only — no registry push configured yet (no image registry has been provisioned
+      # for this project). Proves the containerized build path works end-to-end (Phase 0:
+      # "a Dockerfile exists and is used by at least one CI job") ahead of wiring a real
+      # registry/deployment pipeline. Runs only on main, not on every develop push: main is the
+      # only branch guaranteed to have every com.altafjava.platform:* dependency it needs already
+      # published to GitHub Packages (platform-saas's own publish-snapshot.yml is main-triggered
+      # too), and it's the only branch this image would ever actually be built from for real —
+      # building on every develop push conflates "compiles" with "releasable" and wastes runner
+      # time on images nothing will ever use. Mirrors platform-saas's own ci.yml/publish-snapshot.yml
+      # split (test on develop, publish on main).
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: school-saas:ci-${{ github.sha }}
+          secrets: |
+            github_actor=${{ github.actor }}
+            platform_saas_token=${{ secrets.PLATFORM_SAAS_TOKEN }}

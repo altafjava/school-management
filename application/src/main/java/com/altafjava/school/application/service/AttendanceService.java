@@ -11,8 +11,10 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
 import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.attendance.model.Attendance;
+import com.altafjava.school.domain.attendance.model.AttendancePercentage;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
+import com.altafjava.school.domain.attendance.service.AttendancePercentageCalculator;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
 import com.altafjava.school.domain.student.model.Student;
@@ -27,6 +29,7 @@ public class AttendanceService {
 	private final StudentClassroomLinkRepository studentClassroomLinkRepository;
 	private final StudentDataAccessGuard studentDataAccessGuard;
 	private final TeacherClassroomScopeResolver teacherClassroomScopeResolver;
+	private final AttendancePercentageCalculator attendancePercentageCalculator = new AttendancePercentageCalculator();
 
 	public AttendanceService(AttendanceRepository attendanceRepository, StudentRepository studentRepository,
 			ClassroomRepository classroomRepository, StudentClassroomLinkRepository studentClassroomLinkRepository,
@@ -65,6 +68,20 @@ public class AttendanceService {
 				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
 		studentDataAccessGuard.assertCanView(tenantId, studentPublicId);
 		return attendanceRepository.findByStudentIdAndTenantId(student.getId(), tenantId, pageable);
+	}
+
+	@Transactional(readOnly = true)
+	public AttendancePercentage calculatePercentage(String studentPublicId, LocalDate from, LocalDate to) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		studentDataAccessGuard.assertCanView(tenantId, studentPublicId);
+		long totalMarkedDays = attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetween(
+				student.getId(), tenantId, from, to);
+		// Denominator is days attendance was actually marked — no working-days/school-calendar concept exists yet.
+		long presentDays = attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(
+				student.getId(), tenantId, from, to, AttendanceStatus.PRESENT);
+		return attendancePercentageCalculator.calculate(presentDays, totalMarkedDays);
 	}
 
 	@Transactional

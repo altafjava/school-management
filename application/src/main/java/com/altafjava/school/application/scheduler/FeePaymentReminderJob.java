@@ -90,14 +90,17 @@ public class FeePaymentReminderJob implements JobExecutionStrategy {
 	private boolean notifyRecipient(Long tenantId, Student student, BigDecimal outstanding) {
 		return recipientResolver.resolve(tenantId, student)
 				.map(userId -> {
+					String studentName = student.getFirstName() + " " + student.getLastName();
 					notificationService.send(SendNotificationCommand.builder()
 							.tenantId(tenantId)
 							.userId(userId)
 							.type(NotificationType.FEE_DUE)
 							.title("Fee Payment Reminder")
-							.message("Outstanding fee balance for " + student.getFirstName() + " "
-									+ student.getLastName() + " is " + outstanding + ". Please pay at your earliest "
-									+ "convenience.")
+							.message("Outstanding fee balance for " + studentName + " is " + outstanding
+									+ ". Please pay at your earliest convenience.")
+							.templateVariables(Map.of(
+									"studentName", studentName,
+									"amount", outstanding.toPlainString()))
 							.priority(NotificationPriority.NORMAL)
 							.build());
 					return true;

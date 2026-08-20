@@ -1,0 +1,61 @@
+package com.altafjava.school.api.controller;
+
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.school.api.dto.request.GradeSubmissionRequest;
+import com.altafjava.school.api.dto.request.SubmitAssignmentRequest;
+import com.altafjava.school.api.dto.response.SubmissionResponse;
+import com.altafjava.school.api.mapper.SubmissionMapper;
+import com.altafjava.school.application.security.SchoolRoles;
+import com.altafjava.school.application.service.SubmissionService;
+
+@RestController
+@RequestMapping("/api/v1/assignments/{assignmentPublicId}/submissions")
+public class SubmissionController {
+
+	private final SubmissionService submissionService;
+	private final SubmissionMapper submissionMapper;
+
+	public SubmissionController(SubmissionService submissionService, SubmissionMapper submissionMapper) {
+		this.submissionService = submissionService;
+		this.submissionMapper = submissionMapper;
+	}
+
+	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
+	@PreAuthorize(SchoolRoles.HAS_STUDENT)
+	public SubmissionResponse submit(@PathVariable String assignmentPublicId,
+			@Valid @RequestBody SubmitAssignmentRequest request) {
+		return submissionMapper.toResponse(
+				submissionService.submit(assignmentPublicId, request.storageKey(), request.textContent()));
+	}
+
+	@GetMapping
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	public Page<SubmissionResponse> list(@PathVariable String assignmentPublicId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return submissionService.list(assignmentPublicId, PageRequest.of(page, Math.min(size, 100)))
+				.map(submissionMapper::toResponse);
+	}
+
+	@PatchMapping("/{submissionPublicId}/grade")
+	@PreAuthorize(SchoolRoles.HAS_TEACHER)
+	public SubmissionResponse grade(@PathVariable String assignmentPublicId,
+			@PathVariable String submissionPublicId, @Valid @RequestBody GradeSubmissionRequest request) {
+		return submissionMapper.toResponse(submissionService.grade(assignmentPublicId, submissionPublicId,
+				request.marks(), request.feedback()));
+	}
+}

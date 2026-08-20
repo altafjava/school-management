@@ -110,6 +110,9 @@ class ExamScheduleReminderJobTest {
 		SendNotificationCommand sent = captor.getValue();
 		assertEquals(77L, sent.getUserId());
 		assertEquals(NotificationType.EXAM_SCHEDULED, sent.getType());
+		assertEquals("Alice Smith", sent.getTemplateVariables().get("studentName"));
+		assertEquals("Midterm", sent.getTemplateVariables().get("examTitle"));
+		assertEquals("Math", sent.getTemplateVariables().get("subjectName"));
 		assertEquals(new JobExecutionResult.Success(Map.of("remindedCount", 1), null), result);
 	}
 

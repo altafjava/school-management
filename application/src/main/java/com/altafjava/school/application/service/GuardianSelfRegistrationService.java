@@ -1,0 +1,66 @@
+package com.altafjava.school.application.service;
+
+import java.util.Optional;
+import java.util.Set;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.altafjava.platform.core.exception.BusinessException;
+import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.platform.domain.user.model.User;
+import com.altafjava.platform.domain.user.service.UserDomainService;
+import com.altafjava.school.application.security.SchoolRoles;
+import com.altafjava.school.domain.guardian.model.Guardian;
+import com.altafjava.school.domain.guardian.model.GuardianSelfRegistrationMode;
+import com.altafjava.school.domain.guardian.repository.GuardianRepository;
+import lombok.RequiredArgsConstructor;
+
+// Public, unauthenticated self-registration for guardians — dual mode per tenant, see
+// GuardianRegistrationSettingsService. Deliberately does not extend GuardianService: this flow's
+// zero-role vs. trusted-claim role decision is a security-sensitive concern of its own, not a
+// variant of the admin-only GuardianService#create use case.
+@Service
+@RequiredArgsConstructor
+public class GuardianSelfRegistrationService {
+
+	private final GuardianRepository guardianRepository;
+	private final GuardianRegistrationSettingsService guardianRegistrationSettingsService;
+	private final UserDomainService userService;
+
+	@Transactional
+	public Guardian register(String email, String password, String firstName, String lastName, String phone) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Optional<Guardian> pendingGuardian = guardianRepository.findByEmailAndTenantIdAndUserIdIsNull(email,
+				tenantId);
+		if (pendingGuardian.isPresent()) {
+			return claimPendingGuardian(pendingGuardian.get(), tenantId, email, password, firstName, lastName);
+		}
+		return createNewGuardian(tenantId, email, password, firstName, lastName, phone);
+	}
+
+	private Guardian claimPendingGuardian(Guardian guardian, Long tenantId, String email, String password,
+			String firstName, String lastName) {
+		// PARENT is granted immediately here — unlike AuthController.register()'s zero-role
+		// convention — because this binds to a real, already-admin-created guardian/student record:
+		// a trusted binding, not an anonymous signup, so immediate usable access is safe. Do not
+		// "fix" this to zero roles to match AuthController; that would break the claim flow.
+		User user = userService.createUser(tenantId, email, password, firstName, lastName,
+				Set.of(SchoolRoles.PARENT));
+		guardian.linkUserAccount(user.getId());
+		return guardianRepository.save(guardian);
+	}
+
+	private Guardian createNewGuardian(Long tenantId, String email, String password, String firstName,
+			String lastName, String phone) {
+		GuardianSelfRegistrationMode mode = guardianRegistrationSettingsService.getMode(tenantId);
+		if (mode == GuardianSelfRegistrationMode.CLAIM_ONLY) {
+			throw new BusinessException(
+					"No pending guardian record found for this email — contact the school office");
+		}
+		// Zero roles here, matching AuthController.register()'s convention exactly — unlike the
+		// claim path above, there is no pre-existing trusted binding to a student; an admin must
+		// separately link this guardian to a student and grant PARENT access.
+		User user = userService.createUser(tenantId, email, password, firstName, lastName, Set.of());
+		Guardian guardian = Guardian.create(firstName, lastName, email, phone, user.getId());
+		return guardianRepository.save(guardian);
+	}
+}

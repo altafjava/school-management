@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
 import com.altafjava.platform.core.security.annotation.Pii;
 import lombok.Getter;
@@ -48,5 +49,12 @@ public class Guardian extends SoftDeletableEntity {
 				.phone(phone)
 				.userId(userId)
 				.build();
+	}
+
+	public void linkUserAccount(Long userId) {
+		if (this.userId != null) {
+			throw new BusinessException("Guardian is already linked to a user account");
+		}
+		this.userId = userId;
 	}
 }

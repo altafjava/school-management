@@ -29,13 +29,27 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
  * {@code platform-saas/CHANGELOG.md}). Every school-saas controller currently declares
  * {@code @PreAuthorize} on every endpoint, so both allowlists below start empty — add an entry
  * only alongside a matching {@code SecurityConfig}/{@code permitAll()} change, never silently.
+ * <p>
+ * {@code AdmissionController#apply} is the one deliberate exception to "never silently": a
+ * prospective guardian applying before any account exists cannot present a JWT, so it is
+ * {@code permitAll()} via a literal entry in platform-saas's {@code SecurityConfig}.
+ * {@code GuardianSelfRegistrationController} is the same kind of deliberate, flagged exception,
+ * mirroring platform's {@code AuthController#register} for the same reason (no account yet to
+ * carry a JWT). {@code FeePaymentWebhookController} is the same kind of deliberate, flagged
+ * exception: an inbound payment-gateway webhook callback carries no JWT at all, so it is
+ * {@code permitAll()} via a generic {@code /api/v1/*}{@code /webhooks/**} pattern in platform's
+ * {@code SecurityConfig}, and enforces its own trust boundary via gateway signature verification
+ * instead of {@code @PreAuthorize}.
  */
 @AnalyzeClasses(packages = "com.altafjava.school.api")
 class ControllerAuthorizationFitnessTest {
 
-	private static final Set<String> KNOWN_PUBLIC_CONTROLLERS = Set.of();
+	private static final Set<String> KNOWN_PUBLIC_CONTROLLERS = Set.of(
+			"com.altafjava.school.api.controller.GuardianSelfRegistrationController",
+			"com.altafjava.school.api.controller.FeePaymentWebhookController");
 
-	private static final Set<String> KNOWN_PUBLIC_ENDPOINTS = Set.of();
+	private static final Set<String> KNOWN_PUBLIC_ENDPOINTS = Set
+			.of("com.altafjava.school.api.controller.AdmissionController#apply");
 
 	@ArchTest
 	static final ArchRule controllersMustDeclareAuthorization = classes()

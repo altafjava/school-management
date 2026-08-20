@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.admission.model;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -9,6 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
 import com.altafjava.platform.core.security.annotation.Pii;
 import lombok.Getter;
@@ -77,6 +79,15 @@ public class Admission extends SoftDeletableEntity {
 	@Column(name = "enrolled_guardian_id")
 	private Long enrolledGuardianId;
 
+	@Column(name = "entrance_test_score", precision = 10, scale = 2)
+	private BigDecimal entranceTestScore;
+
+	@Column(name = "entrance_test_max_score", precision = 10, scale = 2)
+	private BigDecimal entranceTestMaxScore;
+
+	@Column(name = "merit_rank")
+	private Integer meritRank;
+
 	public static Admission submit(String applicantFirstName, String applicantLastName,
 			LocalDate applicantDateOfBirth, String guardianFirstName, String guardianLastName,
 			String guardianEmail, String guardianPhone, String appliedGrade) {
@@ -128,5 +139,35 @@ public class Admission extends SoftDeletableEntity {
 		this.enrolledStudentId = null;
 		this.enrolledGuardianId = null;
 		this.enrollmentSagaId = null;
+	}
+
+	public void recordEntranceTestScore(BigDecimal score, BigDecimal maxScore) {
+		if (this.status != AdmissionStatus.UNDER_REVIEW) {
+			throw new BusinessException("Entrance test score can only be recorded while UNDER_REVIEW, was "
+					+ this.status);
+		}
+		this.entranceTestScore = score;
+		this.entranceTestMaxScore = maxScore;
+	}
+
+	public void assignMeritRank(int rank) {
+		if (rank < 1) {
+			throw new BusinessException("Merit rank must be a positive integer, was " + rank);
+		}
+		this.meritRank = rank;
+	}
+
+	public void waitlist() {
+		if (this.status != AdmissionStatus.UNDER_REVIEW) {
+			throw new BusinessException("Cannot waitlist an admission that is not UNDER_REVIEW, was " + this.status);
+		}
+		this.status = AdmissionStatus.WAITLISTED;
+	}
+
+	public void promoteFromWaitlist() {
+		if (this.status != AdmissionStatus.WAITLISTED) {
+			throw new BusinessException("Cannot promote an admission that is not WAITLISTED, was " + this.status);
+		}
+		this.status = AdmissionStatus.UNDER_REVIEW;
 	}
 }

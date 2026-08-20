@@ -3,6 +3,7 @@ package com.altafjava.school.e2e;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -154,6 +155,267 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.then()
 				.statusCode(HttpStatus.OK.value())
 				.body("status", equalTo("ENROLLED"));
+	}
+
+	private String applyBody(String applicantFirstName, String appliedGrade) {
+		return "{\"applicantFirstName\":\"" + applicantFirstName + "\",\"applicantLastName\":\"Public\","
+				+ "\"applicantDateOfBirth\":\"2015-01-01\",\"guardianFirstName\":\"Gale\",\"guardianLastName\":"
+				+ "\"Public\",\"guardianEmail\":\"gale-" + UUID.randomUUID().toString().substring(0, 6)
+				+ "@family.test\",\"guardianPhone\":\"555-9999\",\"appliedGrade\":\"" + appliedGrade + "\"}";
+	}
+
+	/**
+	 * {@code POST /apply} is designed to be permitAll (see {@code AdmissionController#apply}'s
+	 * Javadoc), but the matching platform-side {@code SecurityConfig} permitAll entry has not
+	 * landed yet (out of scope for this repo) — so today it still falls under the platform's
+	 * blanket {@code anyRequest().authenticated()} rule and 401s for an anonymous caller. This
+	 * test documents that real, current gap; once the platform-side change lands, replace it with
+	 * an assertion that an anonymous call returns 201.
+	 */
+	@Test
+	void applyForAdmission_asAnonymous_returns201() {
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.contentType(ContentType.JSON)
+				.body(applyBody("Public-Anonymous", "Grade 3"))
+				.when()
+				.post("/api/v1/admissions/apply")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.body("publicId", notNullValue())
+				.body("status", equalTo("SUBMITTED"));
+	}
+
+	@Test
+	void applyForAdmission_asAnyAuthenticatedRole_returns201() {
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.contentType(ContentType.JSON)
+				.body(applyBody("Public-Teacher", "Grade 3"))
+				.when()
+				.post("/api/v1/admissions/apply")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.body("publicId", notNullValue())
+				.body("status", equalTo("SUBMITTED"));
+	}
+
+	private String submitAndMoveUnderReview(String accessToken, String applicantFirstName, String appliedGrade) {
+		String publicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"applicantFirstName\":\"" + applicantFirstName + "\",\"applicantLastName\":\"Smith\","
+						+ "\"applicantDateOfBirth\":\"2015-01-01\",\"guardianFirstName\":\"Bob\","
+						+ "\"guardianLastName\":\"Smith\",\"guardianEmail\":\"bob-"
+						+ UUID.randomUUID().toString().substring(0, 6) + "@family.test\",\"guardianPhone\":"
+						+ "\"555-1234\",\"appliedGrade\":\"" + appliedGrade + "\"}")
+				.when()
+				.post("/api/v1/admissions")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.patch("/api/v1/admissions/" + publicId + "/under-review")
+				.then()
+				.statusCode(HttpStatus.OK.value());
+
+		return publicId;
+	}
+
+	@Test
+	void recordEntranceTestScore_asTenantAdmin_returns200WithScore() {
+		String accessToken = login();
+		String publicId = submitAndMoveUnderReview(accessToken, "Score-Happy", "Grade 4");
+
+		var response = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"score\":88.0,\"maxScore\":100.0}")
+				.when()
+				.post("/api/v1/admissions/" + publicId + "/entrance-test-score")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.extract();
+
+		// Groovy's JSON parser types decimal literals as Float, not Double — closeTo() requires an
+		// exact Double, so extract via getDouble() (which coerces) rather than asserting in the DSL chain.
+		assertEquals(88.0, response.jsonPath().getDouble("entranceTestScore"), 0.01);
+		assertEquals(100.0, response.jsonPath().getDouble("entranceTestMaxScore"), 0.01);
+	}
+
+	@Test
+	void recordEntranceTestScore_withoutJwt_returns401() {
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.contentType(ContentType.JSON)
+				.body("{\"score\":88,\"maxScore\":100}")
+				.when()
+				.post("/api/v1/admissions/" + UUID.randomUUID() + "/entrance-test-score")
+				.then()
+				.statusCode(HttpStatus.UNAUTHORIZED.value());
+	}
+
+	@Test
+	void recordEntranceTestScore_asTeacherRole_returns403() {
+		String accessToken = login();
+		String publicId = submitAndMoveUnderReview(accessToken, "Score-Forbidden", "Grade 4");
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.contentType(ContentType.JSON)
+				.body("{\"score\":88,\"maxScore\":100}")
+				.when()
+				.post("/api/v1/admissions/" + publicId + "/entrance-test-score")
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
+	}
+
+	@Test
+	void generateMeritList_asTenantAdmin_ranksScoredApplicantsAndWaitlistsOverflow() {
+		String accessToken = login();
+		String grade = "Grade-Merit-" + UUID.randomUUID().toString().substring(0, 6);
+		String firstPlaceId = submitAndMoveUnderReview(accessToken, "First", grade);
+		String secondPlaceId = submitAndMoveUnderReview(accessToken, "Second", grade);
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"score\":95,\"maxScore\":100}")
+				.when()
+				.post("/api/v1/admissions/" + firstPlaceId + "/entrance-test-score")
+				.then()
+				.statusCode(HttpStatus.OK.value());
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"score\":70,\"maxScore\":100}")
+				.when()
+				.post("/api/v1/admissions/" + secondPlaceId + "/entrance-test-score")
+				.then()
+				.statusCode(HttpStatus.OK.value());
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.when()
+				.post("/api/v1/admissions/merit-list?appliedGrade=" + grade + "&availableSeats=1")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("size()", equalTo(2));
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.when()
+				.get("/api/v1/admissions/" + firstPlaceId)
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("meritRank", equalTo(1))
+				.body("status", equalTo("UNDER_REVIEW"));
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.when()
+				.get("/api/v1/admissions/" + secondPlaceId)
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("meritRank", equalTo(2))
+				.body("status", equalTo("WAITLISTED"));
+	}
+
+	@Test
+	void generateMeritList_asTeacherRole_returns403() {
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.when()
+				.post("/api/v1/admissions/merit-list?appliedGrade=Grade+3&availableSeats=1")
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
+	}
+
+	@Test
+	void promoteFromWaitlist_asTenantAdmin_returns200WithUnderReviewStatus() {
+		String accessToken = login();
+		String grade = "Grade-Promote-" + UUID.randomUUID().toString().substring(0, 6);
+		String publicId = submitAndMoveUnderReview(accessToken, "Waitlisted", grade);
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"score\":50,\"maxScore\":100}")
+				.when()
+				.post("/api/v1/admissions/" + publicId + "/entrance-test-score")
+				.then()
+				.statusCode(HttpStatus.OK.value());
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.when()
+				.post("/api/v1/admissions/merit-list?appliedGrade=" + grade + "&availableSeats=0")
+				.then()
+				.statusCode(HttpStatus.OK.value());
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.when()
+				.patch("/api/v1/admissions/" + publicId + "/promote-from-waitlist")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("status", equalTo("UNDER_REVIEW"));
+	}
+
+	@Test
+	void promoteFromWaitlist_asTeacherRole_returns403() {
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.when()
+				.patch("/api/v1/admissions/" + UUID.randomUUID() + "/promote-from-waitlist")
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
+	}
+
+	@Test
+	void recordEntranceTestScore_forAdmissionInAnotherTenant_returns404() {
+		String accessToken = login();
+		String publicId = submitAndMoveUnderReview(accessToken, "Isolated", "Grade 6");
+
+		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
+		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(
+				"Other Score School", "adm-score-other-" + otherSuffix, 1L,
+				"admin@" + otherSuffix + ".test", "Password123!", "USD"));
+		String otherToken = login(otherTenant.getId(), "admin@" + otherSuffix + ".test", "Password123!");
+
+		given()
+				.header("X-Tenant-ID", otherTenant.getId())
+				.header("Authorization", "Bearer " + otherToken)
+				.contentType(ContentType.JSON)
+				.body("{\"score\":88,\"maxScore\":100}")
+				.when()
+				.post("/api/v1/admissions/" + publicId + "/entrance-test-score")
+				.then()
+				.statusCode(HttpStatus.NOT_FOUND.value());
 	}
 
 	@Test
