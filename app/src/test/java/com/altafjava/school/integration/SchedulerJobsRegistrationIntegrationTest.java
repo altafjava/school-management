@@ -9,6 +9,7 @@ import com.altafjava.school.application.scheduler.AttendanceSummaryReportJob;
 import com.altafjava.school.application.scheduler.DailyAttendanceReminderJob;
 import com.altafjava.school.application.scheduler.ExamScheduleReminderJob;
 import com.altafjava.school.application.scheduler.FeePaymentReminderJob;
+import com.altafjava.school.application.scheduler.LowAttendanceAlertJob;
 import com.altafjava.school.application.scheduler.ReportCardGenerationJob;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
@@ -40,6 +41,9 @@ class SchedulerJobsRegistrationIntegrationTest extends SchoolIntegrationTestBase
 
 	@Autowired
 	private AcademicYearRolloverJob academicYearRolloverJob;
+
+	@Autowired
+	private LowAttendanceAlertJob lowAttendanceAlertJob;
 
 	@Test
 	void dailyAttendanceReminderJob_isRegisteredAsBean() {
@@ -79,6 +83,12 @@ class SchedulerJobsRegistrationIntegrationTest extends SchoolIntegrationTestBase
 	}
 
 	@Test
+	void lowAttendanceAlertJob_isRegisteredAsBean() {
+		assertNotNull(lowAttendanceAlertJob);
+		assertNotNull(lowAttendanceAlertJob.jobName());
+	}
+
+	@Test
 	void allSchoolJobs_belongToSchoolGroup() {
 		assertNotNull(dailyAttendanceReminderJob.jobGroup());
 		assert "school".equals(dailyAttendanceReminderJob.jobGroup());
@@ -87,5 +97,6 @@ class SchedulerJobsRegistrationIntegrationTest extends SchoolIntegrationTestBase
 		assert "school".equals(examScheduleReminderJob.jobGroup());
 		assert "school".equals(reportCardGenerationJob.jobGroup());
 		assert "school".equals(academicYearRolloverJob.jobGroup());
+		assert "school".equals(lowAttendanceAlertJob.jobGroup());
 	}
 }

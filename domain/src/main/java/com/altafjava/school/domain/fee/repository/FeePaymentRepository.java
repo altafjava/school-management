@@ -22,6 +22,8 @@ public interface FeePaymentRepository extends JpaRepository<FeePayment, Long> {
 
 	boolean existsByReceiptNumberAndTenantId(String receiptNumber, Long tenantId);
 
+	Optional<FeePayment> findByGatewayChargeReferenceAndTenantId(String gatewayChargeReference, Long tenantId);
+
 	// Campus-level aggregate for the multi-campus rollup report — summed at the DB rather than
 	// pulled row-by-row, since a campus can have thousands of payments (see OrganizationRollupService).
 	@Query("SELECT COALESCE(SUM(fp.paidAmount), 0) FROM FeePayment fp WHERE fp.tenantId = :tenantId")

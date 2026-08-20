@@ -1,8 +1,10 @@
 package com.altafjava.school.integration;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,9 +13,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.altafjava.platform.application.dto.RegisterTenantCommand;
 import com.altafjava.platform.application.service.TenantOnboardingService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
+import com.altafjava.platform.core.security.AuthenticatedUser;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.tenant.model.Tenant;
 import com.altafjava.school.application.service.AcademicYearService;
@@ -25,6 +32,7 @@ import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.attendance.model.Attendance;
+import com.altafjava.school.domain.attendance.model.AttendancePercentage;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.student.model.Student;
@@ -64,6 +72,7 @@ class AttendanceTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 		tenantB = onboardingService.registerTenant(new RegisterTenantCommand(
 				"School B", "att-b-" + suffix, 1L, "admin@att-b.test", "Password123!", "USD"));
 		TenantContext.ForTesting.clear();
+		authenticateAsTenantAdmin();
 	}
 
 	private void activateTenant(Tenant tenant) {
@@ -71,9 +80,34 @@ class AttendanceTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 				tenant.getType());
 	}
 
+	// calculatePercentage() routes through StudentDataAccessGuard, which requires a real authenticated
+	// principal — TENANT_ADMIN bypasses the guard's ownership check, matching how staff actually call it.
+	private void authenticateAsTenantAdmin() {
+		AuthenticatedUser principal = new AuthenticatedUser() {
+			@Override
+			public Long getId() {
+				return -1L;
+			}
+
+			@Override
+			public String getUsername() {
+				return "admin";
+			}
+
+			@Override
+			public Long getTenantId() {
+				return null;
+			}
+		};
+		List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_TENANT_ADMIN"));
+		SecurityContextHolder.getContext()
+				.setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, authorities));
+	}
+
 	@AfterEach
 	void clearContext() {
 		TenantContext.ForTesting.clear();
+		SecurityContextHolder.clearContext();
 	}
 
 	private String createAcademicYear(String name) {
@@ -131,5 +165,44 @@ class AttendanceTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 		assertThrows(ResourceNotFoundException.class,
 				() -> attendanceService.findByPublicId(publicId),
 				"Tenant B must receive ResourceNotFoundException for tenant A's attendance");
+	}
+
+	@Test
+	void attendancePercentage_countsOnlyMarkedDaysWithinRange() {
+		activateTenant(tenantA);
+		String academicYearPublicId = createAcademicYear("2024-25");
+		String classCode = "CLS-" + UUID.randomUUID().toString().substring(0, 6);
+		var classroom = classroomService.create(classCode, "Grade 5", "C", academicYearPublicId, null);
+		Student student = enrollStudentInClassroom("STU-" + UUID.randomUUID().toString().substring(0, 6),
+				"Carol", "Diaz", "carol@a.edu", classroom, academicYearPublicId);
+		LocalDate day1 = LocalDate.now().minusDays(2);
+		LocalDate day2 = LocalDate.now().minusDays(1);
+		LocalDate day3 = LocalDate.now();
+		attendanceService.mark(student.getId(), classroom.getId(), day1, AttendanceStatus.PRESENT, "teacher-a");
+		attendanceService.mark(student.getId(), classroom.getId(), day2, AttendanceStatus.ABSENT, "teacher-a");
+		attendanceService.mark(student.getId(), classroom.getId(), day3, AttendanceStatus.PRESENT, "teacher-a");
+
+		AttendancePercentage result = attendanceService.calculatePercentage(student.getPublicId().toString(), day1,
+				day3);
+
+		assertEquals(2, result.presentDays());
+		assertEquals(3, result.totalMarkedDays());
+	}
+
+	@Test
+	void attendancePercentage_forTenantAStudent_notAccessibleFromTenantB() {
+		activateTenant(tenantA);
+		String academicYearPublicId = createAcademicYear("2024-25");
+		String classCode = "CLS-" + UUID.randomUUID().toString().substring(0, 6);
+		var classroom = classroomService.create(classCode, "Grade 6", "D", academicYearPublicId, null);
+		Student student = enrollStudentInClassroom("STU-" + UUID.randomUUID().toString().substring(0, 6),
+				"Dan", "Lee", "dan@a.edu", classroom, academicYearPublicId);
+		String studentPublicId = student.getPublicId().toString();
+
+		activateTenant(tenantB);
+		assertThrows(ResourceNotFoundException.class,
+				() -> attendanceService.calculatePercentage(studentPublicId, LocalDate.now().minusDays(5),
+						LocalDate.now()),
+				"Tenant B must receive ResourceNotFoundException for tenant A's student");
 	}
 }

@@ -62,8 +62,10 @@ pitest {
     targetClasses = ['com.altafjava.school.domain.grade.service.*',
                       'com.altafjava.school.domain.grade.model.GradingScale',
                       'com.altafjava.school.domain.grade.model.GradeThreshold',
-                      'com.altafjava.school.domain.fee.service.*']
-    targetTests = ['com.altafjava.school.domain.grade.*', 'com.altafjava.school.domain.fee.*']
+                      'com.altafjava.school.domain.fee.service.*',
+                      'com.altafjava.school.domain.attendance.service.*']
+    targetTests = ['com.altafjava.school.domain.grade.*', 'com.altafjava.school.domain.fee.*',
+                    'com.altafjava.school.domain.attendance.*']
     pitestVersion = libs.versions.pitest.core.get()
     junit5PluginVersion = libs.versions.pitest.junit5.plugin.get()
     mutationThreshold = 70

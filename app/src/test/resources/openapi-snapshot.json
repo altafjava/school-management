@@ -115,6 +115,9 @@
     "name" : "AdminAnalytics Management",
     "description" : "APIs for managing AdminAnalytics operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
+    "name" : "Payment Gateways (Admin)",
+    "description" : "Platform-wide default payment gateway configuration"
+  }, {
     "name" : "Report Management",
     "description" : "APIs for managing Report operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
@@ -135,6 +138,9 @@
   }, {
     "name" : "BillingCoupon Management",
     "description" : "APIs for managing BillingCoupon operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
+  }, {
+    "name" : "Payment Gateways (Tenant)",
+    "description" : "Per-tenant payment gateway override"
   }, {
     "name" : "AdminReport Management",
     "description" : "APIs for managing AdminReport operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
@@ -434,6 +440,91 @@
         "responses" : {
           "200" : {
             "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/payment-gateways/{providerType}" : {
+      "put" : {
+        "tags" : [ "Payment Gateways (Tenant)" ],
+        "summary" : "Upsert Tenant Payment Gateway Config",
+        "description" : "Creates or updates the calling tenant's own config for one provider type. The credentials map fully replaces whatever was previously stored — this is a plain REST PUT, not a partial merge.",
+        "operationId" : "upsertTenantPaymentGatewayConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertPaymentGatewayConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePaymentGatewayConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "Payment Gateways (Tenant)" ],
+        "summary" : "Delete Tenant Payment Gateway Config",
+        "description" : "Removes the calling tenant's own config for one provider type — reverts to the platform default if it was active.",
+        "operationId" : "deleteTenantPaymentGatewayConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
           }
         },
         "security" : [ {
@@ -837,10 +928,54 @@
         } ]
       }
     },
+    "/api/v1/guardians/self-registration-settings" : {
+      "get" : {
+        "tags" : [ "guardian-registration-settings-controller" ],
+        "operationId" : "get",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GuardianRegistrationSettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "guardian-registration-settings-controller" ],
+        "operationId" : "update",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateGuardianRegistrationSettingsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GuardianRegistrationSettingsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/grading-scale" : {
       "get" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "get",
+        "operationId" : "get_1",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -856,7 +991,7 @@
       },
       "put" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "update",
+        "operationId" : "update_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -995,6 +1130,50 @@
         } ]
       }
     },
+    "/api/v1/attendance/low-threshold-setting" : {
+      "get" : {
+        "tags" : [ "attendance-alert-settings-controller" ],
+        "operationId" : "get_2",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LowAttendanceThresholdResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "attendance-alert-settings-controller" ],
+        "operationId" : "update_2",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateLowAttendanceThresholdRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LowAttendanceThresholdResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/tax/jurisdictions/{id}" : {
       "put" : {
         "tags" : [ "admin-tax-controller" ],
@@ -1126,6 +1305,91 @@
         "responses" : {
           "200" : {
             "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/payment-gateways/{providerType}" : {
+      "put" : {
+        "tags" : [ "Payment Gateways (Admin)" ],
+        "summary" : "Upsert Payment Gateway Config",
+        "description" : "Creates or updates the platform-default config for one provider type. The credentials map fully replaces whatever was previously stored — this is a plain REST PUT, not a partial merge.",
+        "operationId" : "upsertPaymentGatewayConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertPaymentGatewayConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePaymentGatewayConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "Payment Gateways (Admin)" ],
+        "summary" : "Delete Payment Gateway Config",
+        "description" : "Removes the platform-default config for one provider type.",
+        "operationId" : "deletePaymentGatewayConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
           }
         },
         "security" : [ {
@@ -3572,6 +3836,34 @@
         } ]
       }
     },
+    "/api/v1/lessons" : {
+      "post" : {
+        "tags" : [ "lesson-controller" ],
+        "operationId" : "post",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PostLessonRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LessonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/guardians" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
@@ -3664,6 +3956,34 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/StudentGuardianLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardians/self-register" : {
+      "post" : {
+        "tags" : [ "guardian-self-registration-controller" ],
+        "operationId" : "selfRegister",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GuardianSelfRegisterRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GuardianResponse"
                 }
               }
             }
@@ -3984,6 +4304,113 @@
         "responses" : {
           "201" : {
             "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeePaymentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fee-payments/webhooks/{tenantPublicId}/{providerType}" : {
+      "post" : {
+        "tags" : [ "fee-payment-webhook-controller" ],
+        "operationId" : "handleWebhook",
+        "parameters" : [ {
+          "name" : "tenantPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "providerType",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "Stripe-Signature",
+          "in" : "header",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "string"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/fee-payments/self-service/charges" : {
+      "post" : {
+        "tags" : [ "fee-online-payment-controller" ],
+        "operationId" : "createCharge",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateFeeChargeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeeChargeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fee-payments/self-service/charges/{gatewayChargeReference}/confirm" : {
+      "post" : {
+        "tags" : [ "fee-online-payment-controller" ],
+        "operationId" : "confirmCharge",
+        "parameters" : [ {
+          "name" : "gatewayChargeReference",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConfirmFeeChargeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -5210,6 +5637,112 @@
         }
       }
     },
+    "/api/v1/assignments" : {
+      "post" : {
+        "tags" : [ "assignment-controller" ],
+        "operationId" : "create_6",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateAssignmentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AssignmentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assignments/{assignmentPublicId}/submissions" : {
+      "get" : {
+        "tags" : [ "submission-controller" ],
+        "operationId" : "list_13",
+        "parameters" : [ {
+          "name" : "assignmentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageSubmissionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "submission-controller" ],
+        "operationId" : "submit",
+        "parameters" : [ {
+          "name" : "assignmentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SubmitAssignmentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/approval/requests/{id}/reject" : {
       "post" : {
         "tags" : [ "Approval Requests" ],
@@ -5383,7 +5916,7 @@
     "/api/v1/admissions" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "list_13",
+        "operationId" : "list_14",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5418,12 +5951,113 @@
       },
       "post" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "submit",
+        "operationId" : "submit_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/SubmitAdmissionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdmissionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admissions/{publicId}/entrance-test-score" : {
+      "post" : {
+        "tags" : [ "admission-controller" ],
+        "operationId" : "recordEntranceTestScore",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RecordEntranceTestScoreRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdmissionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admissions/merit-list" : {
+      "post" : {
+        "tags" : [ "admission-controller" ],
+        "operationId" : "generateMeritList",
+        "parameters" : [ {
+          "name" : "appliedGrade",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "availableSeats",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdmissionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admissions/apply" : {
+      "post" : {
+        "tags" : [ "admission-controller" ],
+        "operationId" : "apply",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PublicAdmissionApplicationRequest"
               }
             }
           },
@@ -7012,7 +7646,7 @@
     "/api/v1/academic-years" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "list_14",
+        "operationId" : "list_15",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -7047,7 +7681,7 @@
       },
       "post" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "create_6",
+        "operationId" : "create_7",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7723,6 +8357,55 @@
         } ]
       }
     },
+    "/api/v1/tenant-settings/payment-gateways/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "Payment Gateways (Tenant)" ],
+        "summary" : "Activate Tenant Payment Gateway Config",
+        "description" : "Marks the given provider type as this tenant's active override, deactivating any other active provider for this tenant.",
+        "operationId" : "activateTenantPaymentGatewayConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePaymentGatewayConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/tenant-settings/email-providers/{providerType}/activate" : {
       "patch" : {
         "tags" : [ "Email Providers (Tenant)" ],
@@ -8154,6 +8837,85 @@
         }
       }
     },
+    "/api/v1/assignments/{publicId}/reschedule" : {
+      "patch" : {
+        "tags" : [ "assignment-controller" ],
+        "operationId" : "reschedule_1",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RescheduleAssignmentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AssignmentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assignments/{assignmentPublicId}/submissions/{submissionPublicId}/grade" : {
+      "patch" : {
+        "tags" : [ "submission-controller" ],
+        "operationId" : "grade",
+        "parameters" : [ {
+          "name" : "assignmentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "submissionPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GradeSubmissionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubmissionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/approval/definitions/{id}/toggle" : {
       "patch" : {
         "tags" : [ "Approval Workflow Definitions" ],
@@ -8190,6 +8952,32 @@
       "patch" : {
         "tags" : [ "admission-controller" ],
         "operationId" : "markUnderReview",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdmissionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admissions/{publicId}/promote-from-waitlist" : {
+      "patch" : {
+        "tags" : [ "admission-controller" ],
+        "operationId" : "promoteFromWaitlist",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8323,6 +9111,55 @@
         "responses" : {
           "200" : {
             "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/payment-gateways/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "Payment Gateways (Admin)" ],
+        "summary" : "Activate Payment Gateway Config",
+        "description" : "Marks the given provider type as the platform default, deactivating any other active provider.",
+        "operationId" : "activatePaymentGatewayConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePaymentGatewayConfigResponse"
+                }
+              }
+            }
           }
         },
         "security" : [ {
@@ -8817,7 +9654,7 @@
     "/api/v1/timetable-entries/{publicId}" : {
       "get" : {
         "tags" : [ "timetable-controller" ],
-        "operationId" : "get_1",
+        "operationId" : "get_3",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8869,7 +9706,7 @@
     "/api/v1/terms/{publicId}" : {
       "get" : {
         "tags" : [ "term-controller" ],
-        "operationId" : "get_2",
+        "operationId" : "get_4",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -8949,6 +9786,74 @@
         }
       }
     },
+    "/api/v1/tenant-settings/payment-gateways" : {
+      "get" : {
+        "tags" : [ "Payment Gateways (Tenant)" ],
+        "summary" : "List Tenant Payment Gateway Configs",
+        "description" : "Lists the calling tenant's own configured payment gateway rows.",
+        "operationId" : "getTenantPaymentGatewayConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/payment-gateways/effective" : {
+      "get" : {
+        "tags" : [ "Payment Gateways (Tenant)" ],
+        "summary" : "Get Effective Payment Gateway",
+        "description" : "The gateway actually in effect for the calling tenant right now — its own override if active, else the platform default.",
+        "operationId" : "getEffectivePaymentGateway",
+        "responses" : {
+          "200" : {
+            "description" : "Effective gateway resolved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No payment gateway configured for this tenant or the platform",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseEffectivePaymentGatewayConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/tenant-settings/email-providers" : {
       "get" : {
         "tags" : [ "Email Providers (Tenant)" ],
@@ -9010,7 +9915,7 @@
     "/api/v1/teachers/{publicId}" : {
       "get" : {
         "tags" : [ "teacher-controller" ],
-        "operationId" : "get_3",
+        "operationId" : "get_5",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9165,7 +10070,7 @@
     "/api/v1/subjects/{publicId}" : {
       "get" : {
         "tags" : [ "subject-controller" ],
-        "operationId" : "get_4",
+        "operationId" : "get_6",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9191,7 +10096,7 @@
     "/api/v1/students/{publicId}" : {
       "get" : {
         "tags" : [ "student-controller" ],
-        "operationId" : "get_5",
+        "operationId" : "get_7",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9358,6 +10263,48 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/PageAttendanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{publicId}/attendance/percentage" : {
+      "get" : {
+        "tags" : [ "student-controller" ],
+        "operationId" : "attendancePercentage",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "fromDate",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        }, {
+          "name" : "toDate",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttendancePercentageResponse"
                 }
               }
             }
@@ -9576,7 +10523,7 @@
     "/api/v1/periods/{publicId}" : {
       "get" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "get_6",
+        "operationId" : "get_8",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9602,7 +10549,7 @@
     "/api/v1/organizations/{organizationPublicId}/rollup-report" : {
       "get" : {
         "tags" : [ "organization-rollup-controller" ],
-        "operationId" : "get_7",
+        "operationId" : "get_9",
         "parameters" : [ {
           "name" : "organizationPublicId",
           "in" : "path",
@@ -9763,6 +10710,50 @@
         } ]
       }
     },
+    "/api/v1/lessons/classroom/{classroomPublicId}" : {
+      "get" : {
+        "tags" : [ "lesson-controller" ],
+        "operationId" : "listByClassroom",
+        "parameters" : [ {
+          "name" : "classroomPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageLessonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/languages" : {
       "get" : {
         "tags" : [ "Language Management" ],
@@ -9790,7 +10781,7 @@
     "/api/v1/guardians/{publicId}" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "get_8",
+        "operationId" : "get_10",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9853,7 +10844,7 @@
     "/api/v1/grades/{publicId}" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "get_9",
+        "operationId" : "get_11",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9968,7 +10959,7 @@
     "/api/v1/fee-structures/{publicId}" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "get_10",
+        "operationId" : "get_12",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -9994,7 +10985,33 @@
     "/api/v1/fee-payments/{publicId}" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "get_11",
+        "operationId" : "get_13",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FeePaymentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fee-payments/self-service/{publicId}" : {
+      "get" : {
+        "tags" : [ "fee-online-payment-controller" ],
+        "operationId" : "getReceipt",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10020,7 +11037,7 @@
     "/api/v1/exams/{publicId}" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "get_12",
+        "operationId" : "get_14",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10070,7 +11087,7 @@
     "/api/v1/classrooms/{publicId}" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "get_13",
+        "operationId" : "get_15",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10586,7 +11603,7 @@
     "/api/v1/attendance/{publicId}" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "get_14",
+        "operationId" : "get_16",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10602,6 +11619,50 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/AttendanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assignments/classroom/{classroomPublicId}" : {
+      "get" : {
+        "tags" : [ "assignment-controller" ],
+        "operationId" : "listByClassroom_1",
+        "parameters" : [ {
+          "name" : "classroomPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageAssignmentResponse"
                 }
               }
             }
@@ -10730,7 +11791,7 @@
     "/api/v1/admissions/{publicId}" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "get_15",
+        "operationId" : "get_17",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11241,6 +12302,35 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiResponseMapStringObject"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/payment-gateways" : {
+      "get" : {
+        "tags" : [ "Payment Gateways (Admin)" ],
+        "summary" : "List Payment Gateway Configs",
+        "description" : "Lists all configured platform-default payment gateway rows.",
+        "operationId" : "getPaymentGatewayConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
                 }
               }
             }
@@ -12177,7 +13267,7 @@
     "/api/v1/academic-years/{publicId}" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "get_16",
+        "operationId" : "get_18",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13239,6 +14329,90 @@
           }
         }
       },
+      "UpsertPaymentGatewayConfigRequest" : {
+        "type" : "object",
+        "properties" : {
+          "environment" : {
+            "type" : "string"
+          },
+          "confirmationMode" : {
+            "type" : "string",
+            "enum" : [ "SYNCHRONOUS", "WEBHOOK", "BOTH" ]
+          },
+          "credentials" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "ApiResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : { },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "ApiResponsePaymentGatewayConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/PaymentGatewayConfigResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "PaymentGatewayConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "providerType" : {
+            "type" : "string",
+            "enum" : [ "STRIPE" ]
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "environment" : {
+            "type" : "string"
+          },
+          "confirmationMode" : {
+            "type" : "string",
+            "enum" : [ "SYNCHRONOUS", "WEBHOOK", "BOTH" ]
+          },
+          "credentialFieldsConfigured" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "API_KEY", "API_SECRET", "PUBLISHABLE_KEY", "WEBHOOK_SIGNING_SECRET", "MERCHANT_ID", "ACCOUNT_ID", "CLIENT_ID", "CLIENT_SECRET", "BASE_URL", "ENVIRONMENT", "EXTRA_CONFIG_JSON" ]
+            },
+            "uniqueItems" : true
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "UpsertEmailProviderConfigRequest" : {
         "type" : "object",
         "properties" : {
@@ -13266,21 +14440,6 @@
           },
           "secret" : {
             "type" : "string"
-          }
-        }
-      },
-      "ApiResponse" : {
-        "type" : "object",
-        "properties" : {
-          "success" : {
-            "type" : "boolean"
-          },
-          "data" : { },
-          "error" : {
-            "$ref" : "#/components/schemas/Error"
-          },
-          "meta" : {
-            "$ref" : "#/components/schemas/Meta"
           }
         }
       },
@@ -13522,7 +14681,7 @@
         "properties" : {
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED" ]
           },
           "channels" : {
             "type" : "array",
@@ -13560,7 +14719,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED" ]
           },
           "enabledChannels" : {
             "type" : "array",
@@ -13617,6 +14776,25 @@
           },
           "timeZone" : {
             "type" : "string"
+          }
+        }
+      },
+      "UpdateGuardianRegistrationSettingsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "mode" : {
+            "type" : "string",
+            "enum" : [ "CLAIM_ONLY", "OPEN" ]
+          }
+        },
+        "required" : [ "mode" ]
+      },
+      "GuardianRegistrationSettingsResponse" : {
+        "type" : "object",
+        "properties" : {
+          "mode" : {
+            "type" : "string",
+            "enum" : [ "CLAIM_ONLY", "OPEN" ]
           }
         }
       },
@@ -13705,6 +14883,27 @@
           "createdAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "UpdateLowAttendanceThresholdRequest" : {
+        "type" : "object",
+        "properties" : {
+          "thresholdPercent" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 0
+          }
+        },
+        "required" : [ "thresholdPercent" ]
+      },
+      "LowAttendanceThresholdResponse" : {
+        "type" : "object",
+        "properties" : {
+          "thresholdPercent" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -15713,7 +16912,7 @@
             "type" : "string",
             "default" : "",
             "description" : "Notification type",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED" ]
           },
           "title" : {
             "type" : "string",
@@ -15796,7 +16995,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED" ]
           },
           "title" : {
             "type" : "string"
@@ -15846,7 +17045,7 @@
         "properties" : {
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED" ]
           },
           "subjectTemplate" : {
             "type" : "string",
@@ -15899,7 +17098,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED" ]
           },
           "subjectTemplate" : {
             "type" : "string"
@@ -15922,6 +17121,66 @@
             "type" : "boolean"
           },
           "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "PostLessonRequest" : {
+        "type" : "object",
+        "properties" : {
+          "classroomPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "subjectPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "title" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "storageKey" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "classroomPublicId", "subjectPublicId", "title" ]
+      },
+      "LessonResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "classroomId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "subjectId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "teacherId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "storageKey" : {
+            "type" : "string"
+          },
+          "postedAt" : {
             "type" : "string",
             "format" : "date-time"
           }
@@ -16020,6 +17279,37 @@
             "format" : "date-time"
           }
         }
+      },
+      "GuardianSelfRegisterRequest" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 255,
+            "minLength" : 0
+          },
+          "password" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "firstName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "lastName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "phone" : {
+            "type" : "string",
+            "maxLength" : 30,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "email", "firstName", "lastName", "password" ]
       },
       "RecordGradeRequest" : {
         "type" : "object",
@@ -16242,6 +17532,48 @@
             "type" : "string"
           }
         }
+      },
+      "CreateFeeChargeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "studentPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "feeStructurePublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "feeStructurePublicId", "studentPublicId" ]
+      },
+      "FeeChargeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "gatewayChargeReference" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "clientSecret" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ConfirmFeeChargeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "studentPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "feeStructurePublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "feeStructurePublicId", "studentPublicId" ]
       },
       "ScheduleExamRequest" : {
         "type" : "object",
@@ -17166,6 +18498,133 @@
           }
         }
       },
+      "CreateAssignmentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "classroomPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "subjectPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "title" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "storageKey" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          },
+          "dueDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "maxMarks" : {
+            "type" : "number",
+            "minimum" : 0.01
+          }
+        },
+        "required" : [ "classroomPublicId", "dueDate", "subjectPublicId", "title" ]
+      },
+      "AssignmentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "classroomId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "subjectId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "teacherId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "storageKey" : {
+            "type" : "string"
+          },
+          "dueDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "maxMarks" : {
+            "type" : "number"
+          }
+        }
+      },
+      "SubmitAssignmentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "storageKey" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          },
+          "textContent" : {
+            "type" : "string"
+          }
+        }
+      },
+      "SubmissionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "assignmentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "studentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "submittedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "storageKey" : {
+            "type" : "string"
+          },
+          "textContent" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "marksObtained" : {
+            "type" : "number"
+          },
+          "feedback" : {
+            "type" : "string"
+          },
+          "gradedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "gradedBy" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
       "ApprovalDecisionRequest" : {
         "type" : "object",
         "properties" : {
@@ -17425,13 +18884,81 @@
           },
           "status" : {
             "type" : "string",
-            "enum" : [ "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED", "ENROLLED" ]
+            "enum" : [ "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED", "ENROLLED", "WAITLISTED" ]
           },
           "submittedAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "entranceTestScore" : {
+            "type" : "number"
+          },
+          "entranceTestMaxScore" : {
+            "type" : "number"
+          },
+          "meritRank" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
+      },
+      "RecordEntranceTestScoreRequest" : {
+        "type" : "object",
+        "properties" : {
+          "score" : {
+            "type" : "number"
+          },
+          "maxScore" : {
+            "type" : "number"
+          }
+        },
+        "required" : [ "maxScore", "score" ]
+      },
+      "PublicAdmissionApplicationRequest" : {
+        "type" : "object",
+        "properties" : {
+          "applicantFirstName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "applicantLastName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "applicantDateOfBirth" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "guardianFirstName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "guardianLastName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "guardianEmail" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 255,
+            "minLength" : 0
+          },
+          "guardianPhone" : {
+            "type" : "string",
+            "maxLength" : 30,
+            "minLength" : 0
+          },
+          "appliedGrade" : {
+            "type" : "string",
+            "maxLength" : 20,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "applicantFirstName", "applicantLastName", "appliedGrade", "guardianFirstName", "guardianLastName" ]
       },
       "UpdateTenantTagsRequest" : {
         "type" : "object",
@@ -18768,6 +20295,29 @@
         },
         "required" : [ "academicYearPublicId" ]
       },
+      "RescheduleAssignmentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "dueDate" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "dueDate" ]
+      },
+      "GradeSubmissionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "marks" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "feedback" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "marks" ]
+      },
       "DecideAdmissionRequest" : {
         "type" : "object",
         "properties" : {
@@ -19271,15 +20821,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19309,11 +20859,11 @@
           "unpaged" : {
             "type" : "boolean"
           },
-          "pageNumber" : {
+          "pageSize" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "pageSize" : {
+          "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -19329,10 +20879,10 @@
       "SortObject" : {
         "type" : "object",
         "properties" : {
-          "sorted" : {
+          "unsorted" : {
             "type" : "boolean"
           },
-          "unsorted" : {
+          "sorted" : {
             "type" : "boolean"
           },
           "empty" : {
@@ -19357,15 +20907,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19406,6 +20956,39 @@
           }
         }
       },
+      "ApiResponseEffectivePaymentGatewayConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/EffectivePaymentGatewayConfigResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "EffectivePaymentGatewayConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "providerType" : {
+            "type" : "string",
+            "enum" : [ "STRIPE" ]
+          },
+          "environment" : {
+            "type" : "string"
+          },
+          "confirmationMode" : {
+            "type" : "string",
+            "enum" : [ "SYNCHRONOUS", "WEBHOOK", "BOTH" ]
+          }
+        }
+      },
       "PageTeacherResponse" : {
         "type" : "object",
         "properties" : {
@@ -19423,15 +21006,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19490,15 +21073,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19536,15 +21119,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19582,15 +21165,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19628,15 +21211,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19698,15 +21281,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19724,6 +21307,22 @@
           },
           "empty" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "AttendancePercentageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "presentDays" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalMarkedDays" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "percentage" : {
+            "type" : "number"
           }
         }
       },
@@ -19823,15 +21422,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -19886,15 +21485,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20115,15 +21714,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20384,15 +21983,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20439,6 +22038,52 @@
           },
           "meta" : {
             "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "PageLessonResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LessonResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
           }
         }
       },
@@ -20496,15 +22141,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20629,15 +22274,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20675,15 +22320,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20721,15 +22366,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20767,15 +22412,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -20869,15 +22514,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -21399,6 +23044,98 @@
           }
         }
       },
+      "PageSubmissionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SubmissionResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageAssignmentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AssignmentResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "ApiResponseApprovalRequestResponse" : {
         "type" : "object",
         "properties" : {
@@ -21561,15 +23298,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -21656,15 +23393,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -22782,15 +24519,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -22845,15 +24582,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",
@@ -23070,15 +24807,15 @@
           "sort" : {
             "$ref" : "#/components/schemas/SortObject"
           },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "first" : {
             "type" : "boolean"
           },
           "last" : {
             "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "size" : {
             "type" : "integer",

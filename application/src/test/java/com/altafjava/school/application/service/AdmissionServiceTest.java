@@ -9,7 +9,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.altafjava.platform.application.service.EmailService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
@@ -39,13 +43,15 @@ class AdmissionServiceTest {
 	private AdmissionDecisionRepository admissionDecisionRepository;
 	@Mock
 	private AdmissionEnrollmentSaga admissionEnrollmentSaga;
+	@Mock
+	private EmailService emailService;
 
 	private AdmissionService admissionService;
 
 	@BeforeEach
 	void setUp() {
 		admissionService = new AdmissionService(admissionRepository, admissionDecisionRepository,
-				admissionEnrollmentSaga);
+				admissionEnrollmentSaga, emailService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -150,5 +156,94 @@ class AdmissionServiceTest {
 
 		assertEquals(AdmissionStatus.REJECTED, result.getStatus());
 		verify(admissionEnrollmentSaga, never()).enroll(anyLong(), anyString());
+	}
+
+	@Test
+	void decide_reject_notifiesGuardianByEmail() {
+		UUID publicId = UUID.randomUUID();
+		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.SUBMITTED);
+		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
+		when(admissionRepository.save(any(Admission.class))).thenAnswer(inv -> inv.getArgument(0));
+		when(admissionDecisionRepository.save(any(AdmissionDecision.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		admissionService.decide(publicId.toString(), DecisionOutcome.REJECTED, "admin", "not a fit", null);
+
+		verify(emailService).sendEmail(eq("bob@family.test"), anyString(), anyString());
+	}
+
+	@Test
+	void recordEntranceTestScore_fromUnderReview_succeeds() {
+		UUID publicId = UUID.randomUUID();
+		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.UNDER_REVIEW);
+		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
+		when(admissionRepository.save(any(Admission.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Admission result = admissionService.recordEntranceTestScore(publicId.toString(), BigDecimal.valueOf(85),
+				BigDecimal.valueOf(100));
+
+		assertEquals(BigDecimal.valueOf(85), result.getEntranceTestScore());
+		assertEquals(BigDecimal.valueOf(100), result.getEntranceTestMaxScore());
+	}
+
+	@Test
+	void recordEntranceTestScore_fromSubmitted_throwsBusinessException() {
+		UUID publicId = UUID.randomUUID();
+		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.SUBMITTED);
+		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
+
+		assertThrows(BusinessException.class, () -> admissionService.recordEntranceTestScore(publicId.toString(),
+				BigDecimal.valueOf(85), BigDecimal.valueOf(100)));
+
+		verify(admissionRepository, never()).save(any());
+	}
+
+	@Test
+	void generateMeritList_ranksDescendingAndWaitlistsBeyondAvailableSeats() {
+		Admission low = admissionWithScore(1L, UUID.randomUUID(), BigDecimal.valueOf(60));
+		Admission high = admissionWithScore(2L, UUID.randomUUID(), BigDecimal.valueOf(95));
+		Admission mid = admissionWithScore(3L, UUID.randomUUID(), BigDecimal.valueOf(75));
+		when(admissionRepository.findAllByTenantIdAndAppliedGradeAndStatusAndEntranceTestScoreIsNotNull(1L,
+				"Grade 3", AdmissionStatus.UNDER_REVIEW)).thenReturn(new ArrayList<>(List.of(low, high, mid)));
+		when(admissionRepository.save(any(Admission.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		List<Admission> ranked = admissionService.generateMeritList("Grade 3", 2);
+
+		assertEquals(3, ranked.size());
+		assertEquals(1, high.getMeritRank());
+		assertEquals(AdmissionStatus.UNDER_REVIEW, high.getStatus());
+		assertEquals(2, mid.getMeritRank());
+		assertEquals(AdmissionStatus.UNDER_REVIEW, mid.getStatus());
+		assertEquals(3, low.getMeritRank());
+		assertEquals(AdmissionStatus.WAITLISTED, low.getStatus());
+	}
+
+	@Test
+	void promoteFromWaitlist_fromWaitlisted_succeeds() {
+		UUID publicId = UUID.randomUUID();
+		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.WAITLISTED);
+		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
+		when(admissionRepository.save(any(Admission.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Admission result = admissionService.promoteFromWaitlist(publicId.toString());
+
+		assertEquals(AdmissionStatus.UNDER_REVIEW, result.getStatus());
+	}
+
+	@Test
+	void promoteFromWaitlist_fromUnderReview_throwsBusinessException() {
+		UUID publicId = UUID.randomUUID();
+		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.UNDER_REVIEW);
+		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
+
+		assertThrows(BusinessException.class, () -> admissionService.promoteFromWaitlist(publicId.toString()));
+
+		verify(admissionRepository, never()).save(any());
+	}
+
+	private Admission admissionWithScore(long id, UUID publicId, BigDecimal score) {
+		Admission admission = admissionWithId(id, publicId, AdmissionStatus.UNDER_REVIEW);
+		admission.setEntranceTestScore(score);
+		admission.setEntranceTestMaxScore(BigDecimal.valueOf(100));
+		return admission;
 	}
 }

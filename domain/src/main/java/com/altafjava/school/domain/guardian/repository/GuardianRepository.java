@@ -15,6 +15,10 @@ public interface GuardianRepository extends JpaRepository<Guardian, Long> {
 
 	Optional<Guardian> findByUserIdAndTenantId(Long userId, Long tenantId);
 
+	// A "pending, unclaimed" guardian record — created by an admin/saga ahead of the guardian
+	// ever logging in — that self-registration can claim by matching email.
+	Optional<Guardian> findByEmailAndTenantIdAndUserIdIsNull(String email, Long tenantId);
+
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
 
 	Optional<Guardian> findByIdAndTenantId(Long id, Long tenantId);

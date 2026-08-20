@@ -1,5 +1,6 @@
 package com.altafjava.school.api.dto.response;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import com.altafjava.school.domain.admission.model.AdmissionStatus;
@@ -15,5 +16,8 @@ public record AdmissionResponse(
 		String guardianPhone,
 		String appliedGrade,
 		AdmissionStatus status,
-		Instant submittedAt) {
+		Instant submittedAt,
+		BigDecimal entranceTestScore,
+		BigDecimal entranceTestMaxScore,
+		Integer meritRank) {
 }

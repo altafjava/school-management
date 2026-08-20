@@ -17,5 +17,8 @@
     <include file="db/domain/changesets/010-classroom-academic-year.xml"/>
     <include file="db/domain/changesets/011-classroom-roster.xml"/>
     <include file="db/domain/changesets/012-fee-assignments.xml"/>
+    <include file="db/domain/changesets/013-admission-entrance-test.xml"/>
+    <include file="db/domain/changesets/014-lms.xml"/>
+    <include file="db/domain/changesets/015-fee-payment-gateway.xml"/>
 
 </databaseChangeLog>

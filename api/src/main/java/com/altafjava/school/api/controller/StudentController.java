@@ -2,6 +2,7 @@ package com.altafjava.school.api.controller;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.LocalDate;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateStudentRequest;
 import com.altafjava.school.api.dto.request.UpdateStudentContactDetailsRequest;
+import com.altafjava.school.api.dto.response.AttendancePercentageResponse;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
 import com.altafjava.school.api.dto.response.BulkImportResponse;
 import com.altafjava.school.api.dto.response.FeeBalanceResponse;
@@ -32,6 +34,7 @@ import com.altafjava.school.api.dto.response.GradeResponse;
 import com.altafjava.school.api.dto.response.ReportCardResponse;
 import com.altafjava.school.api.dto.response.StudentResponse;
 import com.altafjava.school.api.mapper.AttendanceMapper;
+import com.altafjava.school.api.mapper.AttendancePercentageMapper;
 import com.altafjava.school.api.mapper.BulkImportMapper;
 import com.altafjava.school.api.mapper.FeeBalanceMapper;
 import com.altafjava.school.api.mapper.GradeMapper;
@@ -59,6 +62,7 @@ public class StudentController {
 	private final GradeMapper gradeMapper;
 	private final AttendanceService attendanceService;
 	private final AttendanceMapper attendanceMapper;
+	private final AttendancePercentageMapper attendancePercentageMapper;
 	private final FeePaymentService feePaymentService;
 	private final FeeBalanceMapper feeBalanceMapper;
 	private final ReportCardService reportCardService;
@@ -69,15 +73,17 @@ public class StudentController {
 
 	public StudentController(StudentService studentService, StudentMapper studentMapper, GradeService gradeService,
 			GradeMapper gradeMapper, AttendanceService attendanceService, AttendanceMapper attendanceMapper,
-			FeePaymentService feePaymentService, FeeBalanceMapper feeBalanceMapper,
-			ReportCardService reportCardService, ReportCardMapper reportCardMapper, TermService termService,
-			StudentBulkImportService studentBulkImportService, BulkImportMapper bulkImportMapper) {
+			AttendancePercentageMapper attendancePercentageMapper, FeePaymentService feePaymentService,
+			FeeBalanceMapper feeBalanceMapper, ReportCardService reportCardService, ReportCardMapper reportCardMapper,
+			TermService termService, StudentBulkImportService studentBulkImportService,
+			BulkImportMapper bulkImportMapper) {
 		this.studentService = studentService;
 		this.studentMapper = studentMapper;
 		this.gradeService = gradeService;
 		this.gradeMapper = gradeMapper;
 		this.attendanceService = attendanceService;
 		this.attendanceMapper = attendanceMapper;
+		this.attendancePercentageMapper = attendancePercentageMapper;
 		this.feePaymentService = feePaymentService;
 		this.feeBalanceMapper = feeBalanceMapper;
 		this.reportCardService = reportCardService;
@@ -162,6 +168,15 @@ public class StudentController {
 			@RequestParam(defaultValue = "20") int size) {
 		return attendanceService.getStudentAttendance(publicId, PageRequest.of(page, Math.min(size, 100)))
 				.map(attendanceMapper::toResponse);
+	}
+
+	@GetMapping("/{publicId}/attendance/percentage")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	public AttendancePercentageResponse attendancePercentage(@PathVariable String publicId,
+			@RequestParam LocalDate fromDate,
+			@RequestParam LocalDate toDate) {
+		return attendancePercentageMapper.toResponse(
+				attendanceService.calculatePercentage(publicId, fromDate, toDate));
 	}
 
 	@GetMapping("/{publicId}/fee-balance")

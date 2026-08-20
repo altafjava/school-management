@@ -32,4 +32,9 @@ public interface StudentClassroomLinkRepository extends JpaRepository<StudentCla
 
 	@Query("SELECT l FROM StudentClassroomLink l WHERE l.tenantId = :tenantId AND l.studentId = :studentId")
 	List<StudentClassroomLink> findByStudentId(@Param("tenantId") Long tenantId, @Param("studentId") Long studentId);
+
+	// Distinct roster-enrolled student ids tenant-wide — the authoritative "who is actively
+	// enrolled" source for jobs that must iterate every student, not just one classroom's.
+	@Query("SELECT DISTINCT l.studentId FROM StudentClassroomLink l WHERE l.tenantId = :tenantId")
+	List<Long> findDistinctStudentIdsByTenantId(@Param("tenantId") Long tenantId);
 }

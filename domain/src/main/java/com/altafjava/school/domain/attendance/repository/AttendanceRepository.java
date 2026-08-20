@@ -31,8 +31,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
 	Page<Attendance> findByStudentIdAndTenantId(Long studentId, Long tenantId, Pageable pageable);
 
-	// Students inferred as "in" a classroom from their attendance history — school-saas has no
-	// explicit student-to-classroom enrollment table yet (see ROADMAP.md Phase 2).
+	// Roster inferred from attendance history — retained for ExamScheduleReminderJob's existing call
+	// site; StudentClassroomLinkRepository is now the authoritative source of enrollment, use that.
 	@Query("SELECT DISTINCT a.studentId FROM Attendance a WHERE a.tenantId = :tenantId AND a.classroomId = :classroomId")
 	List<Long> findDistinctStudentIdsByClassroomId(@Param("tenantId") Long tenantId,
 			@Param("classroomId") Long classroomId);
@@ -41,4 +41,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 			AttendanceStatus status);
 
 	Page<Attendance> findByClassroomIdInAndTenantId(List<Long> classroomIds, Long tenantId, Pageable pageable);
+
+	long countByStudentIdAndTenantIdAndAttendanceDateBetween(Long studentId, Long tenantId, LocalDate from,
+			LocalDate to);
+
+	long countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(Long studentId, Long tenantId, LocalDate from,
+			LocalDate to, AttendanceStatus status);
 }
