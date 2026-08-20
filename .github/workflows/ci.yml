@@ -46,7 +46,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: false
+          # Self-hosted runner: ~/.gradle already persists on local disk between jobs, so
+          # round-tripping it through GitHub's remote Actions cache (which this runner's network
+          # path is slow to reach — see gradle/wrapper/gradle-wrapper.properties' networkTimeout)
+          # is pure overhead, not a benefit; it was costing several minutes per job in cache
+          # upload alone. Matches platform-saas's own ci.yml.
+          cache-disabled: true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
