@@ -29,7 +29,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: false
+          # Self-hosted runner: local ~/.gradle already persists between jobs — see ci.yml's
+          # matching comment for why the remote GitHub Actions cache is skipped here.
+          cache-disabled: true
 
       - name: Resolve NVD cache week key
         id: cache-date
