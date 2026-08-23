@@ -25,4 +25,6 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
 	Optional<Teacher> findByIdAndTenantId(Long id, Long tenantId);
 
 	Optional<Teacher> findByUserIdAndTenantId(Long userId, Long tenantId);
+
+	long countByTenantId(Long tenantId);
 }

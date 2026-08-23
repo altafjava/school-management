@@ -17,6 +17,10 @@ import com.altafjava.platform.domain.notification.model.NotificationChannel;
 import com.altafjava.platform.domain.notification.model.NotificationTemplate;
 import com.altafjava.platform.domain.notification.model.NotificationType;
 import com.altafjava.platform.domain.notification.repository.NotificationTemplateRepository;
+import com.altafjava.platform.domain.report.model.ReportDefinition;
+import com.altafjava.platform.domain.report.model.ReportOutputFormat;
+import com.altafjava.platform.domain.report.model.ReportType;
+import com.altafjava.platform.domain.report.repository.ReportDefinitionRepository;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
 import com.altafjava.school.domain.curriculum.model.GradingScale;
@@ -92,10 +96,17 @@ public class SchoolTenantProvisioningListener {
 							+ "confirmed.\n\nThank you.",
 					List.of("studentName", "eventTitle", "eventDate")));
 
+	private static final List<DashboardReportSeed> DASHBOARD_REPORT_SEEDS = List.of(
+			new DashboardReportSeed("Principal Dashboard", "principalDashboardDataProvider"),
+			new DashboardReportSeed("Finance Dashboard", "financeDashboardDataProvider"),
+			new DashboardReportSeed("HR Dashboard", "hrDashboardDataProvider"),
+			new DashboardReportSeed("Academic Dashboard", "academicDashboardDataProvider"));
+
 	private final AcademicYearRepository academicYearRepository;
 	private final NotificationTemplateRepository notificationTemplateRepository;
 	private final GradingScaleRepository gradingScaleRepository;
 	private final GradingScaleThresholdRepository gradingScaleThresholdRepository;
+	private final ReportDefinitionRepository reportDefinitionRepository;
 	private final ObjectMapper objectMapper;
 
 	@Async("platformTaskExecutor")
@@ -109,6 +120,7 @@ public class SchoolTenantProvisioningListener {
 			seedDefaultAcademicYear(event.tenantId());
 			seedDefaultNotificationTemplates(event.tenantId());
 			seedDefaultGradingScale(event.tenantId());
+			seedDashboardReportDefinitions(event.tenantId());
 		});
 		log.info("action=school-tenant-provisioning-complete tenantId={}", event.tenantId());
 	}
@@ -150,6 +162,29 @@ public class SchoolTenantProvisioningListener {
 		log.info("action=seed-grading-scale-created tenantId={}", tenantId);
 	}
 
+	private void seedDashboardReportDefinitions(Long tenantId) {
+		DASHBOARD_REPORT_SEEDS.forEach(seed -> seedDashboardReportDefinition(tenantId, seed));
+	}
+
+	private void seedDashboardReportDefinition(Long tenantId, DashboardReportSeed seed) {
+		if (reportDefinitionRepository.existsByNameAndTenantId(seed.name(), tenantId)) {
+			log.info("action=seed-dashboard-report-skipped tenantId={} name={} reason=already-exists", tenantId,
+					seed.name());
+			return;
+		}
+		ReportDefinition definition = ReportDefinition.builder()
+				.tenantId(tenantId)
+				.name(seed.name())
+				.description(seed.name() + " — role-scoped aggregate, exportable as CSV/Excel/PDF/JSON")
+				.type(ReportType.SERVICE_CALL)
+				.queryTemplate(seed.providerBeanName())
+				.outputFormat(ReportOutputFormat.JSON)
+				.active(true)
+				.build();
+		reportDefinitionRepository.save(definition);
+		log.info("action=seed-dashboard-report-created tenantId={} name={}", tenantId, seed.name());
+	}
+
 	private void seedDefaultNotificationTemplates(Long tenantId) {
 		NOTIFICATION_TEMPLATE_SEEDS.forEach(seed -> seedNotificationTemplate(tenantId, seed));
 	}
@@ -186,5 +221,8 @@ public class SchoolTenantProvisioningListener {
 	}
 
 	private record ThresholdSeed(String letter, BigDecimal minPercentage, BigDecimal points) {
+	}
+
+	private record DashboardReportSeed(String name, String providerBeanName) {
 	}
 }

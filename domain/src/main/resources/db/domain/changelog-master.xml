@@ -27,5 +27,6 @@
     <include file="db/domain/changesets/020-events.xml"/>
     <include file="db/domain/changesets/021-inventory.xml"/>
     <include file="db/domain/changesets/022-library.xml"/>
+    <include file="db/domain/changesets/023-seed-dashboard-roles.xml"/>
 
 </databaseChangeLog>
