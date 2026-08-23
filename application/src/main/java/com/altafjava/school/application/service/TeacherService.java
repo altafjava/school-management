@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.department.repository.DepartmentRepository;
+import com.altafjava.school.domain.teacher.model.EmploymentType;
 import com.altafjava.school.domain.teacher.model.Teacher;
 import com.altafjava.school.domain.teacher.repository.TeacherRepository;
 
@@ -15,9 +17,11 @@ import com.altafjava.school.domain.teacher.repository.TeacherRepository;
 public class TeacherService {
 
 	private final TeacherRepository teacherRepository;
+	private final DepartmentRepository departmentRepository;
 
-	public TeacherService(TeacherRepository teacherRepository) {
+	public TeacherService(TeacherRepository teacherRepository, DepartmentRepository departmentRepository) {
 		this.teacherRepository = teacherRepository;
+		this.departmentRepository = departmentRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -48,5 +52,24 @@ public class TeacherService {
 		Teacher teacher = findByPublicId(publicId);
 		teacher.updateContactDetails(firstName, lastName, email);
 		return teacherRepository.save(teacher);
+	}
+
+	@Transactional
+	public Teacher updateHrDetails(String publicId, String departmentPublicId, String qualification,
+			EmploymentType employmentType) {
+		Teacher teacher = findByPublicId(publicId);
+		Long departmentId = resolveDepartmentId(departmentPublicId);
+		teacher.assignHrDetails(departmentId, qualification, employmentType);
+		return teacherRepository.save(teacher);
+	}
+
+	private Long resolveDepartmentId(String departmentPublicId) {
+		if (departmentPublicId == null) {
+			return null;
+		}
+		Long tenantId = TenantContext.getCurrentTenantId();
+		return departmentRepository.findByPublicIdAndTenantId(UUID.fromString(departmentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Department not found: " + departmentPublicId))
+				.getId();
 	}
 }

@@ -3,6 +3,8 @@ package com.altafjava.school.domain.teacher.model;
 import java.time.LocalDate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
@@ -43,6 +45,17 @@ public class Teacher extends SoftDeletableEntity {
 	@Column(name = "user_id")
 	private Long userId;
 
+	// FK to departments.id — nullable, HR details are assigned after hiring, not at hire time.
+	@Column(name = "department_id")
+	private Long departmentId;
+
+	@Column(name = "qualification", length = 255)
+	private String qualification;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "employment_type", length = 30)
+	private EmploymentType employmentType;
+
 	public static Teacher create(String employeeCode, String firstName, String lastName,
 			String email, LocalDate joinDate) {
 		return Teacher.builder()
@@ -58,5 +71,11 @@ public class Teacher extends SoftDeletableEntity {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.email = email;
+	}
+
+	public void assignHrDetails(Long departmentId, String qualification, EmploymentType employmentType) {
+		this.departmentId = departmentId;
+		this.qualification = qualification;
+		this.employmentType = employmentType;
 	}
 }

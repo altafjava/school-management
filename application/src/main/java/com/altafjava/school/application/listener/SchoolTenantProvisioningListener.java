@@ -59,7 +59,20 @@ public class SchoolTenantProvisioningListener {
 			new TemplateSeed(NotificationType.SUBMISSION_GRADED, "Submission Graded: {{assignmentTitle}}",
 					"Dear student,\n\nYour submission for \"{{assignmentTitle}}\" has been graded. You received "
 							+ "{{marksObtained}} marks.\n\nFeedback: {{feedback}}\n\nThank you.",
-					List.of("assignmentTitle", "marksObtained", "feedback")));
+					List.of("assignmentTitle", "marksObtained", "feedback")),
+			new TemplateSeed(NotificationType.LEAVE_REQUESTED, "Leave Request: {{teacherName}}",
+					"{{teacherName}} requested {{daysRequested}} day(s) of {{leaveTypeName}} leave, from "
+							+ "{{startDate}} to {{endDate}}. Please review and approve or reject this request.",
+					List.of("teacherName", "leaveTypeName", "startDate", "endDate", "daysRequested")),
+			new TemplateSeed(NotificationType.LEAVE_APPROVED, "Leave Request Approved",
+					"Dear teacher,\n\nYour leave request from {{startDate}} to {{endDate}} "
+							+ "({{daysRequested}} day(s)) has been approved.\n\nThank you.",
+					List.of("startDate", "endDate", "daysRequested")),
+			new TemplateSeed(NotificationType.LEAVE_REJECTED, "Leave Request Rejected",
+					"Dear teacher,\n\nYour leave request from {{startDate}} to {{endDate}} "
+							+ "({{daysRequested}} day(s)) has been rejected.\n\nReason: {{rejectionReason}}\n\n"
+							+ "Please contact the school office if you have any questions.",
+					List.of("startDate", "endDate", "daysRequested", "rejectionReason")));
 
 	private final AcademicYearRepository academicYearRepository;
 	private final NotificationTemplateRepository notificationTemplateRepository;

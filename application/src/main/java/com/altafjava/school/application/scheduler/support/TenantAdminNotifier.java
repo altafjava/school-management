@@ -1,5 +1,6 @@
 package com.altafjava.school.application.scheduler.support;
 
+import java.util.Map;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.application.dto.notification.SendNotificationCommand;
 import com.altafjava.platform.application.service.NotificationService;
@@ -26,6 +27,11 @@ public class TenantAdminNotifier {
 	}
 
 	public int notifyAll(Long tenantId, String title, String message) {
+		return notifyAll(tenantId, NotificationType.ANNOUNCEMENT, title, message, Map.of());
+	}
+
+	public int notifyAll(Long tenantId, NotificationType type, String title, String message,
+			Map<String, String> templateVariables) {
 		UserSearchCriteria criteria = new UserSearchCriteria(null, Roles.TENANT_ADMIN, null, null);
 		var admins = userRepository.findAll(criteria, Pageable.of(0, MAX_ADMIN_RECIPIENTS));
 
@@ -34,9 +40,10 @@ public class TenantAdminNotifier {
 			notificationService.send(SendNotificationCommand.builder()
 					.tenantId(tenantId)
 					.userId(admin.getId())
-					.type(NotificationType.ANNOUNCEMENT)
+					.type(type)
 					.title(title)
 					.message(message)
+					.templateVariables(templateVariables)
 					.priority(NotificationPriority.LOW)
 					.build());
 			notifiedCount++;

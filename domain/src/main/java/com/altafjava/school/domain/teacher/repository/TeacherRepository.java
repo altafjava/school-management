@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.teacher.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -10,6 +11,10 @@ import com.altafjava.school.domain.teacher.model.Teacher;
 public interface TeacherRepository extends JpaRepository<Teacher, Long> {
 
 	Page<Teacher> findAllByTenantId(Long tenantId, Pageable pageable);
+
+	// Unpaged, batch-context-only overload — for scheduler jobs that must process every teacher in
+	// a tenant (e.g. LeaveBalanceAllocationJob), never for a client-facing endpoint.
+	List<Teacher> findAllByTenantId(Long tenantId);
 
 	Optional<Teacher> findByPublicIdAndTenantId(UUID publicId, Long tenantId);
 

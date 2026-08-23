@@ -8,5 +8,8 @@ public record TeacherResponse(
 		String firstName,
 		String lastName,
 		String email,
-		LocalDate joinDate) {
+		LocalDate joinDate,
+		Long departmentId,
+		String qualification,
+		String employmentType) {
 }
