@@ -2,18 +2,29 @@ package com.altafjava.school.domain.grade.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
-import com.altafjava.school.domain.grade.model.GradingScale;
+import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
 
 class GradeCalculatorTest {
 
 	private final GradeCalculator calculator = new GradeCalculator();
 
+	private List<GradingScaleThreshold> defaultThresholds() {
+		return List.of(
+				GradingScaleThreshold.create(1L, "A", new BigDecimal("90"), new BigDecimal("4.0")),
+				GradingScaleThreshold.create(1L, "B", new BigDecimal("80"), new BigDecimal("3.0")),
+				GradingScaleThreshold.create(1L, "C", new BigDecimal("70"), new BigDecimal("2.0")),
+				GradingScaleThreshold.create(1L, "D", new BigDecimal("60"), new BigDecimal("1.0")),
+				GradingScaleThreshold.create(1L, "F", BigDecimal.ZERO, BigDecimal.ZERO));
+	}
+
 	@Test
 	void calculateLetterGrade_atExactBoundary_awardsHigherGrade() {
 		String grade = calculator.calculateLetterGrade(BigDecimal.valueOf(90), BigDecimal.valueOf(100),
-				GradingScale.defaultScale());
+				defaultThresholds());
 
 		assertEquals("A", grade);
 	}
@@ -21,7 +32,7 @@ class GradeCalculatorTest {
 	@Test
 	void calculateLetterGrade_justBelowBoundary_awardsLowerGrade() {
 		String grade = calculator.calculateLetterGrade(new BigDecimal("89.99"), BigDecimal.valueOf(100),
-				GradingScale.defaultScale());
+				defaultThresholds());
 
 		assertEquals("B", grade);
 	}
@@ -29,7 +40,7 @@ class GradeCalculatorTest {
 	@Test
 	void calculateLetterGrade_zeroMarks_awardsLowestGrade() {
 		String grade = calculator.calculateLetterGrade(BigDecimal.ZERO, BigDecimal.valueOf(100),
-				GradingScale.defaultScale());
+				defaultThresholds());
 
 		assertEquals("F", grade);
 	}
@@ -37,7 +48,7 @@ class GradeCalculatorTest {
 	@Test
 	void calculateLetterGrade_fullMarks_awardsTopGrade() {
 		String grade = calculator.calculateLetterGrade(BigDecimal.valueOf(100), BigDecimal.valueOf(100),
-				GradingScale.defaultScale());
+				defaultThresholds());
 
 		assertEquals("A", grade);
 	}
@@ -45,7 +56,7 @@ class GradeCalculatorTest {
 	@Test
 	void calculateLetterGrade_nonStandardMaxMarks_computesPercentageCorrectly() {
 		String grade = calculator.calculateLetterGrade(BigDecimal.valueOf(45), BigDecimal.valueOf(50),
-				GradingScale.defaultScale());
+				defaultThresholds());
 
 		assertEquals("A", grade);
 	}
@@ -54,20 +65,35 @@ class GradeCalculatorTest {
 	void calculateLetterGrade_marksAboveMaxMarks_throwsIllegalArgument() {
 		assertThrows(IllegalArgumentException.class,
 				() -> calculator.calculateLetterGrade(BigDecimal.valueOf(101), BigDecimal.valueOf(100),
-						GradingScale.defaultScale()));
+						defaultThresholds()));
 	}
 
 	@Test
 	void calculateLetterGrade_negativeMarks_throwsIllegalArgument() {
 		assertThrows(IllegalArgumentException.class,
 				() -> calculator.calculateLetterGrade(BigDecimal.valueOf(-1), BigDecimal.valueOf(100),
-						GradingScale.defaultScale()));
+						defaultThresholds()));
 	}
 
 	@Test
 	void calculateLetterGrade_zeroMaxMarks_throwsIllegalArgument() {
 		assertThrows(IllegalArgumentException.class,
 				() -> calculator.calculateLetterGrade(BigDecimal.valueOf(10), BigDecimal.ZERO,
-						GradingScale.defaultScale()));
+						defaultThresholds()));
+	}
+
+	@Test
+	void resolvePoints_matchingLetter_returnsItsPoints() {
+		var points = calculator.resolvePoints("B", defaultThresholds());
+
+		assertTrue(points.isPresent());
+		assertEquals(0, new BigDecimal("3.0").compareTo(points.get()));
+	}
+
+	@Test
+	void resolvePoints_unmatchedLetter_returnsEmpty() {
+		var points = calculator.resolvePoints("Z", defaultThresholds());
+
+		assertTrue(points.isEmpty());
 	}
 }

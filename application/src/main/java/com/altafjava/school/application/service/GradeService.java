@@ -11,10 +11,10 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
 import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
+import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
-import com.altafjava.school.domain.grade.model.GradingScale;
 import com.altafjava.school.domain.grade.repository.GradeRepository;
 import com.altafjava.school.domain.grade.service.GradeCalculator;
 import com.altafjava.school.domain.student.model.Student;
@@ -84,8 +84,8 @@ public class GradeService {
 			throw new IllegalArgumentException(
 					"Grade already recorded for student " + studentId + " in exam " + examId);
 		}
-		GradingScale scale = gradingScaleService.getScale();
-		String gradeLetter = gradeCalculator.calculateLetterGrade(marks, exam.getMaxMarks(), scale);
+		List<GradingScaleThreshold> thresholds = gradingScaleService.resolveEffectiveThresholds(exam.getClassroomId());
+		String gradeLetter = gradeCalculator.calculateLetterGrade(marks, exam.getMaxMarks(), thresholds);
 		// subjectId is derived from the exam, not client-supplied — a grade's subject must always
 		// match its exam's subject, so there is no legitimate case where they could differ.
 		Grade grade = Grade.create(studentId, exam.getSubjectId(), examId, marks, gradeLetter, gradedBy);

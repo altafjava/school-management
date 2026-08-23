@@ -31,6 +31,7 @@ import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.classroom.model.StudentClassroomLink;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
+import com.altafjava.school.domain.curriculum.repository.CurriculumRepository;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 import com.altafjava.school.domain.teacher.repository.TeacherRepository;
@@ -51,6 +52,8 @@ class ClassroomServiceTest {
 	@Mock
 	private StudentRepository studentRepository;
 	@Mock
+	private CurriculumRepository curriculumRepository;
+	@Mock
 	private EventPublisher eventPublisher;
 
 	private ClassroomService classroomService;
@@ -58,7 +61,7 @@ class ClassroomServiceTest {
 	@BeforeEach
 	void setUp() {
 		classroomService = new ClassroomService(classroomRepository, teacherRepository, academicYearRepository,
-				studentClassroomLinkRepository, studentRepository, eventPublisher);
+				studentClassroomLinkRepository, studentRepository, curriculumRepository, eventPublisher);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 		AcademicYear academicYear = AcademicYear.create("2024-25", LocalDate.of(2024, 6, 1),
 				LocalDate.of(2025, 5, 31), true);
@@ -130,6 +133,25 @@ class ClassroomServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> classroomService.reassignTeacher(classroomPublicId.toString(), 99L));
+	}
+
+	@Test
+	void assignCurriculum_toExistingCurriculum_succeeds() {
+		UUID classroomPublicId = UUID.randomUUID();
+		UUID curriculumPublicId = UUID.randomUUID();
+		Classroom classroom = classroomWithPublicId(classroomPublicId, 1L);
+		com.altafjava.school.domain.curriculum.model.Curriculum curriculum = com.altafjava.school.domain.curriculum.model.Curriculum
+				.create(1L, "CBSE Primary", "CBSE-P", null);
+		curriculum.setId(7L);
+		when(classroomRepository.findByPublicIdAndTenantId(classroomPublicId, 1L)).thenReturn(Optional.of(classroom));
+		when(curriculumRepository.findByPublicIdAndTenantId(curriculumPublicId, 1L))
+				.thenReturn(Optional.of(curriculum));
+		when(classroomRepository.save(any(Classroom.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Classroom updated = classroomService.assignCurriculum(classroomPublicId.toString(),
+				curriculumPublicId.toString());
+
+		assertEquals(7L, updated.getCurriculumId());
 	}
 
 	@Test

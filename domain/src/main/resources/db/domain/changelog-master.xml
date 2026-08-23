@@ -21,5 +21,6 @@
     <include file="db/domain/changesets/014-lms.xml"/>
     <include file="db/domain/changesets/015-fee-payment-gateway.xml"/>
     <include file="db/domain/changesets/016-hr-leave.xml"/>
+    <include file="db/domain/changesets/017-curriculum.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,135 @@
+package com.altafjava.school.application.service;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Stream;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.altafjava.platform.core.exception.ResourceNotFoundException;
+import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.application.security.StudentDataAccessGuard;
+import com.altafjava.school.domain.academicyear.model.AcademicYear;
+import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
+import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
+import com.altafjava.school.domain.exam.model.Exam;
+import com.altafjava.school.domain.exam.repository.ExamRepository;
+import com.altafjava.school.domain.grade.model.Grade;
+import com.altafjava.school.domain.grade.repository.GradeRepository;
+import com.altafjava.school.domain.grade.service.GpaCalculator;
+import com.altafjava.school.domain.grade.service.GradeCalculator;
+import com.altafjava.school.domain.student.model.Student;
+import com.altafjava.school.domain.student.repository.StudentRepository;
+import com.altafjava.school.domain.term.model.Term;
+import com.altafjava.school.domain.term.repository.TermRepository;
+
+/**
+ * GPA rollup — unweighted average of each recorded {@code Grade}'s resolved points (via the
+ * grading scale effective for that grade's classroom at calculation time, see
+ * {@code GradingScaleService.resolveEffectiveThresholds} — GPA reflects the currently effective
+ * scale, the same pragmatic assumption {@code GradeCalculator} already makes for letter grades).
+ * Term/year windows are applied as a date-range filter on {@code Exam.scheduledAt}, mirroring
+ * {@code ReportCardService}'s existing approach rather than relying on the nullable
+ * {@code Exam.termId}.
+ */
+@Service
+public class StudentGpaService {
+
+	private final GradeRepository gradeRepository;
+	private final ExamRepository examRepository;
+	private final TermRepository termRepository;
+	private final AcademicYearRepository academicYearRepository;
+	private final StudentRepository studentRepository;
+	private final StudentDataAccessGuard studentDataAccessGuard;
+	private final GradingScaleService gradingScaleService;
+	private final GradeCalculator gradeCalculator = new GradeCalculator();
+	private final GpaCalculator gpaCalculator = new GpaCalculator();
+
+	public StudentGpaService(GradeRepository gradeRepository, ExamRepository examRepository,
+			TermRepository termRepository, AcademicYearRepository academicYearRepository,
+			StudentRepository studentRepository, StudentDataAccessGuard studentDataAccessGuard,
+			GradingScaleService gradingScaleService) {
+		this.gradeRepository = gradeRepository;
+		this.examRepository = examRepository;
+		this.termRepository = termRepository;
+		this.academicYearRepository = academicYearRepository;
+		this.studentRepository = studentRepository;
+		this.studentDataAccessGuard = studentDataAccessGuard;
+		this.gradingScaleService = gradingScaleService;
+	}
+
+	@Transactional(readOnly = true)
+	public GpaResult calculateTermGpa(String studentPublicId, String termPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Student student = resolveStudent(tenantId, studentPublicId);
+		Term term = termRepository.findByPublicIdAndTenantId(UUID.fromString(termPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Term not found: " + termPublicId));
+		return calculateGpaForRange(tenantId, student.getId(), term.getStartDate().atStartOfDay(),
+				term.getEndDate().atTime(LocalTime.MAX));
+	}
+
+	@Transactional(readOnly = true)
+	public GpaResult calculateAcademicYearGpa(String studentPublicId, String academicYearPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Student student = resolveStudent(tenantId, studentPublicId);
+		AcademicYear academicYear = academicYearRepository
+				.findByPublicIdAndTenantId(UUID.fromString(academicYearPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Academic year not found: " + academicYearPublicId));
+		return calculateGpaForRange(tenantId, student.getId(), academicYear.getStartDate().atStartOfDay(),
+				academicYear.getEndDate().atTime(LocalTime.MAX));
+	}
+
+	@Transactional(readOnly = true)
+	public GpaResult calculateCumulativeGpa(String studentPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Student student = resolveStudent(tenantId, studentPublicId);
+		List<BigDecimal> points = examinedGrades(tenantId, student.getId())
+				.map(this::resolvePoints)
+				.flatMap(Optional::stream)
+				.toList();
+		return toResult(points);
+	}
+
+	private GpaResult calculateGpaForRange(Long tenantId, Long studentId, LocalDateTime start, LocalDateTime end) {
+		List<BigDecimal> points = examinedGrades(tenantId, studentId)
+				.filter(gradedExam -> withinRange(gradedExam.exam(), start, end))
+				.map(this::resolvePoints)
+				.flatMap(Optional::stream)
+				.toList();
+		return toResult(points);
+	}
+
+	private boolean withinRange(Exam exam, LocalDateTime start, LocalDateTime end) {
+		return !exam.getScheduledAt().isBefore(start) && !exam.getScheduledAt().isAfter(end);
+	}
+
+	private Stream<GradedExam> examinedGrades(Long tenantId, Long studentId) {
+		return gradeRepository.findByStudentId(tenantId, studentId).stream()
+				.map(grade -> examRepository.findByIdAndTenantId(grade.getExamId(), tenantId)
+						.map(exam -> new GradedExam(grade, exam)))
+				.flatMap(Optional::stream);
+	}
+
+	private Optional<BigDecimal> resolvePoints(GradedExam gradedExam) {
+		List<GradingScaleThreshold> thresholds = gradingScaleService
+				.resolveEffectiveThresholds(gradedExam.exam().getClassroomId());
+		return gradeCalculator.resolvePoints(gradedExam.grade().getGradeLetter(), thresholds);
+	}
+
+	private GpaResult toResult(List<BigDecimal> points) {
+		return new GpaResult(gpaCalculator.calculateAverage(points).orElse(null), points.size());
+	}
+
+	private Student resolveStudent(Long tenantId, String studentPublicId) {
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		studentDataAccessGuard.assertCanView(tenantId, studentPublicId);
+		return student;
+	}
+
+	private record GradedExam(Grade grade, Exam exam) {
+	}
+}

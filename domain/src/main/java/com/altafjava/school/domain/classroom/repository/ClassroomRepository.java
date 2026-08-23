@@ -16,6 +16,8 @@ public interface ClassroomRepository extends JpaRepository<Classroom, Long> {
 
 	Optional<Classroom> findByPublicIdAndTenantId(UUID publicId, Long tenantId);
 
+	Optional<Classroom> findByIdAndTenantId(Long id, Long tenantId);
+
 	boolean existsByClassTeacherIdAndTenantId(Long classTeacherId, Long tenantId);
 
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
