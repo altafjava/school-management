@@ -48,4 +48,36 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on BookController/RouteController's 3-arg constructors: flags storing the
+      injected application service and MapStruct mapper references into fields. Same standard
+      constructor-injection pattern as every other controller in this module (e.g.
+      ClassroomController's 6-arg constructor, never flagged) — investigated 2026-08-23,
+      consistent with the TenantAdminNotifier/ReportCardService/OrganizationRollupService findings
+      above: this detector flags EI_EXPOSE_REP2 inconsistently across structurally identical
+      constructors, which is detector noise, not a real defect — none of these fields hold mutable
+      state that could leak, and none is ever handed back to a caller.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.api.controller.BookController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.RouteController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!--
+      EI_EXPOSE_REP2 on CirculationService's 4-arg constructor: flags storing the injected
+      TenantSettingOverrideService (a platform application-layer service, same category of type as
+      TenantAdminNotifier's UserRepository/NotificationService above) into a field. Same standard
+      constructor-injection pattern, investigated 2026-08-23: no mutable state leak, reference
+      never handed back to a caller — consistent detector noise, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.application.service.CirculationService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

@@ -22,5 +22,10 @@
     <include file="db/domain/changesets/015-fee-payment-gateway.xml"/>
     <include file="db/domain/changesets/016-hr-leave.xml"/>
     <include file="db/domain/changesets/017-curriculum.xml"/>
+    <include file="db/domain/changesets/018-transport.xml"/>
+    <include file="db/domain/changesets/019-discipline.xml"/>
+    <include file="db/domain/changesets/020-events.xml"/>
+    <include file="db/domain/changesets/021-inventory.xml"/>
+    <include file="db/domain/changesets/022-library.xml"/>
 
 </databaseChangeLog>

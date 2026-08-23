@@ -77,7 +77,20 @@ public class SchoolTenantProvisioningListener {
 					"Dear teacher,\n\nYour leave request from {{startDate}} to {{endDate}} "
 							+ "({{daysRequested}} day(s)) has been rejected.\n\nReason: {{rejectionReason}}\n\n"
 							+ "Please contact the school office if you have any questions.",
-					List.of("startDate", "endDate", "daysRequested", "rejectionReason")));
+					List.of("startDate", "endDate", "daysRequested", "rejectionReason")),
+			new TemplateSeed(NotificationType.DISCIPLINE_INCIDENT_RECORDED, "Discipline Incident Reported",
+					"Dear parent/guardian,\n\nA {{severity}} discipline incident was recorded for {{studentName}} "
+							+ "on {{incidentDate}}.\n\nDetails: {{description}}\n\nPlease contact the school office "
+							+ "if you have any questions.",
+					List.of("studentName", "severity", "incidentDate", "description")),
+			new TemplateSeed(NotificationType.BOOK_OVERDUE, "Overdue Library Book",
+					"Dear parent/guardian,\n\n{{studentName}} has a library book overdue since {{dueDate}}. "
+							+ "Please return it at your earliest convenience to avoid further fines.\n\nThank you.",
+					List.of("studentName", "dueDate")),
+			new TemplateSeed(NotificationType.EVENT_REGISTRATION_CONFIRMED, "Event Registration Confirmed",
+					"Dear {{studentName}},\n\nYour registration for \"{{eventTitle}}\" on {{eventDate}} is "
+							+ "confirmed.\n\nThank you.",
+					List.of("studentName", "eventTitle", "eventDate")));
 
 	private final AcademicYearRepository academicYearRepository;
 	private final NotificationTemplateRepository notificationTemplateRepository;
