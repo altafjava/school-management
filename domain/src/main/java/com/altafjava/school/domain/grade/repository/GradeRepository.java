@@ -24,4 +24,12 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
 	boolean existsByStudentIdAndExamIdAndTenantId(Long studentId, Long examId, Long tenantId);
 
 	Page<Grade> findByExamIdInAndTenantId(List<Long> examIds, Long tenantId, Pageable pageable);
+
+	long countByTenantId(Long tenantId);
+
+	// Grade-letter distribution for the academic dashboard — grouped at the DB rather than pulled
+	// row-by-row and counted in memory, matching FeePaymentRepository.sumPaidAmountByTenantId's
+	// precedent for tenant-wide aggregates.
+	@Query("SELECT g.gradeLetter, COUNT(g) FROM Grade g WHERE g.tenantId = :tenantId GROUP BY g.gradeLetter")
+	List<Object[]> countGroupedByGradeLetter(@Param("tenantId") Long tenantId);
 }

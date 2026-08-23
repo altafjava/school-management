@@ -40,6 +40,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 	long countByTenantIdAndAttendanceDateBetweenAndStatus(Long tenantId, LocalDate from, LocalDate to,
 			AttendanceStatus status);
 
+	long countByTenantIdAndAttendanceDateBetween(Long tenantId, LocalDate from, LocalDate to);
+
 	Page<Attendance> findByClassroomIdInAndTenantId(List<Long> classroomIds, Long tenantId, Pageable pageable);
 
 	long countByStudentIdAndTenantIdAndAttendanceDateBetween(Long studentId, Long tenantId, LocalDate from,

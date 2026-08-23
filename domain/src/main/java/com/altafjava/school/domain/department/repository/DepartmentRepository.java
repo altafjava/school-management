@@ -16,4 +16,6 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 	Optional<Department> findByIdAndTenantId(Long id, Long tenantId);
 
 	boolean existsByCodeAndTenantId(String code, Long tenantId);
+
+	long countByTenantId(Long tenantId);
 }

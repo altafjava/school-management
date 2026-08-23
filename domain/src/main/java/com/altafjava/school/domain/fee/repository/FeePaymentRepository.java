@@ -28,4 +28,6 @@ public interface FeePaymentRepository extends JpaRepository<FeePayment, Long> {
 	// pulled row-by-row, since a campus can have thousands of payments (see OrganizationRollupService).
 	@Query("SELECT COALESCE(SUM(fp.paidAmount), 0) FROM FeePayment fp WHERE fp.tenantId = :tenantId")
 	BigDecimal sumPaidAmountByTenantId(@Param("tenantId") Long tenantId);
+
+	long countByTenantId(Long tenantId);
 }
