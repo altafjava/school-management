@@ -1,0 +1,8 @@
+package com.altafjava.school.api.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+
+public record CheckoutBookRequest(
+		@NotBlank String bookCopyPublicId,
+		@NotBlank String studentPublicId) {
+}
