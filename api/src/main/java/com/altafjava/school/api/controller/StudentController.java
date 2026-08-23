@@ -30,6 +30,7 @@ import com.altafjava.school.api.dto.response.AttendancePercentageResponse;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
 import com.altafjava.school.api.dto.response.BulkImportResponse;
 import com.altafjava.school.api.dto.response.FeeBalanceResponse;
+import com.altafjava.school.api.dto.response.GpaResponse;
 import com.altafjava.school.api.dto.response.GradeResponse;
 import com.altafjava.school.api.dto.response.ReportCardResponse;
 import com.altafjava.school.api.dto.response.StudentResponse;
@@ -43,9 +44,11 @@ import com.altafjava.school.api.mapper.StudentMapper;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AttendanceService;
 import com.altafjava.school.application.service.FeePaymentService;
+import com.altafjava.school.application.service.GpaResult;
 import com.altafjava.school.application.service.GradeService;
 import com.altafjava.school.application.service.ReportCardService;
 import com.altafjava.school.application.service.StudentBulkImportService;
+import com.altafjava.school.application.service.StudentGpaService;
 import com.altafjava.school.application.service.StudentService;
 import com.altafjava.school.application.service.TermService;
 import com.altafjava.school.domain.reportcard.model.ReportCard;
@@ -70,13 +73,14 @@ public class StudentController {
 	private final TermService termService;
 	private final StudentBulkImportService studentBulkImportService;
 	private final BulkImportMapper bulkImportMapper;
+	private final StudentGpaService studentGpaService;
 
 	public StudentController(StudentService studentService, StudentMapper studentMapper, GradeService gradeService,
 			GradeMapper gradeMapper, AttendanceService attendanceService, AttendanceMapper attendanceMapper,
 			AttendancePercentageMapper attendancePercentageMapper, FeePaymentService feePaymentService,
 			FeeBalanceMapper feeBalanceMapper, ReportCardService reportCardService, ReportCardMapper reportCardMapper,
 			TermService termService, StudentBulkImportService studentBulkImportService,
-			BulkImportMapper bulkImportMapper) {
+			BulkImportMapper bulkImportMapper, StudentGpaService studentGpaService) {
 		this.studentService = studentService;
 		this.studentMapper = studentMapper;
 		this.gradeService = gradeService;
@@ -91,6 +95,7 @@ public class StudentController {
 		this.termService = termService;
 		this.studentBulkImportService = studentBulkImportService;
 		this.bulkImportMapper = bulkImportMapper;
+		this.studentGpaService = studentGpaService;
 	}
 
 	@GetMapping
@@ -159,6 +164,28 @@ public class StudentController {
 			@RequestParam(defaultValue = "20") int size) {
 		return gradeService.getStudentGrades(publicId, PageRequest.of(page, Math.min(size, 100)))
 				.map(gradeMapper::toResponse);
+	}
+
+	@GetMapping("/{publicId}/gpa/term")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	public GpaResponse termGpa(@PathVariable String publicId, @RequestParam String termPublicId) {
+		return toGpaResponse(studentGpaService.calculateTermGpa(publicId, termPublicId));
+	}
+
+	@GetMapping("/{publicId}/gpa/academic-year")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	public GpaResponse academicYearGpa(@PathVariable String publicId, @RequestParam String academicYearPublicId) {
+		return toGpaResponse(studentGpaService.calculateAcademicYearGpa(publicId, academicYearPublicId));
+	}
+
+	@GetMapping("/{publicId}/gpa/cumulative")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	public GpaResponse cumulativeGpa(@PathVariable String publicId) {
+		return toGpaResponse(studentGpaService.calculateCumulativeGpa(publicId));
+	}
+
+	private GpaResponse toGpaResponse(GpaResult result) {
+		return new GpaResponse(result.gpa(), result.gradeCount());
 	}
 
 	@GetMapping("/{publicId}/attendance")

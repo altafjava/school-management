@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateTeacherRequest;
 import com.altafjava.school.api.dto.request.UpdateTeacherContactDetailsRequest;
+import com.altafjava.school.api.dto.request.UpdateTeacherHrDetailsRequest;
 import com.altafjava.school.api.dto.response.TeacherResponse;
 import com.altafjava.school.api.mapper.TeacherMapper;
 import com.altafjava.school.application.service.TeacherService;
@@ -66,5 +67,13 @@ public class TeacherController {
 			@Valid @RequestBody UpdateTeacherContactDetailsRequest request) {
 		return teacherMapper.toResponse(teacherService.updateContactDetails(publicId, request.firstName(),
 				request.lastName(), request.email()));
+	}
+
+	@PatchMapping("/{publicId}/hr-details")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public TeacherResponse updateHrDetails(@PathVariable String publicId,
+			@Valid @RequestBody UpdateTeacherHrDetailsRequest request) {
+		return teacherMapper.toResponse(teacherService.updateHrDetails(publicId, request.departmentPublicId(),
+				request.qualification(), request.employmentType()));
 	}
 }

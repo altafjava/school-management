@@ -19,6 +19,7 @@ import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.classroom.model.StudentClassroomLink;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
+import com.altafjava.school.domain.curriculum.repository.CurriculumRepository;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 import com.altafjava.school.domain.teacher.repository.TeacherRepository;
@@ -31,17 +32,19 @@ public class ClassroomService {
 	private final AcademicYearRepository academicYearRepository;
 	private final StudentClassroomLinkRepository studentClassroomLinkRepository;
 	private final StudentRepository studentRepository;
+	private final CurriculumRepository curriculumRepository;
 	private final EventPublisher eventPublisher;
 
 	public ClassroomService(ClassroomRepository classroomRepository, TeacherRepository teacherRepository,
 			AcademicYearRepository academicYearRepository,
 			StudentClassroomLinkRepository studentClassroomLinkRepository, StudentRepository studentRepository,
-			EventPublisher eventPublisher) {
+			CurriculumRepository curriculumRepository, EventPublisher eventPublisher) {
 		this.classroomRepository = classroomRepository;
 		this.teacherRepository = teacherRepository;
 		this.academicYearRepository = academicYearRepository;
 		this.studentClassroomLinkRepository = studentClassroomLinkRepository;
 		this.studentRepository = studentRepository;
+		this.curriculumRepository = curriculumRepository;
 		this.eventPublisher = eventPublisher;
 	}
 
@@ -91,6 +94,16 @@ public class ClassroomService {
 				.findByPublicIdAndTenantId(UUID.fromString(academicYearPublicId), tenantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Academic year not found: " + academicYearPublicId));
 		classroom.reassignAcademicYear(academicYear.getId(), academicYear.getName());
+		return classroomRepository.save(classroom);
+	}
+
+	@Transactional
+	public Classroom assignCurriculum(String publicId, String curriculumPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Classroom classroom = findByPublicId(publicId);
+		var curriculum = curriculumRepository.findByPublicIdAndTenantId(UUID.fromString(curriculumPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Curriculum not found: " + curriculumPublicId));
+		classroom.assignCurriculum(curriculum.getId());
 		return classroomRepository.save(classroom);
 	}
 

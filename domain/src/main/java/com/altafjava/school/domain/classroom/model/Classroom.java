@@ -42,6 +42,11 @@ public class Classroom extends SoftDeletableEntity {
 	@Column(name = "class_teacher_id")
 	private Long classTeacherId;
 
+	// FK to curricula.id — nullable; a classroom without one grades against the tenant's default
+	// grading scale (see GradingScaleService.resolveEffectiveThresholds).
+	@Column(name = "curriculum_id")
+	private Long curriculumId;
+
 	public static Classroom create(String classCode, String grade, String section,
 			Long academicYearId, String academicYearName, Long classTeacherId) {
 		return Classroom.builder()
@@ -61,5 +66,9 @@ public class Classroom extends SoftDeletableEntity {
 	public void reassignAcademicYear(Long academicYearId, String academicYearName) {
 		this.academicYearId = academicYearId;
 		this.academicYear = academicYearName;
+	}
+
+	public void assignCurriculum(Long curriculumId) {
+		this.curriculumId = curriculumId;
 	}
 }

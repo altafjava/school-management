@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,10 +22,10 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
 import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
+import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
-import com.altafjava.school.domain.grade.model.GradingScale;
 import com.altafjava.school.domain.grade.repository.GradeRepository;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 
@@ -93,10 +94,13 @@ class GradeServiceTest {
 	@Test
 	void record_withValidReferences_computesLetterGradeFromDefaultScale() {
 		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100), null);
+		List<GradingScaleThreshold> thresholds = List.of(
+				GradingScaleThreshold.create(1L, "A", new BigDecimal("90"), new BigDecimal("4.0")),
+				GradingScaleThreshold.create(1L, "F", BigDecimal.ZERO, BigDecimal.ZERO));
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(exam));
 		when(gradeRepository.existsByStudentIdAndExamIdAndTenantId(1L, 2L, 1L)).thenReturn(false);
-		when(gradingScaleService.getScale()).thenReturn(GradingScale.defaultScale());
+		when(gradingScaleService.resolveEffectiveThresholds(10L)).thenReturn(thresholds);
 		when(gradeRepository.save(any(Grade.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		Grade grade = assertDoesNotThrow(

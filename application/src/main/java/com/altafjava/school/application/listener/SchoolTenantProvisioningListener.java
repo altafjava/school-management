@@ -1,5 +1,6 @@
 package com.altafjava.school.application.listener;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -18,6 +19,10 @@ import com.altafjava.platform.domain.notification.model.NotificationType;
 import com.altafjava.platform.domain.notification.repository.NotificationTemplateRepository;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
+import com.altafjava.school.domain.curriculum.model.GradingScale;
+import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
+import com.altafjava.school.domain.curriculum.repository.GradingScaleRepository;
+import com.altafjava.school.domain.curriculum.repository.GradingScaleThresholdRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.core.JacksonException;
@@ -59,10 +64,25 @@ public class SchoolTenantProvisioningListener {
 			new TemplateSeed(NotificationType.SUBMISSION_GRADED, "Submission Graded: {{assignmentTitle}}",
 					"Dear student,\n\nYour submission for \"{{assignmentTitle}}\" has been graded. You received "
 							+ "{{marksObtained}} marks.\n\nFeedback: {{feedback}}\n\nThank you.",
-					List.of("assignmentTitle", "marksObtained", "feedback")));
+					List.of("assignmentTitle", "marksObtained", "feedback")),
+			new TemplateSeed(NotificationType.LEAVE_REQUESTED, "Leave Request: {{teacherName}}",
+					"{{teacherName}} requested {{daysRequested}} day(s) of {{leaveTypeName}} leave, from "
+							+ "{{startDate}} to {{endDate}}. Please review and approve or reject this request.",
+					List.of("teacherName", "leaveTypeName", "startDate", "endDate", "daysRequested")),
+			new TemplateSeed(NotificationType.LEAVE_APPROVED, "Leave Request Approved",
+					"Dear teacher,\n\nYour leave request from {{startDate}} to {{endDate}} "
+							+ "({{daysRequested}} day(s)) has been approved.\n\nThank you.",
+					List.of("startDate", "endDate", "daysRequested")),
+			new TemplateSeed(NotificationType.LEAVE_REJECTED, "Leave Request Rejected",
+					"Dear teacher,\n\nYour leave request from {{startDate}} to {{endDate}} "
+							+ "({{daysRequested}} day(s)) has been rejected.\n\nReason: {{rejectionReason}}\n\n"
+							+ "Please contact the school office if you have any questions.",
+					List.of("startDate", "endDate", "daysRequested", "rejectionReason")));
 
 	private final AcademicYearRepository academicYearRepository;
 	private final NotificationTemplateRepository notificationTemplateRepository;
+	private final GradingScaleRepository gradingScaleRepository;
+	private final GradingScaleThresholdRepository gradingScaleThresholdRepository;
 	private final ObjectMapper objectMapper;
 
 	@Async("platformTaskExecutor")
@@ -75,6 +95,7 @@ public class SchoolTenantProvisioningListener {
 		TenantContext.runAsTenant(snapshot, () -> {
 			seedDefaultAcademicYear(event.tenantId());
 			seedDefaultNotificationTemplates(event.tenantId());
+			seedDefaultGradingScale(event.tenantId());
 		});
 		log.info("action=school-tenant-provisioning-complete tenantId={}", event.tenantId());
 	}
@@ -96,6 +117,24 @@ public class SchoolTenantProvisioningListener {
 				true);
 		academicYearRepository.save(academicYear);
 		log.info("action=seed-academic-year-created tenantId={} name={}", tenantId, name);
+	}
+
+	private static final List<ThresholdSeed> DEFAULT_GRADING_SCALE_THRESHOLDS = List.of(
+			new ThresholdSeed("A", new BigDecimal("90"), new BigDecimal("4.0")),
+			new ThresholdSeed("B", new BigDecimal("80"), new BigDecimal("3.0")),
+			new ThresholdSeed("C", new BigDecimal("70"), new BigDecimal("2.0")),
+			new ThresholdSeed("D", new BigDecimal("60"), new BigDecimal("1.0")),
+			new ThresholdSeed("F", BigDecimal.ZERO, BigDecimal.ZERO));
+
+	private void seedDefaultGradingScale(Long tenantId) {
+		if (gradingScaleRepository.findByIsDefaultTrueAndTenantId(tenantId).isPresent()) {
+			log.info("action=seed-grading-scale-skipped tenantId={} reason=already-exists", tenantId);
+			return;
+		}
+		GradingScale scale = gradingScaleRepository.save(GradingScale.create("Default", true));
+		DEFAULT_GRADING_SCALE_THRESHOLDS.forEach(seed -> gradingScaleThresholdRepository.save(
+				GradingScaleThreshold.create(scale.getId(), seed.letter(), seed.minPercentage(), seed.points())));
+		log.info("action=seed-grading-scale-created tenantId={}", tenantId);
 	}
 
 	private void seedDefaultNotificationTemplates(Long tenantId) {
@@ -131,5 +170,8 @@ public class SchoolTenantProvisioningListener {
 	}
 
 	private record TemplateSeed(NotificationType type, String subject, String body, List<String> variableNames) {
+	}
+
+	private record ThresholdSeed(String letter, BigDecimal minPercentage, BigDecimal points) {
 	}
 }

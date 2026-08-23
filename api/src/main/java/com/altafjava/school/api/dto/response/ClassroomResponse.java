@@ -6,5 +6,6 @@ public record ClassroomResponse(
 		String grade,
 		String section,
 		String academicYear,
-		Long classTeacherId) {
+		Long classTeacherId,
+		Long curriculumId) {
 }

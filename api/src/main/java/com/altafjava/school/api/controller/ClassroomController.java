@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.dto.request.AssignClassroomCurriculumRequest;
 import com.altafjava.school.api.dto.request.CreateClassroomRequest;
 import com.altafjava.school.api.dto.request.EnrollStudentInClassroomRequest;
 import com.altafjava.school.api.dto.request.MoveClassroomAcademicYearRequest;
@@ -94,6 +95,13 @@ public class ClassroomController {
 			@Valid @RequestBody MoveClassroomAcademicYearRequest request) {
 		return classroomMapper.toResponse(
 				classroomService.moveToAcademicYear(publicId, request.academicYearPublicId()));
+	}
+
+	@PatchMapping("/{publicId}/curriculum")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public ClassroomResponse assignCurriculum(@PathVariable String publicId,
+			@Valid @RequestBody AssignClassroomCurriculumRequest request) {
+		return classroomMapper.toResponse(classroomService.assignCurriculum(publicId, request.curriculumPublicId()));
 	}
 
 	@GetMapping("/{publicId}/timetable")
