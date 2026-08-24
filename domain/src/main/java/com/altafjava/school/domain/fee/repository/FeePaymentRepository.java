@@ -1,6 +1,7 @@
 package com.altafjava.school.domain.fee.repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,4 +31,11 @@ public interface FeePaymentRepository extends JpaRepository<FeePayment, Long> {
 	BigDecimal sumPaidAmountByTenantId(@Param("tenantId") Long tenantId);
 
 	long countByTenantId(Long tenantId);
+
+	// Monthly fee-collection trend (see FeeCollectionTrendDataProvider) — summed at the DB per
+	// period rather than pulled row-by-row, same reasoning as sumPaidAmountByTenantId above.
+	@Query("SELECT COALESCE(SUM(fp.paidAmount), 0) FROM FeePayment fp WHERE fp.tenantId = :tenantId "
+			+ "AND fp.paidAt BETWEEN :from AND :to")
+	BigDecimal sumPaidAmountByTenantIdAndPaidAtBetween(@Param("tenantId") Long tenantId,
+			@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import com.altafjava.platform.application.alert.AlertRuleService;
 import com.altafjava.platform.application.event.events.TenantCreatedEvent;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.tenant.TenantContext;
@@ -21,6 +22,12 @@ import com.altafjava.platform.domain.report.model.ReportDefinition;
 import com.altafjava.platform.domain.report.model.ReportOutputFormat;
 import com.altafjava.platform.domain.report.model.ReportType;
 import com.altafjava.platform.domain.report.repository.ReportDefinitionRepository;
+import com.altafjava.school.application.alert.AttendanceNotMarkedRuleEvaluator;
+import com.altafjava.school.application.alert.ExamScheduleReminderRuleEvaluator;
+import com.altafjava.school.application.alert.FeeDefaultRiskRuleEvaluator;
+import com.altafjava.school.application.alert.FeePaymentReminderRuleEvaluator;
+import com.altafjava.school.application.alert.LibraryOverdueRuleEvaluator;
+import com.altafjava.school.application.alert.LowAttendanceRuleEvaluator;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
 import com.altafjava.school.domain.curriculum.model.GradingScale;
@@ -100,13 +107,34 @@ public class SchoolTenantProvisioningListener {
 			new DashboardReportSeed("Principal Dashboard", "principalDashboardDataProvider"),
 			new DashboardReportSeed("Finance Dashboard", "financeDashboardDataProvider"),
 			new DashboardReportSeed("HR Dashboard", "hrDashboardDataProvider"),
-			new DashboardReportSeed("Academic Dashboard", "academicDashboardDataProvider"));
+			new DashboardReportSeed("Academic Dashboard", "academicDashboardDataProvider"),
+			new DashboardReportSeed("Principal Dashboard Trend", "attendanceTrendDataProvider"),
+			new DashboardReportSeed("Academic Dashboard Trend", "attendanceTrendDataProvider"),
+			new DashboardReportSeed("Finance Dashboard Trend", "feeCollectionTrendDataProvider"),
+			new DashboardReportSeed("HR Dashboard Trend", "leaveUtilizationTrendDataProvider"));
+
+	// Defaults exactly preserve pre-Phase-4 hardcoded job behavior; a tenant admin can tune or
+	// disable any of these via AlertRuleController without a deploy.
+	private static final List<AlertRuleSeed> ALERT_RULE_SEEDS = List.of(
+			new AlertRuleSeed(LowAttendanceRuleEvaluator.RULE_TYPE, "Low attendance alert",
+					BigDecimal.valueOf(75), NotificationType.LOW_ATTENDANCE_ALERT),
+			new AlertRuleSeed(FeePaymentReminderRuleEvaluator.RULE_TYPE, "Fee payment reminder",
+					null, NotificationType.FEE_DUE),
+			new AlertRuleSeed(FeeDefaultRiskRuleEvaluator.RULE_TYPE, "Fee default risk",
+					BigDecimal.valueOf(1000), NotificationType.FEE_DEFAULT_RISK),
+			new AlertRuleSeed(ExamScheduleReminderRuleEvaluator.RULE_TYPE, "Exam schedule reminder",
+					BigDecimal.valueOf(2), NotificationType.EXAM_SCHEDULED),
+			new AlertRuleSeed(AttendanceNotMarkedRuleEvaluator.RULE_TYPE, "Daily attendance not marked",
+					null, NotificationType.ANNOUNCEMENT),
+			new AlertRuleSeed(LibraryOverdueRuleEvaluator.RULE_TYPE, "Library book overdue",
+					BigDecimal.ZERO, NotificationType.BOOK_OVERDUE));
 
 	private final AcademicYearRepository academicYearRepository;
 	private final NotificationTemplateRepository notificationTemplateRepository;
 	private final GradingScaleRepository gradingScaleRepository;
 	private final GradingScaleThresholdRepository gradingScaleThresholdRepository;
 	private final ReportDefinitionRepository reportDefinitionRepository;
+	private final AlertRuleService alertRuleService;
 	private final ObjectMapper objectMapper;
 
 	@Async("platformTaskExecutor")
@@ -121,6 +149,7 @@ public class SchoolTenantProvisioningListener {
 			seedDefaultNotificationTemplates(event.tenantId());
 			seedDefaultGradingScale(event.tenantId());
 			seedDashboardReportDefinitions(event.tenantId());
+			seedDefaultAlertRules(event.tenantId());
 		});
 		log.info("action=school-tenant-provisioning-complete tenantId={}", event.tenantId());
 	}
@@ -209,6 +238,21 @@ public class SchoolTenantProvisioningListener {
 		log.info("action=seed-notification-template-created tenantId={} type={}", tenantId, seed.type());
 	}
 
+	private void seedDefaultAlertRules(Long tenantId) {
+		ALERT_RULE_SEEDS.forEach(seed -> seedAlertRule(tenantId, seed));
+	}
+
+	private void seedAlertRule(Long tenantId, AlertRuleSeed seed) {
+		if (alertRuleService.exists(tenantId, seed.ruleType())) {
+			log.info("action=seed-alert-rule-skipped tenantId={} ruleType={} reason=already-exists", tenantId,
+					seed.ruleType());
+			return;
+		}
+		alertRuleService.create(tenantId, seed.ruleType(), seed.name(), true, seed.thresholdValue(),
+				seed.notificationType(), null);
+		log.info("action=seed-alert-rule-created tenantId={} ruleType={}", tenantId, seed.ruleType());
+	}
+
 	private String serializeVariableNames(List<String> variableNames) {
 		try {
 			return objectMapper.writeValueAsString(variableNames);
@@ -224,5 +268,9 @@ public class SchoolTenantProvisioningListener {
 	}
 
 	private record DashboardReportSeed(String name, String providerBeanName) {
+	}
+
+	private record AlertRuleSeed(String ruleType, String name, BigDecimal thresholdValue,
+			NotificationType notificationType) {
 	}
 }

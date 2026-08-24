@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.application.organization.OrganizationService;
+import com.altafjava.platform.application.tenant.TenantFilterSwitcher;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
@@ -33,16 +34,15 @@ import com.altafjava.school.domain.student.repository.StudentRepository;
  * <p>
  * Each campus is read by binding {@link TenantContext#callAsTenant} to that campus's snapshot in
  * turn (the platform's own sanctioned "act as tenant X for a bounded scope" API — see its use in
- * {@code AbstractBaseJob} and {@code SchoolTenantProvisioningListener}) and calling the same
- * tenant-scoped repository methods a single-campus request would use. This only produces correct
- * results because the caller of this service is required to hold a system-level (tenant_id=0)
- * token: {@code TenantFilterRequestFilter} only binds Hibernate's session-level {@code
- * tenantFilter} when the resolved request tenant is non-null and non-system. If it were bound to
- * one campus already, nesting {@code callAsTenant} for a different campus would AND two
- * contradictory {@code tenant_id} predicates into the generated SQL and silently return zero rows
- * for every campus but the one the filter is already bound to. {@link OrganizationRollupController}
- * enforces {@code SUPER_ADMIN}, matching platform's own {@code OrganizationController} gating, for
- * exactly this reason.
+ * {@code AbstractBaseJob} and {@code SchoolTenantProvisioningListener}), wrapped in {@link
+ * TenantFilterSwitcher#runWithTenantFilter} so the campus's own tenant id is also what Hibernate's
+ * session-level {@code tenantFilter} enforces for the duration of that campus's queries — {@code
+ * callAsTenant} alone only rebinds the ambient {@code TenantContext} (cache keys, schema routing),
+ * not the Hibernate filter parameter, which {@code TenantFilterRequestFilter} sets once for the
+ * whole request. Without the switcher, a caller whose own request already has the filter bound to
+ * a real tenant (any {@code ORG_ADMIN}, as opposed to a {@code SUPER_ADMIN}/system-level caller
+ * whose request never enables the filter at all) would have every campus's queries silently ANDed
+ * with the caller's own tenant id and return zero rows for every campus but their own.
  */
 @Service
 public class OrganizationRollupService {
@@ -54,17 +54,20 @@ public class OrganizationRollupService {
 	private final AttendanceRepository attendanceRepository;
 	private final FeeStructureRepository feeStructureRepository;
 	private final FeePaymentRepository feePaymentRepository;
+	private final TenantFilterSwitcher tenantFilterSwitcher;
 
 	public OrganizationRollupService(OrganizationService organizationService,
 			StudentRepository studentRepository,
 			AttendanceRepository attendanceRepository,
 			FeeStructureRepository feeStructureRepository,
-			FeePaymentRepository feePaymentRepository) {
+			FeePaymentRepository feePaymentRepository,
+			TenantFilterSwitcher tenantFilterSwitcher) {
 		this.organizationService = organizationService;
 		this.studentRepository = studentRepository;
 		this.attendanceRepository = attendanceRepository;
 		this.feeStructureRepository = feeStructureRepository;
 		this.feePaymentRepository = feePaymentRepository;
+		this.tenantFilterSwitcher = tenantFilterSwitcher;
 	}
 
 	@Transactional(readOnly = true)
@@ -96,8 +99,9 @@ public class OrganizationRollupService {
 		TenantContextSnapshot snapshot = new TenantContextSnapshot(
 				campus.getId(), campus.getPublicId(), campus.getSubdomain(), campus.getType(),
 				campus.getOrganizationId());
-		return TenantContext.<CampusRollup, RuntimeException>callAsTenant(snapshot,
-				() -> computeCampusRollup(campus, periodStart, periodEnd));
+		return tenantFilterSwitcher.runWithTenantFilter(campus.getId(),
+				() -> TenantContext.<CampusRollup, RuntimeException>callAsTenant(snapshot,
+						() -> computeCampusRollup(campus, periodStart, periodEnd)));
 	}
 
 	private CampusRollup computeCampusRollup(Tenant campus, LocalDate periodStart, LocalDate periodEnd) {

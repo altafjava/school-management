@@ -46,12 +46,14 @@ import io.restassured.http.ContentType;
  * is inherently cross-tenant by design).
  *
  * <p>
- * {@code rollupHappyPath_aggregatesBothCampusesCorrectly} is also the regression test for the real
- * hazard documented on {@link com.altafjava.school.application.rollup.OrganizationRollupService}:
- * a SUPER_ADMIN (system-tenant) token must resolve with no Hibernate {@code tenantFilter} bound
- * for the request, or the per-campus {@code TenantContext.callAsTenant} loop would silently return
- * zero rows for every campus but one. Only an E2E test that goes through the real filter chain can
- * catch that regression — the service-layer integration test cannot, since it never engages
+ * The two {@code rollupHappyPath_*} tests are also the regression tests for the real hazard
+ * documented on {@link com.altafjava.school.application.rollup.OrganizationRollupService}: a
+ * SUPER_ADMIN (system-tenant) token resolves with no Hibernate {@code tenantFilter} bound for the
+ * request, but a real tenant user like {@code ORG_ADMIN} does get the filter bound to their home
+ * tenant — without {@code TenantFilterSwitcher} explicitly re-pointing it per campus, the
+ * per-campus {@code TenantContext.callAsTenant} loop would silently return zero rows for every
+ * campus but the caller's own. Only an E2E test that goes through the real filter chain can catch
+ * that regression — the service-layer integration test cannot, since it never engages
  * {@code TenantContextFilter}/{@code TenantFilterRequestFilter}.
  */
 @Import({ TestRedisConfig.class, TestPaymentConfig.class })
@@ -171,6 +173,44 @@ class OrganizationRollupE2ETest extends SchoolIntegrationTestBase {
 				.body("totals.fees.totalDue", comparesEqualTo(1400.00f))
 				.body("totals.fees.totalPaid", comparesEqualTo(800.00f))
 				.body("totals.fees.outstandingBalance", comparesEqualTo(600.00f));
+	}
+
+	@Test
+	void rollupHappyPath_asOrgAdminForTheirOwnOrganization_aggregatesBothCampusesCorrectly() {
+		// Regression test for the Hibernate tenantFilter fix (OrganizationRollupService /
+		// TenantFilterSwitcher): unlike the SUPER_ADMIN token above, an ORG_ADMIN is a real tenant
+		// user — their request DOES get the filter bound to their home tenant (campusA). Without
+		// the fix, campusB's rows would be silently ANDed out and every total below would be wrong.
+		String orgAdminToken = authHelper.tokenForOrgMember(campusA.getId(), 1L, "org-admin@e2e-rollup.test",
+				"ORG_ADMIN", organization.getId());
+
+		given()
+				.header("X-Tenant-ID", campusA.getId())
+				.header("Authorization", "Bearer " + orgAdminToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.get(rollupPath())
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("campuses", hasSize(2))
+				.body("totals.activeStudentCount", equalTo(3))
+				.body("totals.fees.totalDue", comparesEqualTo(1400.00f))
+				.body("totals.fees.totalPaid", comparesEqualTo(800.00f));
+	}
+
+	@Test
+	void rollup_asOrgAdminForADifferentOrganization_returns403() {
+		String orgAdminToken = authHelper.tokenForOrgMember(campusA.getId(), 1L, "org-admin@e2e-rollup.test",
+				"ORG_ADMIN", organization.getId() + 999_999L);
+
+		given()
+				.header("X-Tenant-ID", campusA.getId())
+				.header("Authorization", "Bearer " + orgAdminToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.get(rollupPath())
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
 	}
 
 	@Test
