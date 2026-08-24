@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.altafjava.platform.application.alert.AlertDispatchService;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
@@ -31,13 +32,17 @@ class PrincipalDashboardDataProviderTest {
 	private AttendanceRepository attendanceRepository;
 	@Mock
 	private EventRepository eventRepository;
+	@Mock
+	private AlertDispatchService alertDispatchService;
 
 	private PrincipalDashboardDataProvider provider;
 
 	@BeforeEach
 	void setUp() {
-		provider = new PrincipalDashboardDataProvider(studentRepository, attendanceRepository, eventRepository);
+		provider = new PrincipalDashboardDataProvider(studentRepository, attendanceRepository, eventRepository,
+				alertDispatchService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
+		when(alertDispatchService.evaluate(eq(1L), any())).thenReturn(List.of());
 	}
 
 	@AfterEach
@@ -61,6 +66,7 @@ class PrincipalDashboardDataProviderTest {
 		assertEquals(120L, row.get("activeStudentCount"));
 		assertEquals(0, new BigDecimal("90.00").compareTo((BigDecimal) row.get("attendancePercentageLast30Days")));
 		assertEquals(3L, row.get("upcomingEventCount"));
+		assertEquals(6, ((Map<?, ?>) row.get("activeAlertCounts")).size());
 	}
 
 	@Test

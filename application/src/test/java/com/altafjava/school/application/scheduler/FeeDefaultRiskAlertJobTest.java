@@ -18,20 +18,20 @@ import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.platform.domain.scheduler.model.JobExecutionContext;
 import com.altafjava.platform.domain.scheduler.model.JobExecutionResult;
 import com.altafjava.platform.domain.scheduler.model.TriggerType;
-import com.altafjava.school.application.alert.ExamScheduleReminderRuleEvaluator;
+import com.altafjava.school.application.alert.FeeDefaultRiskRuleEvaluator;
 
-/** The exam-window logic itself is tested in {@code ExamScheduleReminderRuleEvaluatorTest}. */
+/** The threshold-amount logic itself is tested in {@code FeeDefaultRiskRuleEvaluatorTest}. */
 @ExtendWith(MockitoExtension.class)
-class ExamScheduleReminderJobTest {
+class FeeDefaultRiskAlertJobTest {
 
 	@Mock
 	private AlertDispatchService alertDispatchService;
 
-	private ExamScheduleReminderJob job;
+	private FeeDefaultRiskAlertJob job;
 
 	@BeforeEach
 	void setUp() {
-		job = new ExamScheduleReminderJob(alertDispatchService);
+		job = new FeeDefaultRiskAlertJob(alertDispatchService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -41,18 +41,17 @@ class ExamScheduleReminderJobTest {
 	}
 
 	private JobExecutionContext context() {
-		return new JobExecutionContext(UUID.randomUUID(), UUID.randomUUID(), "ExamScheduleReminder", "school",
+		return new JobExecutionContext(UUID.randomUUID(), UUID.randomUUID(), "FeeDefaultRiskAlert", "school",
 				TriggerType.SCHEDULED, null, Instant.now(), null);
 	}
 
 	@Test
-	void execute_delegatesToAlertDispatchServiceForExamScheduleReminderRuleType() {
-		when(alertDispatchService.evaluateAndDispatch(1L, ExamScheduleReminderRuleEvaluator.RULE_TYPE))
-				.thenReturn(1);
+	void execute_delegatesToAlertDispatchServiceForFeeDefaultRiskRuleType() {
+		when(alertDispatchService.evaluateAndDispatch(1L, FeeDefaultRiskRuleEvaluator.RULE_TYPE)).thenReturn(2);
 
 		JobExecutionResult result = job.execute(context());
 
-		verify(alertDispatchService).evaluateAndDispatch(1L, ExamScheduleReminderRuleEvaluator.RULE_TYPE);
-		assertEquals(new JobExecutionResult.Success(Map.of("remindedCount", 1), null), result);
+		verify(alertDispatchService).evaluateAndDispatch(1L, FeeDefaultRiskRuleEvaluator.RULE_TYPE);
+		assertEquals(new JobExecutionResult.Success(Map.of("alertedCount", 2), null), result);
 	}
 }

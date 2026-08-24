@@ -14,17 +14,17 @@ import com.altafjava.school.application.rollup.OrganizationRollupService;
 
 /**
  * Organization-level rollup reporting — aggregates attendance, fees, and enrollment across every
- * campus in a school group (see ROADMAP.md Phase 4). {@code SUPER_ADMIN}-only: {@link
- * OrganizationRollupService}'s cross-campus reads are only correct when the request resolves to
- * the platform's system tenant (no Hibernate {@code tenantFilter} bound for the whole request) —
- * see that class's Javadoc. Matches platform's own {@code OrganizationController} gating; a
- * campus-scoped {@code TENANT_ADMIN}/{@code ORG_ADMIN}-level rollup view is platform work not yet
- * built (no bridge from a tenant-scoped {@code User} to {@code OrganizationMembership} exists
- * today) and is out of scope for this phase.
+ * campus in a school group (see ROADMAP.md Phase 4). {@code SUPER_ADMIN} may read any
+ * organization's rollup; an {@code ORG_ADMIN}/{@code ORG_OWNER}/{@code ORG_VIEWER} may read only
+ * the one organization their platform {@code OrganizationMembership} grants them access to (the
+ * {@code org_id} JWT claim, checked by {@code organizationAccessGuard} against the requested
+ * {@code organizationPublicId} path variable) — see {@link OrganizationRollupService}'s Javadoc
+ * for how per-campus reads stay correctly isolated for either caller.
  */
 @RestController
 @RequestMapping("/api/v1/organizations/{organizationPublicId}/rollup-report")
-@PreAuthorize(Roles.HAS_SUPER_ADMIN)
+@PreAuthorize(Roles.HAS_SUPER_ADMIN
+		+ " or @organizationAccessGuard.canAccessOrganization(authentication, #organizationPublicId)")
 public class OrganizationRollupController {
 
 	private final OrganizationRollupService organizationRollupService;

@@ -118,6 +118,9 @@
     "name" : "AdminAuditLog Management",
     "description" : "APIs for managing AdminAuditLog operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
+    "name" : "Alert Rules",
+    "description" : "Tenant-admin endpoints for configuring automated alert rules (enable/disable, threshold) without a deploy"
+  }, {
     "name" : "AdminAnalytics Management",
     "description" : "APIs for managing AdminAnalytics operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
@@ -1092,31 +1095,26 @@
         } ]
       }
     },
-    "/api/v1/attendance/low-threshold-setting" : {
-      "get" : {
-        "tags" : [ "attendance-alert-settings-controller" ],
-        "operationId" : "get_1",
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/LowAttendanceThresholdResponse"
-                }
-              }
-            }
-          }
-        }
-      },
+    "/api/v1/alert-rules/{id}/threshold" : {
       "put" : {
-        "tags" : [ "attendance-alert-settings-controller" ],
-        "operationId" : "update_1",
+        "tags" : [ "Alert Rules" ],
+        "summary" : "Update an alert rule's threshold",
+        "operationId" : "updateThreshold",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Alert rule public UUID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/UpdateLowAttendanceThresholdRequest"
+                "$ref" : "#/components/schemas/UpdateAlertRuleThresholdRequest"
               }
             }
           },
@@ -1128,12 +1126,57 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/LowAttendanceThresholdResponse"
+                  "$ref" : "#/components/schemas/ApiResponseAlertRuleResponse"
                 }
               }
             }
           }
-        }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/alert-rules/{id}/enabled" : {
+      "put" : {
+        "tags" : [ "Alert Rules" ],
+        "summary" : "Enable or disable an alert rule",
+        "operationId" : "setEnabled",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Alert rule public UUID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetAlertRuleEnabledRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseAlertRuleResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
     "/api/v1/admin/tax/jurisdictions/{id}" : {
@@ -7178,10 +7221,72 @@
         } ]
       }
     },
+    "/api/v1/alert-rules" : {
+      "get" : {
+        "tags" : [ "Alert Rules" ],
+        "summary" : "List the caller's tenant's alert rules",
+        "operationId" : "list_26",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListAlertRuleResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "Alert Rules" ],
+        "summary" : "Create an alert rule for the caller's tenant",
+        "operationId" : "create_17",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateAlertRuleRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Alert rule created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseAlertRuleResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "A rule for this ruleType already exists",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseAlertRuleResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
     "/api/v1/admissions" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "list_26",
+        "operationId" : "list_27",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -8911,7 +9016,7 @@
     "/api/v1/academic-years" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "list_27",
+        "operationId" : "list_28",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -8946,7 +9051,7 @@
       },
       "post" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "create_17",
+        "operationId" : "create_18",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -9252,7 +9357,7 @@
     "/api/v1/vehicles/{publicId}" : {
       "get" : {
         "tags" : [ "vehicle-controller" ],
-        "operationId" : "get_2",
+        "operationId" : "get_1",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10031,7 +10136,7 @@
     "/api/v1/routes/{publicId}" : {
       "get" : {
         "tags" : [ "route-controller" ],
-        "operationId" : "get_3",
+        "operationId" : "get_2",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10117,7 +10222,7 @@
     "/api/v1/leave-types/{publicId}" : {
       "get" : {
         "tags" : [ "leave-type-controller" ],
-        "operationId" : "get_4",
+        "operationId" : "get_3",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10513,7 +10618,7 @@
     "/api/v1/events/{publicId}" : {
       "get" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "get_5",
+        "operationId" : "get_4",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10687,7 +10792,7 @@
     "/api/v1/departments/{publicId}" : {
       "get" : {
         "tags" : [ "department-controller" ],
-        "operationId" : "get_6",
+        "operationId" : "get_5",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10809,7 +10914,7 @@
     "/api/v1/curricula/{publicId}" : {
       "get" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "get_7",
+        "operationId" : "get_6",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11179,7 +11284,7 @@
     "/api/v1/boards/{publicId}" : {
       "get" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "get_8",
+        "operationId" : "get_7",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12236,7 +12341,7 @@
     "/api/v1/timetable-entries/{publicId}" : {
       "get" : {
         "tags" : [ "timetable-controller" ],
-        "operationId" : "get_9",
+        "operationId" : "get_8",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12288,7 +12393,7 @@
     "/api/v1/terms/{publicId}" : {
       "get" : {
         "tags" : [ "term-controller" ],
-        "operationId" : "get_10",
+        "operationId" : "get_9",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12497,7 +12602,7 @@
     "/api/v1/teachers/{publicId}" : {
       "get" : {
         "tags" : [ "teacher-controller" ],
-        "operationId" : "get_11",
+        "operationId" : "get_10",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12688,7 +12793,7 @@
     "/api/v1/subjects/{publicId}" : {
       "get" : {
         "tags" : [ "subject-controller" ],
-        "operationId" : "get_12",
+        "operationId" : "get_11",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12714,7 +12819,7 @@
     "/api/v1/students/{publicId}" : {
       "get" : {
         "tags" : [ "student-controller" ],
-        "operationId" : "get_13",
+        "operationId" : "get_12",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13233,7 +13338,7 @@
     "/api/v1/periods/{publicId}" : {
       "get" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "get_14",
+        "operationId" : "get_13",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13259,7 +13364,7 @@
     "/api/v1/organizations/{organizationPublicId}/rollup-report" : {
       "get" : {
         "tags" : [ "organization-rollup-controller" ],
-        "operationId" : "get_15",
+        "operationId" : "get_14",
         "parameters" : [ {
           "name" : "organizationPublicId",
           "in" : "path",
@@ -13362,6 +13467,39 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiResponseListTenantResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/organizations/me" : {
+      "get" : {
+        "tags" : [ "Organization Management" ],
+        "summary" : "Get the caller's own organization",
+        "description" : "Resolves the organization the caller administers via their OrganizationMembership (the org_id JWT claim). Any authenticated user may call this — 404 if they have no membership.",
+        "operationId" : "getMyOrganization",
+        "responses" : {
+          "200" : {
+            "description" : "Organization found",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseOrganizationResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Caller has no OrganizationMembership",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseOrganizationResponse"
                 }
               }
             }
@@ -13578,7 +13716,7 @@
     "/api/v1/guardians/{publicId}" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "get_16",
+        "operationId" : "get_15",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13641,7 +13779,7 @@
     "/api/v1/grading-scales/{publicId}" : {
       "get" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "get_17",
+        "operationId" : "get_16",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13667,7 +13805,7 @@
     "/api/v1/grades/{publicId}" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "get_18",
+        "operationId" : "get_17",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13782,7 +13920,7 @@
     "/api/v1/fee-structures/{publicId}" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "get_19",
+        "operationId" : "get_18",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13808,7 +13946,7 @@
     "/api/v1/fee-payments/{publicId}" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "get_20",
+        "operationId" : "get_19",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13860,7 +13998,7 @@
     "/api/v1/exams/{publicId}" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "get_21",
+        "operationId" : "get_20",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13949,10 +14087,72 @@
         }
       }
     },
+    "/api/v1/dashboards/principal/trends" : {
+      "get" : {
+        "tags" : [ "dashboard-controller" ],
+        "operationId" : "principalTrends",
+        "parameters" : [ {
+          "name" : "periods",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object",
+                    "additionalProperties" : { }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dashboards/hr" : {
       "get" : {
         "tags" : [ "dashboard-controller" ],
         "operationId" : "hr",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object",
+                    "additionalProperties" : { }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/hr/trends" : {
+      "get" : {
+        "tags" : [ "dashboard-controller" ],
+        "operationId" : "hrTrends",
+        "parameters" : [ {
+          "name" : "periods",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -13993,10 +14193,72 @@
         }
       }
     },
+    "/api/v1/dashboards/finance/trends" : {
+      "get" : {
+        "tags" : [ "dashboard-controller" ],
+        "operationId" : "financeTrends",
+        "parameters" : [ {
+          "name" : "periods",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object",
+                    "additionalProperties" : { }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/dashboards/academic" : {
       "get" : {
         "tags" : [ "dashboard-controller" ],
         "operationId" : "academic",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "object",
+                    "additionalProperties" : { }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboards/academic/trends" : {
+      "get" : {
+        "tags" : [ "dashboard-controller" ],
+        "operationId" : "academicTrends",
+        "parameters" : [ {
+          "name" : "periods",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -14042,7 +14304,7 @@
     "/api/v1/classrooms/{publicId}" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "get_22",
+        "operationId" : "get_21",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14141,7 +14403,7 @@
     "/api/v1/books/{publicId}" : {
       "get" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "get_23",
+        "operationId" : "get_22",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14691,7 +14953,7 @@
     "/api/v1/attendance/{publicId}" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "get_24",
+        "operationId" : "get_23",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14761,7 +15023,7 @@
     "/api/v1/assets/{publicId}" : {
       "get" : {
         "tags" : [ "asset-controller" ],
-        "operationId" : "get_25",
+        "operationId" : "get_24",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14905,7 +15167,7 @@
     "/api/v1/admissions/{publicId}" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "get_26",
+        "operationId" : "get_25",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -16381,7 +16643,7 @@
     "/api/v1/academic-years/{publicId}" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "get_27",
+        "operationId" : "get_26",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -17755,11 +18017,11 @@
             "default" : "",
             "description" : "Public UUID of the membership record"
           },
-          "systemUserId" : {
+          "userId" : {
             "type" : "integer",
             "format" : "int64",
             "default" : "",
-            "description" : "Internal ID of the system user"
+            "description" : "Internal ID of the user"
           },
           "role" : {
             "type" : "string",
@@ -17795,7 +18057,7 @@
         "properties" : {
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
           },
           "channels" : {
             "type" : "array",
@@ -17833,7 +18095,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
           },
           "enabledChannels" : {
             "type" : "array",
@@ -17961,26 +18223,103 @@
           }
         }
       },
-      "UpdateLowAttendanceThresholdRequest" : {
+      "UpdateAlertRuleThresholdRequest" : {
         "type" : "object",
+        "default" : null,
+        "description" : "Request to change an alert rule's threshold value",
         "properties" : {
-          "thresholdPercent" : {
-            "type" : "integer",
-            "format" : "int32",
-            "maximum" : 100,
-            "minimum" : 0
-          }
-        },
-        "required" : [ "thresholdPercent" ]
-      },
-      "LowAttendanceThresholdResponse" : {
-        "type" : "object",
-        "properties" : {
-          "thresholdPercent" : {
-            "type" : "integer",
-            "format" : "int32"
+          "thresholdValue" : {
+            "type" : "number",
+            "default" : "",
+            "description" : "New threshold value",
+            "example" : 80
           }
         }
+      },
+      "AlertRuleResponse" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Alert rule details",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Public UUID of the alert rule"
+          },
+          "ruleType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Consumer-defined rule type"
+          },
+          "name" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Display name"
+          },
+          "enabled" : {
+            "type" : "boolean",
+            "default" : false,
+            "description" : "Whether the rule is active"
+          },
+          "thresholdValue" : {
+            "type" : "number",
+            "default" : "",
+            "description" : "Generic numeric threshold — meaning is evaluator-specific"
+          },
+          "notificationType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Notification type sent when the rule fires",
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
+          },
+          "configJson" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Free-form JSON for anything a single threshold doesn't cover"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "default" : "",
+            "description" : "Timestamp when created"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "default" : "",
+            "description" : "Timestamp when last updated"
+          }
+        }
+      },
+      "ApiResponseAlertRuleResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/AlertRuleResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "SetAlertRuleEnabledRequest" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Request to enable or disable an alert rule",
+        "properties" : {
+          "enabled" : {
+            "type" : "boolean",
+            "default" : false,
+            "description" : "Whether the rule should be active"
+          }
+        },
+        "required" : [ "enabled" ]
       },
       "TaxJurisdictionRequest" : {
         "type" : "object",
@@ -20172,13 +20511,13 @@
       "AddOrganizationMemberRequest" : {
         "type" : "object",
         "default" : null,
-        "description" : "Request to add a system user as a member of an organization",
+        "description" : "Request to add a tenant user as a member of an organization",
         "properties" : {
-          "systemUserId" : {
+          "userId" : {
             "type" : "integer",
             "format" : "int64",
             "default" : "",
-            "description" : "Internal ID of the system user to add",
+            "description" : "Internal ID of the user to add",
             "example" : 42
           },
           "role" : {
@@ -20189,7 +20528,7 @@
             "example" : "ORG_ADMIN"
           }
         },
-        "required" : [ "role", "systemUserId" ]
+        "required" : [ "role", "userId" ]
       },
       "SendNotificationRequest" : {
         "type" : "object",
@@ -20206,7 +20545,7 @@
             "type" : "string",
             "default" : "",
             "description" : "Notification type",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
           },
           "title" : {
             "type" : "string",
@@ -20289,7 +20628,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
           },
           "title" : {
             "type" : "string"
@@ -20339,7 +20678,7 @@
         "properties" : {
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
           },
           "subjectTemplate" : {
             "type" : "string",
@@ -20392,7 +20731,7 @@
           },
           "type" : {
             "type" : "string",
-            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED" ]
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
           },
           "subjectTemplate" : {
             "type" : "string"
@@ -22894,6 +23233,50 @@
           }
         }
       },
+      "CreateAlertRuleRequest" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Request to create an alert rule for the caller's tenant",
+        "properties" : {
+          "ruleType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Consumer-defined rule type, e.g. LOW_ATTENDANCE",
+            "example" : "LOW_ATTENDANCE",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Display name",
+            "example" : "Low attendance alert",
+            "minLength" : 1
+          },
+          "enabled" : {
+            "type" : "boolean",
+            "default" : false,
+            "description" : "Whether the rule is active"
+          },
+          "thresholdValue" : {
+            "type" : "number",
+            "default" : "",
+            "description" : "Generic numeric threshold — meaning is evaluator-specific (e.g. a percentage or a day count)",
+            "example" : 75
+          },
+          "notificationType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Notification type sent when the rule fires",
+            "enum" : [ "GRADE_PUBLISHED", "ATTENDANCE_MARKED", "FEE_DUE", "FEE_OVERDUE", "EXAM_SCHEDULED", "ANNOUNCEMENT", "SYSTEM_ALERT", "ACCOUNT_SUSPENDED", "SUBSCRIPTION_EXPIRING", "ASSIGNMENT_POSTED", "SUBMISSION_GRADED", "LOW_ATTENDANCE_ALERT", "APPLICATION_STATUS_CHANGED", "MERIT_LIST_PUBLISHED", "PAYMENT_RECEIVED", "GATEWAY_PAYMENT_FAILED", "ACCOUNT_LINKED", "LEAVE_REQUESTED", "LEAVE_APPROVED", "LEAVE_REJECTED", "DISCIPLINE_INCIDENT_RECORDED", "BOOK_OVERDUE", "EVENT_REGISTRATION_CONFIRMED", "FEE_DEFAULT_RISK" ]
+          },
+          "configJson" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Free-form JSON for anything a single threshold doesn't cover"
+          }
+        },
+        "required" : [ "enabled", "name", "notificationType", "ruleType" ]
+      },
       "SubmitAdmissionRequest" : {
         "type" : "object",
         "properties" : {
@@ -24885,13 +25268,19 @@
       "PageVehicleResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -24899,15 +25288,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -24931,22 +25314,22 @@
       "PageableObject" : {
         "type" : "object",
         "properties" : {
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "paged" : {
-            "type" : "boolean"
-          },
           "unpaged" : {
             "type" : "boolean"
+          },
+          "pageNumber" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "pageSize" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "pageNumber" : {
-            "type" : "integer",
-            "format" : "int32"
+          "paged" : {
+            "type" : "boolean"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "offset" : {
             "type" : "integer",
@@ -24957,10 +25340,10 @@
       "SortObject" : {
         "type" : "object",
         "properties" : {
-          "sorted" : {
+          "unsorted" : {
             "type" : "boolean"
           },
-          "unsorted" : {
+          "sorted" : {
             "type" : "boolean"
           },
           "empty" : {
@@ -25248,13 +25631,19 @@
       "PageTransportAssignmentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25262,15 +25651,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25294,13 +25677,19 @@
       "PageTimetableEntryResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25308,15 +25697,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25340,13 +25723,19 @@
       "PageTermResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25354,15 +25743,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25439,13 +25822,19 @@
       "PageTeacherResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25453,15 +25842,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25535,13 +25918,19 @@
       "PageSubjectResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25549,15 +25938,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25581,13 +25964,19 @@
       "PageStudentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25595,15 +25984,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25627,13 +26010,19 @@
       "PageReportCardResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25641,15 +26030,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25673,13 +26056,19 @@
       "PageGradeResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25687,15 +26076,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25755,13 +26138,19 @@
       "PageAttendanceResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25769,15 +26158,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25858,13 +26241,19 @@
       "PageRouteResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25872,15 +26261,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -25942,13 +26325,19 @@
       "PageReportDefinitionResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -25956,15 +26345,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26005,13 +26388,19 @@
       "PageReportExecutionResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26019,15 +26408,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26234,13 +26617,19 @@
       "PagePeriodResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26248,15 +26637,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26503,13 +26886,19 @@
       "PageNotificationTemplateResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26517,15 +26906,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26578,13 +26961,19 @@
       "PageLessonResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26592,15 +26981,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26624,13 +27007,19 @@
       "PageLeaveTypeResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26638,15 +27027,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26670,13 +27053,19 @@
       "PageLeaveRequestResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26684,15 +27073,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26753,13 +27136,19 @@
       "PageGuardianResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26767,15 +27156,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26799,13 +27182,19 @@
       "PageGradingScaleResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26813,15 +27202,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26932,13 +27315,19 @@
       "PageFeeStructureResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26946,15 +27335,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -26978,13 +27361,19 @@
       "PageFeeAssignmentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -26992,15 +27381,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27024,13 +27407,19 @@
       "PageFeePaymentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27038,15 +27427,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27070,13 +27453,19 @@
       "PageExamResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27084,15 +27473,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27116,13 +27499,19 @@
       "PageEventResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27130,15 +27519,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27162,13 +27545,19 @@
       "PageEventRegistrationResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27176,15 +27565,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27208,13 +27591,19 @@
       "PageDisciplineIncidentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27222,15 +27611,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27254,13 +27637,19 @@
       "PageDepartmentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27268,15 +27657,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27300,13 +27683,19 @@
       "PageCurriculumResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27314,15 +27703,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27402,13 +27785,19 @@
       "PageClassroomResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27416,15 +27805,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27448,13 +27831,19 @@
       "PageCirculationResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27462,15 +27851,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27494,13 +27877,19 @@
       "PageBookResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27508,15 +27897,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -27540,13 +27923,19 @@
       "PageBoardResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -27554,15 +27943,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -28087,13 +28470,19 @@
       "PageSubmissionResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -28101,15 +28490,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -28133,13 +28516,19 @@
       "PageAssignmentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -28147,15 +28536,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -28179,13 +28562,19 @@
       "PageAssetResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -28193,15 +28582,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -28225,13 +28608,19 @@
       "PageAssetAssignmentResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -28239,15 +28628,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -28413,16 +28796,42 @@
           }
         }
       },
+      "ApiResponseListAlertRuleResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AlertRuleResponse"
+            }
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
       "PageAdmissionResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -28430,15 +28839,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -28511,13 +28914,19 @@
       "PageAdminUsageMetricResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -28525,15 +28934,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -29637,13 +30040,19 @@
       "PageCriticalErrorResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -29651,15 +30060,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -29700,13 +30103,19 @@
       "PageSystemAuditLogResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -29714,15 +30123,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",
@@ -29925,13 +30328,19 @@
       "PageAcademicYearResponse" : {
         "type" : "object",
         "properties" : {
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "first" : {
             "type" : "boolean"
@@ -29939,15 +30348,9 @@
           "last" : {
             "type" : "boolean"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
           },
           "size" : {
             "type" : "integer",

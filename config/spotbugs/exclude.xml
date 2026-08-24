@@ -80,4 +80,16 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on FeeDefaultRiskRuleEvaluator's 3-arg constructor: flags storing the
+      injected UserRepository (a platform interface, same type TenantAdminNotifier already
+      constructor-injects above) into a field. Same standard constructor-injection pattern,
+      investigated 2026-08-24: no mutable state leak, reference never handed back to a caller —
+      consistent detector noise, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.application.alert.FeeDefaultRiskRuleEvaluator"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>
