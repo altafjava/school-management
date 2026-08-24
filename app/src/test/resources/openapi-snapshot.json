@@ -37,6 +37,9 @@
     "name" : "AdminBilling Management",
     "description" : "APIs for managing AdminBilling operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
+    "name" : "Storage Regions (Admin)",
+    "description" : "Platform-wide region-aware file storage routing"
+  }, {
     "name" : "Email Providers (Tenant)",
     "description" : "Per-tenant email provider override"
   }, {
@@ -199,6 +202,9 @@
     "name" : "Tenant Security Settings",
     "description" : "Endpoints for managing tenant-specific security configurations (e.g., password policies, session timeouts)"
   }, {
+    "name" : "SCIM Tokens (Tenant)",
+    "description" : "Per-tenant SCIM 2.0 provisioning bearer tokens"
+  }, {
     "name" : "Notifications",
     "description" : "User notification management"
   }, {
@@ -233,6 +239,236 @@
     "description" : "APIs for managing AdminPrivacy operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   } ],
   "paths" : {
+    "/scim/v2/Users/{id}" : {
+      "get" : {
+        "tags" : [ "scim-user-controller" ],
+        "operationId" : "get",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimUserResource"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "scim-user-controller" ],
+        "operationId" : "replace",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScimUserResource"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimUserResource"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "scim-user-controller" ],
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "scim-user-controller" ],
+        "operationId" : "patch",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScimPatchRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimUserResource"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Groups/{id}" : {
+      "get" : {
+        "tags" : [ "scim-group-controller" ],
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimGroupResource"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "scim-group-controller" ],
+        "operationId" : "replace_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScimGroupResource"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimGroupResource"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "scim-group-controller" ],
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "scim-group-controller" ],
+        "operationId" : "patch_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScimPatchRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimGroupResource"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/{id}/role" : {
       "put" : {
         "tags" : [ "User Management" ],
@@ -940,7 +1176,7 @@
     "/api/v1/guardians/self-registration-settings" : {
       "get" : {
         "tags" : [ "guardian-registration-settings-controller" ],
-        "operationId" : "get",
+        "operationId" : "get_2",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -1232,6 +1468,77 @@
             "description" : "OK"
           }
         }
+      }
+    },
+    "/api/v1/admin/storage-regions/{region}" : {
+      "put" : {
+        "tags" : [ "Storage Regions (Admin)" ],
+        "summary" : "Upsert Storage Region Config",
+        "description" : "Provisions or updates the bucket/region routing for one data-residency region.",
+        "operationId" : "upsertStorageRegionConfig",
+        "parameters" : [ {
+          "name" : "region",
+          "in" : "path",
+          "description" : "Data residency region",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertStorageRegionConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "Storage Regions (Admin)" ],
+        "summary" : "Delete Storage Region Config",
+        "description" : "De-provisions a region — tenants assigned to it fall back to being rejected on re-assignment until it's re-provisioned; already-assigned tenants' new uploads fall through to the platform default bucket.",
+        "operationId" : "deleteStorageRegionConfig",
+        "parameters" : [ {
+          "name" : "region",
+          "in" : "path",
+          "description" : "Data residency region",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
     "/api/v1/admin/scheduler/jobs/{jobName}" : {
@@ -1617,6 +1924,139 @@
         } ]
       }
     },
+    "/scim/v2/Users" : {
+      "get" : {
+        "tags" : [ "scim-user-controller" ],
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "filter",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "startIndex",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 1
+          }
+        }, {
+          "name" : "count",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimListResponseScimUserResource"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "scim-user-controller" ],
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScimUserResource"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimUserResource"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Groups" : {
+      "get" : {
+        "tags" : [ "scim-group-controller" ],
+        "operationId" : "list_1",
+        "parameters" : [ {
+          "name" : "startIndex",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 1
+          }
+        }, {
+          "name" : "count",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimListResponseScimGroupResource"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "scim-group-controller" ],
+        "operationId" : "create_1",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ScimGroupResource"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimGroupResource"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/webhooks/stripe" : {
       "post" : {
         "tags" : [ "Webhook Management" ],
@@ -1736,7 +2176,7 @@
     "/api/v1/vehicles" : {
       "get" : {
         "tags" : [ "vehicle-controller" ],
-        "operationId" : "list",
+        "operationId" : "list_2",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -1771,7 +2211,7 @@
       },
       "post" : {
         "tags" : [ "vehicle-controller" ],
-        "operationId" : "create",
+        "operationId" : "create_2",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2163,7 +2603,7 @@
     "/api/v1/timetable-entries" : {
       "get" : {
         "tags" : [ "timetable-controller" ],
-        "operationId" : "list_1",
+        "operationId" : "list_3",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -2226,7 +2666,7 @@
     "/api/v1/terms" : {
       "get" : {
         "tags" : [ "term-controller" ],
-        "operationId" : "list_2",
+        "operationId" : "list_4",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -2261,7 +2701,7 @@
       },
       "post" : {
         "tags" : [ "term-controller" ],
-        "operationId" : "create_1",
+        "operationId" : "create_3",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2442,10 +2882,125 @@
         }
       }
     },
+    "/api/v1/tenant-settings/scim-tokens" : {
+      "get" : {
+        "tags" : [ "SCIM Tokens (Tenant)" ],
+        "summary" : "List SCIM Tokens",
+        "description" : "Lists the calling tenant's own SCIM tokens — prefix only, never the raw value.",
+        "operationId" : "listScimTokens",
+        "responses" : {
+          "200" : {
+            "description" : "Tokens retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "SCIM Tokens (Tenant)" ],
+        "summary" : "Issue SCIM Token",
+        "description" : "Issues a new SCIM bearer token for the calling tenant. The raw token is returned exactly once, in this response, and is never recoverable afterward.",
+        "operationId" : "issueScimToken",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IssueScimTokenRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Token issued successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/scim-tokens/{id}/rotate" : {
+      "post" : {
+        "tags" : [ "SCIM Tokens (Tenant)" ],
+        "summary" : "Rotate SCIM Token",
+        "description" : "Replaces a token's secret in place (same id, new raw value) — the old raw value stops working immediately. Returned exactly once.",
+        "operationId" : "rotateScimToken",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Token public id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Token rotated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No token exists with the given id",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseIssuedScimTokenResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/teachers" : {
       "get" : {
         "tags" : [ "teacher-controller" ],
-        "operationId" : "list_3",
+        "operationId" : "list_5",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -2920,7 +3475,7 @@
     "/api/v1/subjects" : {
       "get" : {
         "tags" : [ "subject-controller" ],
-        "operationId" : "list_4",
+        "operationId" : "list_6",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -2955,7 +3510,7 @@
       },
       "post" : {
         "tags" : [ "subject-controller" ],
-        "operationId" : "create_2",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -2983,7 +3538,7 @@
     "/api/v1/students" : {
       "get" : {
         "tags" : [ "student-controller" ],
-        "operationId" : "list_5",
+        "operationId" : "list_7",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3222,7 +3777,7 @@
     "/api/v1/routes" : {
       "get" : {
         "tags" : [ "route-controller" ],
-        "operationId" : "list_6",
+        "operationId" : "list_8",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3257,7 +3812,7 @@
       },
       "post" : {
         "tags" : [ "route-controller" ],
-        "operationId" : "create_3",
+        "operationId" : "create_5",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -3654,7 +4209,7 @@
     "/api/v1/periods" : {
       "get" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "list_7",
+        "operationId" : "list_9",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3689,7 +4244,7 @@
       },
       "post" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "create_4",
+        "operationId" : "create_6",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4131,7 +4686,7 @@
     "/api/v1/leave-types" : {
       "get" : {
         "tags" : [ "leave-type-controller" ],
-        "operationId" : "list_8",
+        "operationId" : "list_10",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4166,7 +4721,7 @@
       },
       "post" : {
         "tags" : [ "leave-type-controller" ],
-        "operationId" : "create_5",
+        "operationId" : "create_7",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4194,7 +4749,7 @@
     "/api/v1/leave-requests" : {
       "get" : {
         "tags" : [ "leave-request-controller" ],
-        "operationId" : "list_9",
+        "operationId" : "list_11",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4257,7 +4812,7 @@
     "/api/v1/guardians" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "list_10",
+        "operationId" : "list_12",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4292,7 +4847,7 @@
       },
       "post" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "create_6",
+        "operationId" : "create_8",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4384,7 +4939,7 @@
     "/api/v1/grading-scales" : {
       "get" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "list_11",
+        "operationId" : "list_13",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4419,7 +4974,7 @@
       },
       "post" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "create_7",
+        "operationId" : "create_9",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4447,7 +5002,7 @@
     "/api/v1/grades" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "list_12",
+        "operationId" : "list_14",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4567,7 +5122,7 @@
     "/api/v1/fee-structures" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "list_13",
+        "operationId" : "list_15",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4602,7 +5157,7 @@
       },
       "post" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "create_8",
+        "operationId" : "create_10",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4708,7 +5263,7 @@
     "/api/v1/fee-payments" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "list_14",
+        "operationId" : "list_16",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4878,7 +5433,7 @@
     "/api/v1/exams" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "list_15",
+        "operationId" : "list_17",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4941,7 +5496,7 @@
     "/api/v1/events" : {
       "get" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "list_16",
+        "operationId" : "list_18",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4976,7 +5531,7 @@
       },
       "post" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "create_9",
+        "operationId" : "create_11",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5213,7 +5768,7 @@
     "/api/v1/departments" : {
       "get" : {
         "tags" : [ "department-controller" ],
-        "operationId" : "list_17",
+        "operationId" : "list_19",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5248,7 +5803,7 @@
       },
       "post" : {
         "tags" : [ "department-controller" ],
-        "operationId" : "create_10",
+        "operationId" : "create_12",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5276,7 +5831,7 @@
     "/api/v1/curricula" : {
       "get" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "list_18",
+        "operationId" : "list_20",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5311,7 +5866,7 @@
       },
       "post" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "create_11",
+        "operationId" : "create_13",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5339,7 +5894,7 @@
     "/api/v1/classrooms" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "list_19",
+        "operationId" : "list_21",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5374,7 +5929,7 @@
       },
       "post" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "create_12",
+        "operationId" : "create_14",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5508,7 +6063,7 @@
     "/api/v1/books" : {
       "get" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "list_20",
+        "operationId" : "list_22",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5543,7 +6098,7 @@
       },
       "post" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "create_13",
+        "operationId" : "create_15",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5634,7 +6189,7 @@
     "/api/v1/boards" : {
       "get" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "list_21",
+        "operationId" : "list_23",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5669,7 +6224,7 @@
       },
       "post" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "create_14",
+        "operationId" : "create_16",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6744,7 +7299,7 @@
     "/api/v1/attendance" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "list_22",
+        "operationId" : "list_24",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -6807,7 +7362,7 @@
     "/api/v1/assignments" : {
       "post" : {
         "tags" : [ "assignment-controller" ],
-        "operationId" : "create_15",
+        "operationId" : "create_17",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6835,7 +7390,7 @@
     "/api/v1/assignments/{assignmentPublicId}/submissions" : {
       "get" : {
         "tags" : [ "submission-controller" ],
-        "operationId" : "list_23",
+        "operationId" : "list_25",
         "parameters" : [ {
           "name" : "assignmentPublicId",
           "in" : "path",
@@ -6913,7 +7468,7 @@
     "/api/v1/assets" : {
       "get" : {
         "tags" : [ "asset-controller" ],
-        "operationId" : "list_24",
+        "operationId" : "list_26",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -6948,7 +7503,7 @@
       },
       "post" : {
         "tags" : [ "asset-controller" ],
-        "operationId" : "create_16",
+        "operationId" : "create_18",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6976,7 +7531,7 @@
     "/api/v1/assets/{assetPublicId}/assignments" : {
       "get" : {
         "tags" : [ "asset-assignment-controller" ],
-        "operationId" : "list_25",
+        "operationId" : "list_27",
         "parameters" : [ {
           "name" : "assetPublicId",
           "in" : "path",
@@ -7225,7 +7780,7 @@
       "get" : {
         "tags" : [ "Alert Rules" ],
         "summary" : "List the caller's tenant's alert rules",
-        "operationId" : "list_26",
+        "operationId" : "list_28",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -7245,7 +7800,7 @@
       "post" : {
         "tags" : [ "Alert Rules" ],
         "summary" : "Create an alert rule for the caller's tenant",
-        "operationId" : "create_17",
+        "operationId" : "create_19",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7286,7 +7841,7 @@
     "/api/v1/admissions" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "list_27",
+        "operationId" : "list_29",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -9016,7 +9571,7 @@
     "/api/v1/academic-years" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "list_28",
+        "operationId" : "list_30",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -9051,7 +9606,7 @@
       },
       "post" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "create_18",
+        "operationId" : "create_20",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -9357,7 +9912,7 @@
     "/api/v1/vehicles/{publicId}" : {
       "get" : {
         "tags" : [ "vehicle-controller" ],
-        "operationId" : "get_1",
+        "operationId" : "get_3",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10136,7 +10691,7 @@
     "/api/v1/routes/{publicId}" : {
       "get" : {
         "tags" : [ "route-controller" ],
-        "operationId" : "get_2",
+        "operationId" : "get_4",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10222,7 +10777,7 @@
     "/api/v1/leave-types/{publicId}" : {
       "get" : {
         "tags" : [ "leave-type-controller" ],
-        "operationId" : "get_3",
+        "operationId" : "get_5",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10618,7 +11173,7 @@
     "/api/v1/events/{publicId}" : {
       "get" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "get_4",
+        "operationId" : "get_6",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10792,7 +11347,7 @@
     "/api/v1/departments/{publicId}" : {
       "get" : {
         "tags" : [ "department-controller" ],
-        "operationId" : "get_5",
+        "operationId" : "get_7",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10914,7 +11469,7 @@
     "/api/v1/curricula/{publicId}" : {
       "get" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "get_6",
+        "operationId" : "get_8",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11284,7 +11839,7 @@
     "/api/v1/boards/{publicId}" : {
       "get" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "get_7",
+        "operationId" : "get_9",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12123,6 +12678,66 @@
         } ]
       }
     },
+    "/scim/v2/ServiceProviderConfig" : {
+      "get" : {
+        "tags" : [ "scim-service-provider-config-controller" ],
+        "operationId" : "serviceProviderConfig",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ScimServiceProviderConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/Schemas" : {
+      "get" : {
+        "tags" : [ "scim-service-provider-config-controller" ],
+        "operationId" : "schemas",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScimSchema"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim/v2/ResourceTypes" : {
+      "get" : {
+        "tags" : [ "scim-service-provider-config-controller" ],
+        "operationId" : "resourceTypes",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ScimResourceType"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me/sessions" : {
       "get" : {
         "tags" : [ "Session Management" ],
@@ -12341,7 +12956,7 @@
     "/api/v1/timetable-entries/{publicId}" : {
       "get" : {
         "tags" : [ "timetable-controller" ],
-        "operationId" : "get_8",
+        "operationId" : "get_10",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12393,7 +13008,7 @@
     "/api/v1/terms/{publicId}" : {
       "get" : {
         "tags" : [ "term-controller" ],
-        "operationId" : "get_9",
+        "operationId" : "get_11",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12409,6 +13024,24 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/TermResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tenants/regions/available" : {
+      "get" : {
+        "tags" : [ "tenant-storage-region-controller" ],
+        "operationId" : "getAvailableRegions",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListDataResidencyRegion"
                 }
               }
             }
@@ -12602,7 +13235,7 @@
     "/api/v1/teachers/{publicId}" : {
       "get" : {
         "tags" : [ "teacher-controller" ],
-        "operationId" : "get_10",
+        "operationId" : "get_12",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12793,7 +13426,7 @@
     "/api/v1/subjects/{publicId}" : {
       "get" : {
         "tags" : [ "subject-controller" ],
-        "operationId" : "get_11",
+        "operationId" : "get_13",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12819,7 +13452,7 @@
     "/api/v1/students/{publicId}" : {
       "get" : {
         "tags" : [ "student-controller" ],
-        "operationId" : "get_12",
+        "operationId" : "get_14",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13338,7 +13971,7 @@
     "/api/v1/periods/{publicId}" : {
       "get" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "get_13",
+        "operationId" : "get_15",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13364,7 +13997,7 @@
     "/api/v1/organizations/{organizationPublicId}/rollup-report" : {
       "get" : {
         "tags" : [ "organization-rollup-controller" ],
-        "operationId" : "get_14",
+        "operationId" : "get_16",
         "parameters" : [ {
           "name" : "organizationPublicId",
           "in" : "path",
@@ -13716,7 +14349,7 @@
     "/api/v1/guardians/{publicId}" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "get_15",
+        "operationId" : "get_17",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13779,7 +14412,7 @@
     "/api/v1/grading-scales/{publicId}" : {
       "get" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "get_16",
+        "operationId" : "get_18",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13805,7 +14438,7 @@
     "/api/v1/grades/{publicId}" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "get_17",
+        "operationId" : "get_19",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13920,7 +14553,7 @@
     "/api/v1/fee-structures/{publicId}" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "get_18",
+        "operationId" : "get_20",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13946,7 +14579,7 @@
     "/api/v1/fee-payments/{publicId}" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "get_19",
+        "operationId" : "get_21",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13998,7 +14631,7 @@
     "/api/v1/exams/{publicId}" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "get_20",
+        "operationId" : "get_22",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14304,7 +14937,7 @@
     "/api/v1/classrooms/{publicId}" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "get_21",
+        "operationId" : "get_23",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14403,7 +15036,7 @@
     "/api/v1/books/{publicId}" : {
       "get" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "get_22",
+        "operationId" : "get_24",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14953,7 +15586,7 @@
     "/api/v1/attendance/{publicId}" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "get_23",
+        "operationId" : "get_25",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -15023,7 +15656,7 @@
     "/api/v1/assets/{publicId}" : {
       "get" : {
         "tags" : [ "asset-controller" ],
-        "operationId" : "get_24",
+        "operationId" : "get_26",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -15167,7 +15800,7 @@
     "/api/v1/admissions/{publicId}" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "get_25",
+        "operationId" : "get_27",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -15358,6 +15991,33 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/admin/storage-regions" : {
+      "get" : {
+        "tags" : [ "Storage Regions (Admin)" ],
+        "summary" : "List Storage Region Configs",
+        "description" : "Lists every region an operator has provisioned regional storage infrastructure for.",
+        "operationId" : "getStorageRegionConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
       }
     },
     "/api/v1/admin/scheduler/statistics" : {
@@ -16643,7 +17303,7 @@
     "/api/v1/academic-years/{publicId}" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "get_26",
+        "operationId" : "get_28",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -17107,6 +17767,34 @@
         } ]
       }
     },
+    "/api/v1/tenant-settings/scim-tokens/{id}" : {
+      "delete" : {
+        "tags" : [ "SCIM Tokens (Tenant)" ],
+        "summary" : "Revoke SCIM Token",
+        "description" : "Deactivates a token — it stops authenticating immediately, but the row is kept for audit history.",
+        "operationId" : "revokeScimToken",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Token public id",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Token revoked successfully"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/organizations/{id}/members/{membershipId}" : {
       "delete" : {
         "tags" : [ "Organization Management" ],
@@ -17471,6 +18159,122 @@
   },
   "components" : {
     "schemas" : {
+      "ScimEmail" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "string"
+          },
+          "primary" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "ScimMeta" : {
+        "type" : "object",
+        "properties" : {
+          "resourceType" : {
+            "type" : "string"
+          },
+          "created" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lastModified" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "location" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ScimName" : {
+        "type" : "object",
+        "properties" : {
+          "givenName" : {
+            "type" : "string"
+          },
+          "familyName" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ScimUserResource" : {
+        "type" : "object",
+        "properties" : {
+          "schemas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "externalId" : {
+            "type" : "string"
+          },
+          "userName" : {
+            "type" : "string"
+          },
+          "name" : {
+            "$ref" : "#/components/schemas/ScimName"
+          },
+          "emails" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScimEmail"
+            }
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/ScimMeta"
+          }
+        }
+      },
+      "ScimGroupMember" : {
+        "type" : "object",
+        "properties" : {
+          "value" : {
+            "type" : "string"
+          },
+          "display" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ScimGroupResource" : {
+        "type" : "object",
+        "properties" : {
+          "schemas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "externalId" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "members" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScimGroupMember"
+            }
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/ScimMeta"
+          }
+        }
+      },
       "ChangeRoleRequest" : {
         "type" : "object",
         "properties" : {
@@ -18413,6 +19217,23 @@
           }
         }
       },
+      "UpsertStorageRegionConfigRequest" : {
+        "type" : "object",
+        "properties" : {
+          "bucketName" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "awsRegion" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "endpoint" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "awsRegion", "bucketName" ]
+      },
       "UpdateJobRequest" : {
         "type" : "object",
         "properties" : {
@@ -19285,6 +20106,69 @@
             "type" : "string",
             "default" : "",
             "description" : "Who completed this step"
+          }
+        }
+      },
+      "IssueScimTokenRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "ApiResponseIssuedScimTokenResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/IssuedScimTokenResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "IssuedScimTokenResponse" : {
+        "type" : "object",
+        "properties" : {
+          "token" : {
+            "$ref" : "#/components/schemas/ScimTokenResponse"
+          },
+          "rawToken" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ScimTokenResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "tokenPrefix" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lastUsedAt" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         }
       },
@@ -24322,6 +25206,35 @@
           }
         }
       },
+      "ScimPatchOperation" : {
+        "type" : "object",
+        "properties" : {
+          "op" : {
+            "type" : "string"
+          },
+          "path" : {
+            "type" : "string"
+          },
+          "value" : { }
+        }
+      },
+      "ScimPatchRequest" : {
+        "type" : "object",
+        "properties" : {
+          "schemas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "Operations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScimPatchOperation"
+            }
+          }
+        }
+      },
       "UpdateVehicleRequest" : {
         "type" : "object",
         "properties" : {
@@ -25245,6 +26158,189 @@
           }
         }
       },
+      "ScimListResponseScimUserResource" : {
+        "type" : "object",
+        "properties" : {
+          "schemas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "totalResults" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "startIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "itemsPerPage" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "Resources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScimUserResource"
+            }
+          }
+        }
+      },
+      "AuthenticationScheme" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "primary" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "Bulk" : {
+        "type" : "object",
+        "properties" : {
+          "supported" : {
+            "type" : "boolean"
+          },
+          "maxOperations" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "maxPayloadSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "Filter" : {
+        "type" : "object",
+        "properties" : {
+          "supported" : {
+            "type" : "boolean"
+          },
+          "maxResults" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "ScimServiceProviderConfig" : {
+        "type" : "object",
+        "properties" : {
+          "schemas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "patch" : {
+            "$ref" : "#/components/schemas/Supported"
+          },
+          "bulk" : {
+            "$ref" : "#/components/schemas/Bulk"
+          },
+          "filter" : {
+            "$ref" : "#/components/schemas/Filter"
+          },
+          "changePassword" : {
+            "$ref" : "#/components/schemas/Supported"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/Supported"
+          },
+          "etag" : {
+            "$ref" : "#/components/schemas/Supported"
+          },
+          "authenticationSchemes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AuthenticationScheme"
+            }
+          }
+        }
+      },
+      "Supported" : {
+        "type" : "object",
+        "properties" : {
+          "supported" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "ScimSchema" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ScimResourceType" : {
+        "type" : "object",
+        "properties" : {
+          "schemas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "endpoint" : {
+            "type" : "string"
+          },
+          "schema" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ScimListResponseScimGroupResource" : {
+        "type" : "object",
+        "properties" : {
+          "schemas" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "totalResults" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "startIndex" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "itemsPerPage" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "Resources" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScimGroupResource"
+            }
+          }
+        }
+      },
       "ApiResponseListWebhookResponse" : {
         "type" : "object",
         "properties" : {
@@ -25763,6 +26859,27 @@
           },
           "empty" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "ApiResponseListDataResidencyRegion" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "IN", "EU", "US", "GLOBAL" ]
+            }
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
           }
         }
       },
