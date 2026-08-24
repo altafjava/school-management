@@ -14,6 +14,12 @@ allprojects {
     repositories {
         mavenLocal()    // local dev: platform artifact published via platform-saas publishToMavenLocal
         mavenCentral()
+        // OpenSAML (pulled in transitively by platform-saas's SAML2 SSO support, via
+        // spring-security-saml2-service-provider) is not published to Maven Central.
+        maven {
+            name = 'ShibbolethReleases'
+            url = uri('https://build.shibboleth.net/maven/releases/')
+        }
         // CI: platform artifact resolved from GitHub Packages.
         // PLATFORM_SAAS_TOKEN is a PAT with repo scope (stored as a secret in school-saas)
         // that grants read:packages access to platform-saas. GITHUB_TOKEN alone is scoped
