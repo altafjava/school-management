@@ -15,10 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import com.altafjava.platform.application.branding.TenantBrandingService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.file.service.StorageService;
+import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.platform.domain.tenant.repository.TenantRepository;
 import com.altafjava.school.application.certificate.CertificatePdfGenerator;
 import com.altafjava.school.application.certificate.CertificateVerificationResult;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
@@ -67,12 +70,15 @@ public class CertificateService {
 	private final StorageService storageService;
 	private final CertificatePdfGenerator pdfGenerator;
 	private final TransactionTemplate transactionTemplate;
+	private final TenantRepository tenantRepository;
+	private final TenantBrandingService tenantBrandingService;
 
 	public CertificateService(CertificateIssuanceRepository certificateIssuanceRepository,
 			CertificateTemplateRepository certificateTemplateRepository, StudentRepository studentRepository,
 			StudentClassroomLinkRepository studentClassroomLinkRepository, ClassroomRepository classroomRepository,
 			AcademicYearRepository academicYearRepository, StorageService storageService,
-			CertificatePdfGenerator pdfGenerator, PlatformTransactionManager transactionManager) {
+			CertificatePdfGenerator pdfGenerator, PlatformTransactionManager transactionManager,
+			TenantRepository tenantRepository, TenantBrandingService tenantBrandingService) {
 		this.certificateIssuanceRepository = certificateIssuanceRepository;
 		this.certificateTemplateRepository = certificateTemplateRepository;
 		this.studentRepository = studentRepository;
@@ -82,6 +88,8 @@ public class CertificateService {
 		this.storageService = storageService;
 		this.pdfGenerator = pdfGenerator;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
+		this.tenantRepository = tenantRepository;
+		this.tenantBrandingService = tenantBrandingService;
 	}
 
 	@Transactional(readOnly = true)
@@ -117,7 +125,9 @@ public class CertificateService {
 
 		Map<String, String> placeholders = buildPlaceholders(tenantId, student, template);
 		String resolvedBody = CertificatePlaceholderResolver.resolve(template.getBodyTemplate(), placeholders);
-		byte[] pdf = pdfGenerator.generate(template.getName(), resolvedBody);
+		String tenantName = tenantRepository.findById(tenantId).map(Tenant::getName).orElse("");
+		byte[] logoBytes = tenantBrandingService.getLogoBytes(tenantId).orElse(null);
+		byte[] pdf = pdfGenerator.generate(template.getName(), resolvedBody, tenantName, logoBytes);
 		String storageKey = String.format("tenants/%d/certificates/%d/%d/%s.pdf", tenantId, student.getId(),
 				template.getId(), UUID.randomUUID());
 		storageService.uploadFile(storageKey, pdf, "application/pdf");
