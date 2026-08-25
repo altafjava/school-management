@@ -35,5 +35,8 @@
     <include file="db/domain/changesets/028-payroll.xml"/>
     <include file="db/domain/changesets/029-certificates.xml"/>
     <include file="db/domain/changesets/030-custom-field-definitions.xml"/>
+    <include file="db/domain/changesets/031-hostel.xml"/>
+    <include file="db/domain/changesets/032-health.xml"/>
+    <include file="db/domain/changesets/033-visitor.xml"/>
 
 </databaseChangeLog>
