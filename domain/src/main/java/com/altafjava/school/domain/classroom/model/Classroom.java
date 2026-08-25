@@ -47,6 +47,12 @@ public class Classroom extends SoftDeletableEntity {
 	@Column(name = "curriculum_id")
 	private Long curriculumId;
 
+	// Nullable by design: every classroom that existed before this field was added has no
+	// configured capacity, and null must keep meaning "unlimited" rather than forcing a guessed
+	// value at migration time. Enforced in ClassroomService.enrollStudent only when set.
+	@Column(name = "capacity")
+	private Integer capacity;
+
 	public static Classroom create(String classCode, String grade, String section,
 			Long academicYearId, String academicYearName, Long classTeacherId) {
 		return Classroom.builder()
@@ -57,6 +63,10 @@ public class Classroom extends SoftDeletableEntity {
 				.academicYear(academicYearName)
 				.classTeacherId(classTeacherId)
 				.build();
+	}
+
+	public void updateCapacity(Integer capacity) {
+		this.capacity = capacity;
 	}
 
 	public void reassignTeacher(Long classTeacherId) {

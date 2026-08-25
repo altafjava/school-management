@@ -1,0 +1,93 @@
+package com.altafjava.school.api.controller;
+
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.dto.request.ReferForCounselingRequest;
+import com.altafjava.school.api.dto.request.ScheduleCounselingReferralRequest;
+import com.altafjava.school.api.dto.response.CounselingReferralResponse;
+import com.altafjava.school.api.mapper.CounselingReferralMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
+import com.altafjava.school.application.service.CounselingReferralService;
+
+// See CounselingSessionController for the TENANT_ADMIN-only rationale (PHI-grade data, no
+// dedicated counselor role in the seeded catalog).
+@RestController
+@RequestMapping("/api/v1/counseling-referrals")
+public class CounselingReferralController {
+
+	private final CounselingReferralService counselingReferralService;
+	private final CounselingReferralMapper counselingReferralMapper;
+
+	private final SpringDataPageableResolver pageableResolver;
+
+	public CounselingReferralController(CounselingReferralService counselingReferralService,
+			CounselingReferralMapper counselingReferralMapper, SpringDataPageableResolver pageableResolver) {
+		this.counselingReferralService = counselingReferralService;
+		this.counselingReferralMapper = counselingReferralMapper;
+		this.pageableResolver = pageableResolver;
+	}
+
+	@GetMapping
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public Page<CounselingReferralResponse> listAll(
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return counselingReferralService.listAll(pageableResolver.resolve(page, size))
+				.map(counselingReferralMapper::toResponse);
+	}
+
+	@GetMapping("/students/{studentPublicId}")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public Page<CounselingReferralResponse> listForStudent(@PathVariable String studentPublicId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return counselingReferralService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
+				.map(counselingReferralMapper::toResponse);
+	}
+
+	@GetMapping("/{publicId}")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public CounselingReferralResponse get(@PathVariable String publicId) {
+		return counselingReferralMapper.toResponse(counselingReferralService.get(publicId));
+	}
+
+	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public CounselingReferralResponse refer(@Valid @RequestBody ReferForCounselingRequest request) {
+		return counselingReferralMapper
+				.toResponse(counselingReferralService.refer(request.studentPublicId(), request.reason()));
+	}
+
+	@PatchMapping("/{publicId}/schedule")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public CounselingReferralResponse schedule(@PathVariable String publicId,
+			@Valid @RequestBody ScheduleCounselingReferralRequest request) {
+		return counselingReferralMapper.toResponse(
+				counselingReferralService.scheduleWithSession(publicId, request.counselingSessionPublicId()));
+	}
+
+	@PatchMapping("/{publicId}/complete")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public CounselingReferralResponse complete(@PathVariable String publicId) {
+		return counselingReferralMapper.toResponse(counselingReferralService.complete(publicId));
+	}
+
+	@PatchMapping("/{publicId}/decline")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public CounselingReferralResponse decline(@PathVariable String publicId) {
+		return counselingReferralMapper.toResponse(counselingReferralService.decline(publicId));
+	}
+}
