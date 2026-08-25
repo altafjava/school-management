@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,7 @@ import com.altafjava.school.api.dto.request.CreateAssetRequest;
 import com.altafjava.school.api.dto.request.UpdateAssetLocationRequest;
 import com.altafjava.school.api.dto.response.AssetResponse;
 import com.altafjava.school.api.mapper.AssetMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.AssetService;
 
 @RestController
@@ -28,9 +28,13 @@ public class AssetController {
 	private final AssetService assetService;
 	private final AssetMapper assetMapper;
 
-	public AssetController(AssetService assetService, AssetMapper assetMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public AssetController(AssetService assetService, AssetMapper assetMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.assetService = assetService;
 		this.assetMapper = assetMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -38,7 +42,7 @@ public class AssetController {
 	public Page<AssetResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return assetService.list(PageRequest.of(page, Math.min(size, 100))).map(assetMapper::toResponse);
+		return assetService.list(pageableResolver.resolve(page, size)).map(assetMapper::toResponse);
 	}
 
 	@GetMapping("/{publicId}")

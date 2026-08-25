@@ -1,6 +1,5 @@
 package com.altafjava.school.application.scheduler;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
@@ -62,7 +61,7 @@ public class ReportCardGenerationJob implements JobExecutionStrategy {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		log.info("action=report-card-generation tenantId={} executionId={}", tenantId, ctx.executionId());
 
-		Term currentTerm = termRepository.findCurrentByTenantId(tenantId, LocalDate.now()).orElse(null);
+		Term currentTerm = termRepository.findCurrentByTenantId(tenantId).orElse(null);
 		if (currentTerm == null) {
 			log.info("action=report-card-generation-skipped reason=no-current-term tenantId={}", tenantId);
 			return new JobExecutionResult.Success(Map.of("generatedCount", 0, "notifiedCount", 0), null);

@@ -1,12 +1,14 @@
 package com.altafjava.school.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -24,7 +26,10 @@ import com.altafjava.platform.domain.user.service.UserDomainService;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.domain.guardian.model.Guardian;
 import com.altafjava.school.domain.guardian.model.GuardianSelfRegistrationMode;
+import com.altafjava.school.domain.guardian.model.RelationshipType;
+import com.altafjava.school.domain.guardian.model.StudentGuardianLink;
 import com.altafjava.school.domain.guardian.repository.GuardianRepository;
+import com.altafjava.school.domain.guardian.repository.StudentGuardianLinkRepository;
 
 @ExtendWith(MockitoExtension.class)
 class GuardianSelfRegistrationServiceTest {
@@ -33,6 +38,8 @@ class GuardianSelfRegistrationServiceTest {
 
 	@Mock
 	private GuardianRepository guardianRepository;
+	@Mock
+	private StudentGuardianLinkRepository studentGuardianLinkRepository;
 	@Mock
 	private GuardianRegistrationSettingsService guardianRegistrationSettingsService;
 	@Mock
@@ -43,7 +50,7 @@ class GuardianSelfRegistrationServiceTest {
 	@BeforeEach
 	void setUp() {
 		guardianSelfRegistrationService = new GuardianSelfRegistrationService(guardianRepository,
-				guardianRegistrationSettingsService, userService);
+				studentGuardianLinkRepository, guardianRegistrationSettingsService, userService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -66,6 +73,26 @@ class GuardianSelfRegistrationServiceTest {
 
 		assertEquals(100L, result.getUserId());
 		verify(guardianRegistrationSettingsService, never()).getMode(any());
+	}
+
+	@Test
+	void register_withPendingGuardianRecord_stampsConsentOnExistingLinks() {
+		Guardian pending = Guardian.create("Jane", "Doe", EMAIL, "555-0100", null);
+		pending.setId(10L);
+		when(guardianRepository.findByEmailAndTenantIdAndUserIdIsNull(EMAIL, 1L)).thenReturn(Optional.of(pending));
+		User createdUser = userOf(100L);
+		when(userService.createUser(eq(1L), eq(EMAIL), eq("Password123!"), eq("Jane"), eq("Doe"),
+				eq(Set.of(SchoolRoles.PARENT)))).thenReturn(createdUser);
+		when(guardianRepository.save(any(Guardian.class))).thenAnswer(inv -> inv.getArgument(0));
+		StudentGuardianLink link = StudentGuardianLink.create(20L, 10L, RelationshipType.MOTHER, true);
+		when(studentGuardianLinkRepository.findAllByGuardianIdAndTenantId(10L, 1L))
+				.thenReturn(List.of(link));
+		ArgumentCaptor<List<StudentGuardianLink>> savedLinksCaptor = ArgumentCaptor.forClass(List.class);
+		when(studentGuardianLinkRepository.saveAll(savedLinksCaptor.capture())).thenAnswer(inv -> inv.getArgument(0));
+
+		guardianSelfRegistrationService.register(EMAIL, "Password123!", "Jane", "Doe", "555-0100");
+
+		assertNotNull(savedLinksCaptor.getValue().get(0).getConsentGivenAt());
 	}
 
 	@Test

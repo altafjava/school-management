@@ -1,6 +1,8 @@
 package com.altafjava.school.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -108,6 +110,54 @@ class GuardianServiceTest {
 				STUDENT_PUBLIC_ID.toString(), RelationshipType.MOTHER, true));
 
 		verify(eventPublisher).publish(any());
+	}
+
+	@Test
+	void grantConsent_withExistingLink_stampsConsentGivenAt() {
+		Guardian guardian = guardianOf(10L);
+		Student student = studentOf(20L);
+		StudentGuardianLink link = StudentGuardianLink.create(20L, 10L, RelationshipType.MOTHER, true);
+		when(guardianRepository.findByPublicIdAndTenantId(GUARDIAN_PUBLIC_ID, 1L)).thenReturn(Optional.of(guardian));
+		when(studentRepository.findByPublicIdAndTenantId(STUDENT_PUBLIC_ID, 1L)).thenReturn(Optional.of(student));
+		when(studentGuardianLinkRepository.findByGuardianIdAndStudentIdAndTenantId(10L, 20L, 1L))
+				.thenReturn(Optional.of(link));
+		when(studentGuardianLinkRepository.save(link)).thenReturn(link);
+
+		StudentGuardianLink result = guardianService.grantConsent(GUARDIAN_PUBLIC_ID.toString(),
+				STUDENT_PUBLIC_ID.toString());
+
+		assertNotNull(result.getConsentGivenAt());
+	}
+
+	@Test
+	void revokeConsent_withConsentedLink_clearsConsentGivenAt() {
+		Guardian guardian = guardianOf(10L);
+		Student student = studentOf(20L);
+		StudentGuardianLink link = StudentGuardianLink.create(20L, 10L, RelationshipType.MOTHER, true);
+		link.giveConsent();
+		when(guardianRepository.findByPublicIdAndTenantId(GUARDIAN_PUBLIC_ID, 1L)).thenReturn(Optional.of(guardian));
+		when(studentRepository.findByPublicIdAndTenantId(STUDENT_PUBLIC_ID, 1L)).thenReturn(Optional.of(student));
+		when(studentGuardianLinkRepository.findByGuardianIdAndStudentIdAndTenantId(10L, 20L, 1L))
+				.thenReturn(Optional.of(link));
+		when(studentGuardianLinkRepository.save(link)).thenReturn(link);
+
+		StudentGuardianLink result = guardianService.revokeConsent(GUARDIAN_PUBLIC_ID.toString(),
+				STUDENT_PUBLIC_ID.toString());
+
+		assertNull(result.getConsentGivenAt());
+	}
+
+	@Test
+	void grantConsent_withNoExistingLink_throwsResourceNotFound() {
+		Guardian guardian = guardianOf(10L);
+		Student student = studentOf(20L);
+		when(guardianRepository.findByPublicIdAndTenantId(GUARDIAN_PUBLIC_ID, 1L)).thenReturn(Optional.of(guardian));
+		when(studentRepository.findByPublicIdAndTenantId(STUDENT_PUBLIC_ID, 1L)).thenReturn(Optional.of(student));
+		when(studentGuardianLinkRepository.findByGuardianIdAndStudentIdAndTenantId(10L, 20L, 1L))
+				.thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> guardianService.grantConsent(GUARDIAN_PUBLIC_ID.toString(), STUDENT_PUBLIC_ID.toString()));
 	}
 
 	private Guardian guardianOf(Long id) {

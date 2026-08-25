@@ -22,8 +22,13 @@ public interface TermRepository extends JpaRepository<Term, Long> {
 
 	Optional<Term> findByIdAndTenantId(Long id, Long tenantId);
 
-	// Terms have no isCurrent flag (unlike AcademicYear) — "the current term" is derived from
-	// whether today falls within its date range.
+	// Mirrors AcademicYear's explicit current flag — "the current term" is whichever row
+	// TermRolloverJob has flipped current=true for, not a live date-range computation.
+	@Query("SELECT t FROM Term t WHERE t.tenantId = :tenantId AND t.current = true")
+	Optional<Term> findCurrentByTenantId(@Param("tenantId") Long tenantId);
+
+	// Used only by TermRolloverJob to detect when the current-flagged term needs to change.
 	@Query("SELECT t FROM Term t WHERE t.tenantId = :tenantId AND :today BETWEEN t.startDate AND t.endDate")
-	Optional<Term> findCurrentByTenantId(@Param("tenantId") Long tenantId, @Param("today") LocalDate today);
+	Optional<Term> findByDateRangeContainingAndTenantId(@Param("tenantId") Long tenantId,
+			@Param("today") LocalDate today);
 }

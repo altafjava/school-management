@@ -3,7 +3,6 @@ package com.altafjava.school.api.controller;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +28,7 @@ import com.altafjava.school.api.mapper.ClassroomMapper;
 import com.altafjava.school.api.mapper.StudentClassroomLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
 import com.altafjava.school.api.mapper.TimetableEntryMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.TimetableService;
@@ -44,15 +44,19 @@ public class ClassroomController {
 	private final StudentClassroomLinkMapper studentClassroomLinkMapper;
 	private final StudentMapper studentMapper;
 
+	private final SpringDataPageableResolver pageableResolver;
+
 	public ClassroomController(ClassroomService classroomService, ClassroomMapper classroomMapper,
 			TimetableService timetableService, TimetableEntryMapper timetableEntryMapper,
-			StudentClassroomLinkMapper studentClassroomLinkMapper, StudentMapper studentMapper) {
+			StudentClassroomLinkMapper studentClassroomLinkMapper, StudentMapper studentMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.classroomService = classroomService;
 		this.classroomMapper = classroomMapper;
 		this.timetableService = timetableService;
 		this.timetableEntryMapper = timetableEntryMapper;
 		this.studentClassroomLinkMapper = studentClassroomLinkMapper;
 		this.studentMapper = studentMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -60,7 +64,7 @@ public class ClassroomController {
 	public Page<ClassroomResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return classroomService.listClassrooms(PageRequest.of(page, Math.min(size, 100)))
+		return classroomService.listClassrooms(pageableResolver.resolve(page, size))
 				.map(classroomMapper::toResponse);
 	}
 
@@ -125,7 +129,7 @@ public class ClassroomController {
 	public Page<StudentResponse> roster(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return classroomService.listRoster(publicId, PageRequest.of(page, Math.min(size, 100)))
+		return classroomService.listRoster(publicId, pageableResolver.resolve(page, size))
 				.map(studentMapper::toResponse);
 	}
 

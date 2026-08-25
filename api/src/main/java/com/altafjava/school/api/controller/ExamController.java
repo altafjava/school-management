@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,7 @@ import com.altafjava.school.api.dto.request.RescheduleExamRequest;
 import com.altafjava.school.api.dto.request.ScheduleExamRequest;
 import com.altafjava.school.api.dto.response.ExamResponse;
 import com.altafjava.school.api.mapper.ExamMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.ExamService;
 
@@ -30,9 +30,12 @@ public class ExamController {
 	private final ExamService examService;
 	private final ExamMapper examMapper;
 
-	public ExamController(ExamService examService, ExamMapper examMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public ExamController(ExamService examService, ExamMapper examMapper, SpringDataPageableResolver pageableResolver) {
 		this.examService = examService;
 		this.examMapper = examMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -40,7 +43,7 @@ public class ExamController {
 	public Page<ExamResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return examService.listExams(PageRequest.of(page, Math.min(size, 100)))
+		return examService.listExams(pageableResolver.resolve(page, size))
 				.map(examMapper::toResponse);
 	}
 
@@ -60,7 +63,8 @@ public class ExamController {
 				request.classroomId(),
 				request.scheduledAt(),
 				request.maxMarks(),
-				request.termId()));
+				request.termId(),
+				request.examType()));
 	}
 
 	@PatchMapping("/{publicId}/schedule")
@@ -73,5 +77,17 @@ public class ExamController {
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public ExamResponse assignTerm(@PathVariable String publicId, @Valid @RequestBody AssignExamTermRequest request) {
 		return examMapper.toResponse(examService.assignTerm(publicId, request.termId()));
+	}
+
+	@PatchMapping("/{publicId}/complete")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	public ExamResponse complete(@PathVariable String publicId) {
+		return examMapper.toResponse(examService.complete(publicId));
+	}
+
+	@PatchMapping("/{publicId}/cancel")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public ExamResponse cancel(@PathVariable String publicId) {
+		return examMapper.toResponse(examService.cancel(publicId));
 	}
 }

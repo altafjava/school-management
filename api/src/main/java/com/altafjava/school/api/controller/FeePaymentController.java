@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +17,7 @@ import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.RecordFeePaymentRequest;
 import com.altafjava.school.api.dto.response.FeePaymentResponse;
 import com.altafjava.school.api.mapper.FeePaymentMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.FeePaymentService;
 
 @RestController
@@ -27,9 +27,13 @@ public class FeePaymentController {
 	private final FeePaymentService feePaymentService;
 	private final FeePaymentMapper feePaymentMapper;
 
-	public FeePaymentController(FeePaymentService feePaymentService, FeePaymentMapper feePaymentMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public FeePaymentController(FeePaymentService feePaymentService, FeePaymentMapper feePaymentMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.feePaymentService = feePaymentService;
 		this.feePaymentMapper = feePaymentMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -37,7 +41,7 @@ public class FeePaymentController {
 	public Page<FeePaymentResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return feePaymentService.listFeePayments(PageRequest.of(page, Math.min(size, 100)))
+		return feePaymentService.listFeePayments(pageableResolver.resolve(page, size))
 				.map(feePaymentMapper::toResponse);
 	}
 

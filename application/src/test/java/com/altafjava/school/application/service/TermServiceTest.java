@@ -69,4 +69,32 @@ class TermServiceTest {
 		assertDoesNotThrow(() -> termService.create("Term 1", LocalDate.of(2025, 6, 1),
 				LocalDate.of(2025, 9, 30), 1L));
 	}
+
+	@Test
+	void create_withRangeCoveringToday_marksNewTermCurrentAndUnmarksPrevious() {
+		when(academicYearRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
+		when(termRepository.existsByNameAndAcademicYearIdAndTenantId("Term 1", 1L, 1L)).thenReturn(false);
+		when(termRepository.save(any(Term.class))).thenAnswer(inv -> inv.getArgument(0));
+		Term previouslyCurrent = Term.create("Term 0", LocalDate.now().minusMonths(6), LocalDate.now().minusDays(1),
+				1L);
+		previouslyCurrent.markCurrent();
+		when(termRepository.findCurrentByTenantId(1L)).thenReturn(java.util.Optional.of(previouslyCurrent));
+
+		Term created = termService.create("Term 1", LocalDate.now().minusDays(1), LocalDate.now().plusMonths(3), 1L);
+
+		org.junit.jupiter.api.Assertions.assertTrue(created.isCurrent());
+		org.junit.jupiter.api.Assertions.assertFalse(previouslyCurrent.isCurrent());
+	}
+
+	@Test
+	void create_withFutureRange_doesNotTouchCurrentTerm() {
+		when(academicYearRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
+		when(termRepository.existsByNameAndAcademicYearIdAndTenantId("Term 1", 1L, 1L)).thenReturn(false);
+		when(termRepository.save(any(Term.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Term created = termService.create("Term 1", LocalDate.now().plusMonths(1), LocalDate.now().plusMonths(4), 1L);
+
+		org.junit.jupiter.api.Assertions.assertFalse(created.isCurrent());
+		verify(termRepository, never()).findCurrentByTenantId(any());
+	}
 }

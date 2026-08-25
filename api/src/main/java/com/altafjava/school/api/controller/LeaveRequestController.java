@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,7 @@ import com.altafjava.school.api.dto.request.RejectLeaveRequestRequest;
 import com.altafjava.school.api.dto.request.SubmitLeaveRequestRequest;
 import com.altafjava.school.api.dto.response.LeaveRequestResponse;
 import com.altafjava.school.api.mapper.LeaveRequestMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.LeaveRequestService;
 
@@ -29,9 +29,13 @@ public class LeaveRequestController {
 	private final LeaveRequestService leaveRequestService;
 	private final LeaveRequestMapper leaveRequestMapper;
 
-	public LeaveRequestController(LeaveRequestService leaveRequestService, LeaveRequestMapper leaveRequestMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public LeaveRequestController(LeaveRequestService leaveRequestService, LeaveRequestMapper leaveRequestMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.leaveRequestService = leaveRequestService;
 		this.leaveRequestMapper = leaveRequestMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -39,7 +43,7 @@ public class LeaveRequestController {
 	public Page<LeaveRequestResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return leaveRequestService.listAll(PageRequest.of(page, Math.min(size, 100)))
+		return leaveRequestService.listAll(pageableResolver.resolve(page, size))
 				.map(leaveRequestMapper::toResponse);
 	}
 
@@ -48,7 +52,7 @@ public class LeaveRequestController {
 	public Page<LeaveRequestResponse> listMine(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return leaveRequestService.listForCurrentTeacher(PageRequest.of(page, Math.min(size, 100)))
+		return leaveRequestService.listForCurrentTeacher(pageableResolver.resolve(page, size))
 				.map(leaveRequestMapper::toResponse);
 	}
 

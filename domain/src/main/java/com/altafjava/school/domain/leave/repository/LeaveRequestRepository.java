@@ -2,6 +2,7 @@ package com.altafjava.school.domain.leave.repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -28,4 +29,15 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, Long
 			+ "AND lr.status = :status AND lr.startDate BETWEEN :from AND :to")
 	BigDecimal sumDaysRequestedByTenantIdAndStatusAndStartDateBetween(@Param("tenantId") Long tenantId,
 			@Param("status") LeaveRequestStatus status, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+	// Feeds PayrollCalculator's loss-of-pay computation (see PayslipService) — leaveTypeIds is
+	// pre-filtered by the caller to unpaid leave types only; date range overlap (rather than an
+	// exact match) is required because a request can span a month boundary.
+	@Query("SELECT lr FROM LeaveRequest lr WHERE lr.tenantId = :tenantId AND lr.teacherId = :teacherId "
+			+ "AND lr.status = :status AND lr.leaveTypeId IN :leaveTypeIds "
+			+ "AND lr.startDate <= :monthEnd AND lr.endDate >= :monthStart")
+	List<LeaveRequest> findOverlappingByTeacherIdAndStatusAndLeaveTypeIdIn(@Param("teacherId") Long teacherId,
+			@Param("tenantId") Long tenantId, @Param("status") LeaveRequestStatus status,
+			@Param("leaveTypeIds") List<Long> leaveTypeIds, @Param("monthStart") LocalDate monthStart,
+			@Param("monthEnd") LocalDate monthEnd);
 }

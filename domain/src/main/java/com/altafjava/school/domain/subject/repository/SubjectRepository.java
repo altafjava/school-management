@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.subject.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,8 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
 	Optional<Subject> findByPublicIdAndTenantId(UUID publicId, Long tenantId);
 
 	Optional<Subject> findByIdAndTenantId(Long id, Long tenantId);
+
+	List<Subject> findAllByIdInAndTenantId(List<Long> ids, Long tenantId);
 
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
 

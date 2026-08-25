@@ -14,6 +14,10 @@ public interface LeaveTypeRepository extends JpaRepository<LeaveType, Long> {
 
 	List<LeaveType> findAllByTenantIdAndActiveTrue(Long tenantId);
 
+	// Drives PayrollCalculator's loss-of-pay basis (see PayslipService) — active or not is
+	// irrelevant here, a deactivated-but-still-referenced leave type keeps its paid/unpaid meaning.
+	List<LeaveType> findAllByTenantIdAndPaidFalse(Long tenantId);
+
 	Optional<LeaveType> findByPublicIdAndTenantId(UUID publicId, Long tenantId);
 
 	Optional<LeaveType> findByIdAndTenantId(Long id, Long tenantId);

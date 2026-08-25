@@ -10,5 +10,6 @@ import com.altafjava.school.domain.term.model.Term;
 public interface TermMapper {
 
 	@Mapping(target = "publicId", expression = "java(term.getPublicId().toString())")
+	@Mapping(target = "current", source = "current")
 	TermResponse toResponse(Term term);
 }

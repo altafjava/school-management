@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -41,6 +40,7 @@ import com.altafjava.school.api.mapper.FeeBalanceMapper;
 import com.altafjava.school.api.mapper.GradeMapper;
 import com.altafjava.school.api.mapper.ReportCardMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AttendanceService;
 import com.altafjava.school.application.service.FeePaymentService;
@@ -75,12 +75,15 @@ public class StudentController {
 	private final BulkImportMapper bulkImportMapper;
 	private final StudentGpaService studentGpaService;
 
+	private final SpringDataPageableResolver pageableResolver;
+
 	public StudentController(StudentService studentService, StudentMapper studentMapper, GradeService gradeService,
 			GradeMapper gradeMapper, AttendanceService attendanceService, AttendanceMapper attendanceMapper,
 			AttendancePercentageMapper attendancePercentageMapper, FeePaymentService feePaymentService,
 			FeeBalanceMapper feeBalanceMapper, ReportCardService reportCardService, ReportCardMapper reportCardMapper,
 			TermService termService, StudentBulkImportService studentBulkImportService,
-			BulkImportMapper bulkImportMapper, StudentGpaService studentGpaService) {
+			BulkImportMapper bulkImportMapper, StudentGpaService studentGpaService,
+			SpringDataPageableResolver pageableResolver) {
 		this.studentService = studentService;
 		this.studentMapper = studentMapper;
 		this.gradeService = gradeService;
@@ -96,6 +99,7 @@ public class StudentController {
 		this.studentBulkImportService = studentBulkImportService;
 		this.bulkImportMapper = bulkImportMapper;
 		this.studentGpaService = studentGpaService;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -104,7 +108,7 @@ public class StudentController {
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
 			@RequestParam(required = false) EnrollmentStatus status) {
-		return studentService.listStudents(PageRequest.of(page, Math.min(size, 100)), status)
+		return studentService.listStudents(pageableResolver.resolve(page, size), status)
 				.map(studentMapper::toResponse);
 	}
 
@@ -162,7 +166,7 @@ public class StudentController {
 	public Page<GradeResponse> grades(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return gradeService.getStudentGrades(publicId, PageRequest.of(page, Math.min(size, 100)))
+		return gradeService.getStudentGrades(publicId, pageableResolver.resolve(page, size))
 				.map(gradeMapper::toResponse);
 	}
 
@@ -193,7 +197,7 @@ public class StudentController {
 	public Page<AttendanceResponse> attendance(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return attendanceService.getStudentAttendance(publicId, PageRequest.of(page, Math.min(size, 100)))
+		return attendanceService.getStudentAttendance(publicId, pageableResolver.resolve(page, size))
 				.map(attendanceMapper::toResponse);
 	}
 
@@ -217,7 +221,7 @@ public class StudentController {
 	public Page<ReportCardResponse> reportCards(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return reportCardService.listForStudent(publicId, PageRequest.of(page, Math.min(size, 100)))
+		return reportCardService.listForStudent(publicId, pageableResolver.resolve(page, size))
 				.map(reportCardMapper::toResponse);
 	}
 

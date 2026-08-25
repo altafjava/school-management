@@ -26,6 +26,8 @@ public final class SchoolRoles {
 			+ "', '" + TEACHER + "', '" + PARENT + "', '" + STUDENT + "')";
 	public static final String HAS_TENANT_ADMIN_OR_PARENT_OR_STUDENT = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '"
 			+ PARENT + "', '" + STUDENT + "')";
+	public static final String HAS_TENANT_ADMIN_OR_PARENT = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '" + PARENT
+			+ "')";
 	public static final String HAS_PARENT_OR_STUDENT = "hasAnyRole('" + PARENT + "', '" + STUDENT + "')";
 	public static final String HAS_PARENT = "hasRole('" + PARENT + "')";
 	public static final String HAS_TEACHER = "hasRole('" + TEACHER + "')";

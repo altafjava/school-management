@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.school.api.dto.request.MarkAttendanceRequest;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
 import com.altafjava.school.api.mapper.AttendanceMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AttendanceService;
 
@@ -26,9 +26,13 @@ public class AttendanceController {
 	private final AttendanceService attendanceService;
 	private final AttendanceMapper attendanceMapper;
 
-	public AttendanceController(AttendanceService attendanceService, AttendanceMapper attendanceMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public AttendanceController(AttendanceService attendanceService, AttendanceMapper attendanceMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.attendanceService = attendanceService;
 		this.attendanceMapper = attendanceMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -36,7 +40,7 @@ public class AttendanceController {
 	public Page<AttendanceResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return attendanceService.listAttendance(PageRequest.of(page, Math.min(size, 100)))
+		return attendanceService.listAttendance(pageableResolver.resolve(page, size))
 				.map(attendanceMapper::toResponse);
 	}
 

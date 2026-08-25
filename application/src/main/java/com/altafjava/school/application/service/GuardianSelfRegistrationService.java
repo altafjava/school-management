@@ -1,5 +1,6 @@
 package com.altafjava.school.application.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,9 @@ import com.altafjava.platform.domain.user.service.UserDomainService;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.domain.guardian.model.Guardian;
 import com.altafjava.school.domain.guardian.model.GuardianSelfRegistrationMode;
+import com.altafjava.school.domain.guardian.model.StudentGuardianLink;
 import com.altafjava.school.domain.guardian.repository.GuardianRepository;
+import com.altafjava.school.domain.guardian.repository.StudentGuardianLinkRepository;
 import lombok.RequiredArgsConstructor;
 
 // Public, unauthenticated self-registration for guardians — dual mode per tenant, see
@@ -23,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class GuardianSelfRegistrationService {
 
 	private final GuardianRepository guardianRepository;
+	private final StudentGuardianLinkRepository studentGuardianLinkRepository;
 	private final GuardianRegistrationSettingsService guardianRegistrationSettingsService;
 	private final UserDomainService userService;
 
@@ -46,7 +50,18 @@ public class GuardianSelfRegistrationService {
 		User user = userService.createUser(tenantId, email, password, firstName, lastName,
 				Set.of(SchoolRoles.PARENT));
 		guardian.linkUserAccount(user.getId());
-		return guardianRepository.save(guardian);
+		Guardian saved = guardianRepository.save(guardian);
+		// Completing self-registration is the guardian's explicit consent to the student link(s) an
+		// admin already created for them — stamp consent on every existing link now, not just new ones.
+		giveConsentOnExistingLinks(tenantId, saved.getId());
+		return saved;
+	}
+
+	private void giveConsentOnExistingLinks(Long tenantId, Long guardianId) {
+		List<StudentGuardianLink> links = studentGuardianLinkRepository.findAllByGuardianIdAndTenantId(guardianId,
+				tenantId);
+		links.forEach(StudentGuardianLink::giveConsent);
+		studentGuardianLinkRepository.saveAll(links);
 	}
 
 	private Guardian createNewGuardian(Long tenantId, String email, String password, String firstName,

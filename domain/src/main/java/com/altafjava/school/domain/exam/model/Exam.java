@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,8 +46,16 @@ public class Exam extends SoftDeletableEntity {
 	@Column(name = "term_id")
 	private Long termId;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false, length = 20)
+	private ExamStatus status;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "exam_type", nullable = false, length = 20)
+	private ExamType examType;
+
 	public static Exam create(String title, Long subjectId, Long classroomId,
-			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId) {
+			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId, ExamType examType) {
 		return Exam.builder()
 				.title(title)
 				.subjectId(subjectId)
@@ -52,6 +63,8 @@ public class Exam extends SoftDeletableEntity {
 				.scheduledAt(scheduledAt)
 				.maxMarks(maxMarks)
 				.termId(termId)
+				.examType(examType)
+				.status(ExamStatus.SCHEDULED)
 				.build();
 	}
 
@@ -61,5 +74,25 @@ public class Exam extends SoftDeletableEntity {
 
 	public void assignTerm(Long termId) {
 		this.termId = termId;
+	}
+
+	public void complete() {
+		if (this.status == ExamStatus.CANCELLED) {
+			throw new BusinessException("Cannot complete a cancelled exam");
+		}
+		if (this.status == ExamStatus.COMPLETED) {
+			throw new BusinessException("Exam is already completed");
+		}
+		this.status = ExamStatus.COMPLETED;
+	}
+
+	public void cancel() {
+		if (this.status == ExamStatus.COMPLETED) {
+			throw new BusinessException("Cannot cancel a completed exam");
+		}
+		if (this.status == ExamStatus.CANCELLED) {
+			throw new BusinessException("Exam is already cancelled");
+		}
+		this.status = ExamStatus.CANCELLED;
 	}
 }

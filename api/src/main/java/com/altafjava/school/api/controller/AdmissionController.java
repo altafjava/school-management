@@ -3,7 +3,6 @@ package com.altafjava.school.api.controller;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +21,7 @@ import com.altafjava.school.api.dto.request.RecordEntranceTestScoreRequest;
 import com.altafjava.school.api.dto.request.SubmitAdmissionRequest;
 import com.altafjava.school.api.dto.response.AdmissionResponse;
 import com.altafjava.school.api.mapper.AdmissionMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.AdmissionService;
 
 /**
@@ -42,9 +42,13 @@ public class AdmissionController {
 	private final AdmissionService admissionService;
 	private final AdmissionMapper admissionMapper;
 
-	public AdmissionController(AdmissionService admissionService, AdmissionMapper admissionMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public AdmissionController(AdmissionService admissionService, AdmissionMapper admissionMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.admissionService = admissionService;
 		this.admissionMapper = admissionMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -52,7 +56,7 @@ public class AdmissionController {
 	public Page<AdmissionResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return admissionService.listAdmissions(PageRequest.of(page, Math.min(size, 100)))
+		return admissionService.listAdmissions(pageableResolver.resolve(page, size))
 				.map(admissionMapper::toResponse);
 	}
 

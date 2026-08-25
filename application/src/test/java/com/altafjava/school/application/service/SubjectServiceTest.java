@@ -20,6 +20,8 @@ import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
+import com.altafjava.school.domain.curriculum.model.Curriculum;
+import com.altafjava.school.domain.curriculum.repository.CurriculumRepository;
 import com.altafjava.school.domain.subject.model.Subject;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 
@@ -28,12 +30,14 @@ class SubjectServiceTest {
 
 	@Mock
 	private SubjectRepository subjectRepository;
+	@Mock
+	private CurriculumRepository curriculumRepository;
 
 	private SubjectService subjectService;
 
 	@BeforeEach
 	void setUp() {
-		subjectService = new SubjectService(subjectRepository);
+		subjectService = new SubjectService(subjectRepository, curriculumRepository);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -80,5 +84,36 @@ class SubjectServiceTest {
 		Subject deactivated = subjectService.deactivate(publicId.toString());
 
 		assertFalse(deactivated.isActive());
+	}
+
+	@Test
+	void assignCurriculum_withExistingCurriculum_setsCurriculumId() {
+		UUID subjectPublicId = UUID.randomUUID();
+		UUID curriculumPublicId = UUID.randomUUID();
+		Subject subject = Subject.create("MATH", "Mathematics", null);
+		Curriculum curriculum = Curriculum.create(1L, "IB Diploma", "IB-DP", null);
+		curriculum.setId(9L);
+		when(subjectRepository.findByPublicIdAndTenantId(subjectPublicId, 1L)).thenReturn(Optional.of(subject));
+		when(curriculumRepository.findByPublicIdAndTenantId(curriculumPublicId, 1L))
+				.thenReturn(Optional.of(curriculum));
+		when(subjectRepository.save(any(Subject.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Subject updated = subjectService.assignCurriculum(subjectPublicId.toString(), curriculumPublicId.toString());
+
+		assertEquals(9L, updated.getCurriculumId());
+	}
+
+	@Test
+	void assignCurriculum_withNonExistentCurriculum_throwsResourceNotFound() {
+		UUID subjectPublicId = UUID.randomUUID();
+		UUID curriculumPublicId = UUID.randomUUID();
+		Subject subject = Subject.create("MATH", "Mathematics", null);
+		when(subjectRepository.findByPublicIdAndTenantId(subjectPublicId, 1L)).thenReturn(Optional.of(subject));
+		when(curriculumRepository.findByPublicIdAndTenantId(curriculumPublicId, 1L)).thenReturn(Optional.empty());
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> subjectService.assignCurriculum(subjectPublicId.toString(), curriculumPublicId.toString()));
+
+		verify(subjectRepository, never()).save(any());
 	}
 }

@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,7 @@ import com.altafjava.school.api.dto.request.CreateDepartmentRequest;
 import com.altafjava.school.api.dto.request.UpdateDepartmentRequest;
 import com.altafjava.school.api.dto.response.DepartmentResponse;
 import com.altafjava.school.api.mapper.DepartmentMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.DepartmentService;
 
 @RestController
@@ -29,9 +29,13 @@ public class DepartmentController {
 	private final DepartmentService departmentService;
 	private final DepartmentMapper departmentMapper;
 
-	public DepartmentController(DepartmentService departmentService, DepartmentMapper departmentMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public DepartmentController(DepartmentService departmentService, DepartmentMapper departmentMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.departmentService = departmentService;
 		this.departmentMapper = departmentMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -39,7 +43,7 @@ public class DepartmentController {
 	public Page<DepartmentResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return departmentService.list(PageRequest.of(page, Math.min(size, 100))).map(departmentMapper::toResponse);
+		return departmentService.list(pageableResolver.resolve(page, size)).map(departmentMapper::toResponse);
 	}
 
 	@GetMapping("/{publicId}")

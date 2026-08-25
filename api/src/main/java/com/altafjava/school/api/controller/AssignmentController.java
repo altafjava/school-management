@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +17,7 @@ import com.altafjava.school.api.dto.request.CreateAssignmentRequest;
 import com.altafjava.school.api.dto.request.RescheduleAssignmentRequest;
 import com.altafjava.school.api.dto.response.AssignmentResponse;
 import com.altafjava.school.api.mapper.AssignmentMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AssignmentService;
 
@@ -28,9 +28,13 @@ public class AssignmentController {
 	private final AssignmentService assignmentService;
 	private final AssignmentMapper assignmentMapper;
 
-	public AssignmentController(AssignmentService assignmentService, AssignmentMapper assignmentMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public AssignmentController(AssignmentService assignmentService, AssignmentMapper assignmentMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.assignmentService = assignmentService;
 		this.assignmentMapper = assignmentMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@PostMapping
@@ -52,7 +56,7 @@ public class AssignmentController {
 	public Page<AssignmentResponse> listByClassroom(@PathVariable String classroomPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return assignmentService.listByClassroom(classroomPublicId, PageRequest.of(page, Math.min(size, 100)))
+		return assignmentService.listByClassroom(classroomPublicId, pageableResolver.resolve(page, size))
 				.map(assignmentMapper::toResponse);
 	}
 

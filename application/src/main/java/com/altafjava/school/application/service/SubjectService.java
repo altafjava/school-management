@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.curriculum.repository.CurriculumRepository;
 import com.altafjava.school.domain.subject.model.Subject;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 
@@ -15,9 +16,11 @@ import com.altafjava.school.domain.subject.repository.SubjectRepository;
 public class SubjectService {
 
 	private final SubjectRepository subjectRepository;
+	private final CurriculumRepository curriculumRepository;
 
-	public SubjectService(SubjectRepository subjectRepository) {
+	public SubjectService(SubjectRepository subjectRepository, CurriculumRepository curriculumRepository) {
 		this.subjectRepository = subjectRepository;
+		this.curriculumRepository = curriculumRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -46,6 +49,16 @@ public class SubjectService {
 	public Subject deactivate(String publicId) {
 		Subject subject = findByPublicId(publicId);
 		subject.deactivate();
+		return subjectRepository.save(subject);
+	}
+
+	@Transactional
+	public Subject assignCurriculum(String publicId, String curriculumPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Subject subject = findByPublicId(publicId);
+		var curriculum = curriculumRepository.findByPublicIdAndTenantId(UUID.fromString(curriculumPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Curriculum not found: " + curriculumPublicId));
+		subject.assignCurriculum(curriculum.getId());
 		return subjectRepository.save(subject);
 	}
 }

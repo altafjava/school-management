@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,7 @@ import com.altafjava.school.api.dto.request.CreateVehicleRequest;
 import com.altafjava.school.api.dto.request.UpdateVehicleRequest;
 import com.altafjava.school.api.dto.response.VehicleResponse;
 import com.altafjava.school.api.mapper.VehicleMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.VehicleService;
 
@@ -29,9 +29,13 @@ public class VehicleController {
 	private final VehicleService vehicleService;
 	private final VehicleMapper vehicleMapper;
 
-	public VehicleController(VehicleService vehicleService, VehicleMapper vehicleMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public VehicleController(VehicleService vehicleService, VehicleMapper vehicleMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.vehicleService = vehicleService;
 		this.vehicleMapper = vehicleMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -39,7 +43,7 @@ public class VehicleController {
 	public Page<VehicleResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return vehicleService.list(PageRequest.of(page, Math.min(size, 100))).map(vehicleMapper::toResponse);
+		return vehicleService.list(pageableResolver.resolve(page, size)).map(vehicleMapper::toResponse);
 	}
 
 	@GetMapping("/{publicId}")

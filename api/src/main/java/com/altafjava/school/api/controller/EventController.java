@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +21,7 @@ import com.altafjava.school.api.dto.response.EventRegistrationResponse;
 import com.altafjava.school.api.dto.response.EventResponse;
 import com.altafjava.school.api.mapper.EventMapper;
 import com.altafjava.school.api.mapper.EventRegistrationMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.EventRegistrationService;
 import com.altafjava.school.application.service.EventService;
@@ -35,12 +35,16 @@ public class EventController {
 	private final EventRegistrationService eventRegistrationService;
 	private final EventRegistrationMapper eventRegistrationMapper;
 
+	private final SpringDataPageableResolver pageableResolver;
+
 	public EventController(EventService eventService, EventMapper eventMapper,
-			EventRegistrationService eventRegistrationService, EventRegistrationMapper eventRegistrationMapper) {
+			EventRegistrationService eventRegistrationService, EventRegistrationMapper eventRegistrationMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.eventService = eventService;
 		this.eventMapper = eventMapper;
 		this.eventRegistrationService = eventRegistrationService;
 		this.eventRegistrationMapper = eventRegistrationMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -48,7 +52,7 @@ public class EventController {
 	public Page<EventResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return eventService.list(PageRequest.of(page, Math.min(size, 100))).map(eventMapper::toResponse);
+		return eventService.list(pageableResolver.resolve(page, size)).map(eventMapper::toResponse);
 	}
 
 	@GetMapping("/{publicId}")
@@ -83,7 +87,7 @@ public class EventController {
 	public Page<EventRegistrationResponse> listRegistrations(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return eventRegistrationService.listForEvent(publicId, PageRequest.of(page, Math.min(size, 100)))
+		return eventRegistrationService.listForEvent(publicId, pageableResolver.resolve(page, size))
 				.map(eventRegistrationMapper::toResponse);
 	}
 

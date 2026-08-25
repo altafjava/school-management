@@ -17,6 +17,32 @@ class LeaveTypeTest {
 	}
 
 	@Test
+	void create_isPaidByDefault() {
+		LeaveType leaveType = LeaveType.create("Sick Leave", BigDecimal.valueOf(12));
+
+		assertTrue(leaveType.isPaid());
+	}
+
+	@Test
+	void markUnpaid_flipsPaidFlag() {
+		LeaveType leaveType = LeaveType.create("Unpaid Leave", BigDecimal.valueOf(0));
+
+		leaveType.markUnpaid();
+
+		assertFalse(leaveType.isPaid());
+	}
+
+	@Test
+	void markPaid_reversesMarkUnpaid() {
+		LeaveType leaveType = LeaveType.create("Sick Leave", BigDecimal.valueOf(12));
+		leaveType.markUnpaid();
+
+		leaveType.markPaid();
+
+		assertTrue(leaveType.isPaid());
+	}
+
+	@Test
 	void updateDetails_replacesMutableFields() {
 		LeaveType leaveType = LeaveType.create("Sick Leave", BigDecimal.valueOf(12));
 

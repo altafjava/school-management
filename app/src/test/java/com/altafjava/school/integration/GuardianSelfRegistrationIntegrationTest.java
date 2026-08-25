@@ -3,6 +3,7 @@ package com.altafjava.school.integration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,11 +18,15 @@ import com.altafjava.platform.domain.tenant.model.Tenant;
 import com.altafjava.school.application.service.GuardianRegistrationSettingsService;
 import com.altafjava.school.application.service.GuardianSelfRegistrationService;
 import com.altafjava.school.application.service.GuardianService;
+import com.altafjava.school.application.service.StudentService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.guardian.model.Guardian;
 import com.altafjava.school.domain.guardian.model.GuardianSelfRegistrationMode;
+import com.altafjava.school.domain.guardian.model.RelationshipType;
+import com.altafjava.school.domain.guardian.repository.StudentGuardianLinkRepository;
+import com.altafjava.school.domain.student.model.Student;
 
 /**
  * Real-DB coverage of the dual self-registration mode: claim-existing-record vs. open-create-new,
@@ -39,6 +44,12 @@ class GuardianSelfRegistrationIntegrationTest extends SchoolIntegrationTestBase 
 
 	@Autowired
 	private GuardianService guardianService;
+
+	@Autowired
+	private StudentService studentService;
+
+	@Autowired
+	private StudentGuardianLinkRepository studentGuardianLinkRepository;
 
 	@Autowired
 	private TenantOnboardingService onboardingService;
@@ -73,6 +84,24 @@ class GuardianSelfRegistrationIntegrationTest extends SchoolIntegrationTestBase 
 
 		assertEquals(pending.getPublicId(), claimed.getPublicId());
 		assertNotNull(claimed.getUserId());
+	}
+
+	@Test
+	void register_withPendingGuardianAlreadyLinkedToStudent_stampsConsentOnLink() {
+		String suffix = UUID.randomUUID().toString().substring(0, 6);
+		String email = "pending-" + suffix + "@school.test";
+		Guardian pending = guardianService.create("Jane", "Doe", email, "555-0100", null);
+		Student student = studentService.enroll("STU-" + suffix, "Alice", "Smith", "alice-" + suffix + "@school.test",
+				null);
+		guardianService.linkToStudent(pending.getPublicId().toString(), student.getPublicId().toString(),
+				RelationshipType.MOTHER, true);
+
+		guardianSelfRegistrationService.register(email, "Password123!", "Jane", "Doe", "555-0100");
+
+		List<com.altafjava.school.domain.guardian.model.StudentGuardianLink> links = studentGuardianLinkRepository
+				.findAllByGuardianIdAndTenantId(pending.getId(), tenant.getId());
+		assertEquals(1, links.size());
+		assertNotNull(links.get(0).getConsentGivenAt());
 	}
 
 	@Test

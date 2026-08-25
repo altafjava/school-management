@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,7 @@ import com.altafjava.school.api.dto.request.UpdateTeacherContactDetailsRequest;
 import com.altafjava.school.api.dto.request.UpdateTeacherHrDetailsRequest;
 import com.altafjava.school.api.dto.response.TeacherResponse;
 import com.altafjava.school.api.mapper.TeacherMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.TeacherService;
 
 @RestController
@@ -29,9 +29,13 @@ public class TeacherController {
 	private final TeacherService teacherService;
 	private final TeacherMapper teacherMapper;
 
-	public TeacherController(TeacherService teacherService, TeacherMapper teacherMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public TeacherController(TeacherService teacherService, TeacherMapper teacherMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.teacherService = teacherService;
 		this.teacherMapper = teacherMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -39,7 +43,7 @@ public class TeacherController {
 	public Page<TeacherResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return teacherService.listTeachers(PageRequest.of(page, Math.min(size, 100)))
+		return teacherService.listTeachers(pageableResolver.resolve(page, size))
 				.map(teacherMapper::toResponse);
 	}
 

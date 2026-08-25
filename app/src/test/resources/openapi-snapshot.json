@@ -19,6 +19,9 @@
     "tenantHeader" : [ ]
   } ],
   "tags" : [ {
+    "name" : "Push Providers (Tenant)",
+    "description" : "Per-tenant push provider override"
+  }, {
     "name" : "AdminPerformance Management",
     "description" : "APIs for managing AdminPerformance operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
@@ -133,6 +136,12 @@
     "name" : "Report Management",
     "description" : "APIs for managing Report operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
+    "name" : "Push Providers (Admin)",
+    "description" : "Platform-wide default push provider configuration"
+  }, {
+    "name" : "SMS Providers (Tenant)",
+    "description" : "Per-tenant SMS provider override"
+  }, {
     "name" : "Subscriptions",
     "description" : "Subscription Management"
   }, {
@@ -204,6 +213,9 @@
   }, {
     "name" : "SCIM Tokens (Tenant)",
     "description" : "Per-tenant SCIM 2.0 provisioning bearer tokens"
+  }, {
+    "name" : "SMS Providers (Admin)",
+    "description" : "Platform-wide default SMS provider configuration"
   }, {
     "name" : "Notifications",
     "description" : "User notification management"
@@ -694,6 +706,176 @@
         } ]
       }
     },
+    "/api/v1/tenant-settings/sms-providers/{providerType}" : {
+      "put" : {
+        "tags" : [ "SMS Providers (Tenant)" ],
+        "summary" : "Upsert Tenant SMS Provider Config",
+        "description" : "Creates or updates the calling tenant's own config for one provider type. A blank/omitted secret leaves the currently-stored secret untouched.",
+        "operationId" : "upsertTenantSmsProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertSmsProviderConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseSmsProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "SMS Providers (Tenant)" ],
+        "summary" : "Delete Tenant SMS Provider Config",
+        "description" : "Removes the calling tenant's own config for one provider type — reverts to the platform default if it was active.",
+        "operationId" : "deleteTenantSmsProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/push-providers/{providerType}" : {
+      "put" : {
+        "tags" : [ "Push Providers (Tenant)" ],
+        "summary" : "Upsert Tenant Push Provider Config",
+        "description" : "Creates or updates the calling tenant's own config for one provider type. A blank/omitted secret leaves the currently-stored secret untouched.",
+        "operationId" : "upsertTenantPushProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertPushProviderConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePushProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "Push Providers (Tenant)" ],
+        "summary" : "Delete Tenant Push Provider Config",
+        "description" : "Removes the calling tenant's own config for one provider type — reverts to the platform default if it was active.",
+        "operationId" : "deleteTenantPushProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/tenant-settings/payment-gateways/{providerType}" : {
       "put" : {
         "tags" : [ "Payment Gateways (Tenant)" ],
@@ -862,6 +1044,72 @@
         }, {
           "tenantHeader" : [ ]
         } ]
+      }
+    },
+    "/api/v1/students/{publicId}/custom-fields" : {
+      "get" : {
+        "tags" : [ "student-custom-field-controller" ],
+        "operationId" : "get_2",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CustomFieldValueResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "student-custom-field-controller" ],
+        "operationId" : "set",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetCustomFieldValuesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CustomFieldValueResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/reports/definitions/{id}" : {
@@ -1176,7 +1424,7 @@
     "/api/v1/guardians/self-registration-settings" : {
       "get" : {
         "tags" : [ "guardian-registration-settings-controller" ],
-        "operationId" : "get_2",
+        "operationId" : "get_3",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -1541,6 +1789,91 @@
         } ]
       }
     },
+    "/api/v1/admin/sms-providers/{providerType}" : {
+      "put" : {
+        "tags" : [ "SMS Providers (Admin)" ],
+        "summary" : "Upsert SMS Provider Config",
+        "description" : "Creates or updates the platform-default config for one provider type. A blank/omitted secret leaves the currently-stored secret untouched.",
+        "operationId" : "upsertSmsProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertSmsProviderConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseSmsProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "SMS Providers (Admin)" ],
+        "summary" : "Delete SMS Provider Config",
+        "description" : "Removes the platform-default config for one provider type.",
+        "operationId" : "deleteSmsProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/admin/scheduler/jobs/{jobName}" : {
       "get" : {
         "tags" : [ "Job Management" ],
@@ -1617,6 +1950,91 @@
         "responses" : {
           "200" : {
             "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/push-providers/{providerType}" : {
+      "put" : {
+        "tags" : [ "Push Providers (Admin)" ],
+        "summary" : "Upsert Push Provider Config",
+        "description" : "Creates or updates the platform-default config for one provider type. A blank/omitted secret leaves the currently-stored secret untouched.",
+        "operationId" : "upsertPushProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpsertPushProviderConfigRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Config saved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Missing required fields for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePushProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "Push Providers (Admin)" ],
+        "summary" : "Delete Push Provider Config",
+        "description" : "Removes the platform-default config for one provider type.",
+        "operationId" : "deletePushProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Config deleted successfully"
           }
         },
         "security" : [ {
@@ -3606,6 +4024,81 @@
         }
       }
     },
+    "/api/v1/students/{studentPublicId}/certificates" : {
+      "get" : {
+        "tags" : [ "certificate-controller" ],
+        "operationId" : "list_8",
+        "parameters" : [ {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageCertificateIssuanceResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "certificate-controller" ],
+        "operationId" : "issue",
+        "parameters" : [ {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "certificateTemplatePublicId",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CertificateIssuanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/students/{publicId}/report-cards" : {
       "get" : {
         "tags" : [ "student-controller" ],
@@ -3774,10 +4267,80 @@
         } ]
       }
     },
+    "/api/v1/salary-structures" : {
+      "get" : {
+        "tags" : [ "salary-structure-controller" ],
+        "operationId" : "listForTeacher",
+        "parameters" : [ {
+          "name" : "teacherPublicId",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageSalaryStructureResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "salary-structure-controller" ],
+        "operationId" : "create_5",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateSalaryStructureRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SalaryStructureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/routes" : {
       "get" : {
         "tags" : [ "route-controller" ],
-        "operationId" : "list_8",
+        "operationId" : "list_9",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -3812,7 +4375,7 @@
       },
       "post" : {
         "tags" : [ "route-controller" ],
-        "operationId" : "create_5",
+        "operationId" : "create_6",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4015,8 +4578,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
-            "type" : "string",
-            "enum" : [ "STORAGE_BYTES", "FILE_UPLOADS", "PARENT_LOGINS", "MOBILE_APP_SESSIONS", "REPORTS_GENERATED", "CUSTOM_REPORTS", "BULK_IMPORTS", "STUDENTS_COUNT", "TEACHERS_COUNT", "PARENTS_COUNT", "CLASSES_COUNT", "API_CALLS", "ACTIVE_USERS_LAST_30_DAYS" ]
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -4209,7 +4771,7 @@
     "/api/v1/periods" : {
       "get" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "list_9",
+        "operationId" : "list_10",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4244,7 +4806,7 @@
       },
       "post" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "create_6",
+        "operationId" : "create_7",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4262,6 +4824,69 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/PeriodResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/period-attendance" : {
+      "get" : {
+        "tags" : [ "period-attendance-controller" ],
+        "operationId" : "list_11",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagePeriodAttendanceResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "period-attendance-controller" ],
+        "operationId" : "mark",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/MarkPeriodAttendanceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PeriodAttendanceResponse"
                 }
               }
             }
@@ -4686,7 +5311,7 @@
     "/api/v1/leave-types" : {
       "get" : {
         "tags" : [ "leave-type-controller" ],
-        "operationId" : "list_10",
+        "operationId" : "list_12",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4721,7 +5346,7 @@
       },
       "post" : {
         "tags" : [ "leave-type-controller" ],
-        "operationId" : "create_7",
+        "operationId" : "create_8",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4749,7 +5374,7 @@
     "/api/v1/leave-requests" : {
       "get" : {
         "tags" : [ "leave-request-controller" ],
-        "operationId" : "list_11",
+        "operationId" : "list_13",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4812,7 +5437,7 @@
     "/api/v1/guardians" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "list_12",
+        "operationId" : "list_14",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4847,7 +5472,7 @@
       },
       "post" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "create_8",
+        "operationId" : "create_9",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -4939,7 +5564,7 @@
     "/api/v1/grading-scales" : {
       "get" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "list_13",
+        "operationId" : "list_15",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -4974,7 +5599,7 @@
       },
       "post" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "create_9",
+        "operationId" : "create_10",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5002,7 +5627,7 @@
     "/api/v1/grades" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "list_14",
+        "operationId" : "list_16",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5122,7 +5747,7 @@
     "/api/v1/fee-structures" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "list_15",
+        "operationId" : "list_17",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5157,7 +5782,7 @@
       },
       "post" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "create_10",
+        "operationId" : "create_11",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5263,7 +5888,7 @@
     "/api/v1/fee-payments" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "list_16",
+        "operationId" : "list_18",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5433,7 +6058,7 @@
     "/api/v1/exams" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "list_17",
+        "operationId" : "list_19",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5496,7 +6121,7 @@
     "/api/v1/events" : {
       "get" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "list_18",
+        "operationId" : "list_20",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5531,7 +6156,7 @@
       },
       "post" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "create_11",
+        "operationId" : "create_12",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5768,7 +6393,7 @@
     "/api/v1/departments" : {
       "get" : {
         "tags" : [ "department-controller" ],
-        "operationId" : "list_19",
+        "operationId" : "list_21",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5803,7 +6428,7 @@
       },
       "post" : {
         "tags" : [ "department-controller" ],
-        "operationId" : "create_12",
+        "operationId" : "create_13",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5828,10 +6453,81 @@
         }
       }
     },
+    "/api/v1/custom-field-definitions" : {
+      "get" : {
+        "tags" : [ "custom-field-definition-controller" ],
+        "operationId" : "list_22",
+        "parameters" : [ {
+          "name" : "entityType",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "STUDENT", "TEACHER" ]
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageCustomFieldDefinitionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "custom-field-definition-controller" ],
+        "operationId" : "create_14",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateCustomFieldDefinitionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CustomFieldDefinitionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/curricula" : {
       "get" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "list_20",
+        "operationId" : "list_23",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5866,7 +6562,7 @@
       },
       "post" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "create_13",
+        "operationId" : "create_15",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -5894,7 +6590,7 @@
     "/api/v1/classrooms" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "list_21",
+        "operationId" : "list_24",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -5929,7 +6625,7 @@
       },
       "post" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "create_14",
+        "operationId" : "create_16",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6060,10 +6756,73 @@
         }
       }
     },
+    "/api/v1/certificate-templates" : {
+      "get" : {
+        "tags" : [ "certificate-template-controller" ],
+        "operationId" : "list_25",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageCertificateTemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "certificate-template-controller" ],
+        "operationId" : "create_17",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateCertificateTemplateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CertificateTemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/books" : {
       "get" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "list_22",
+        "operationId" : "list_26",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -6098,7 +6857,7 @@
       },
       "post" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "create_15",
+        "operationId" : "create_18",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -6189,7 +6948,7 @@
     "/api/v1/boards" : {
       "get" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "list_23",
+        "operationId" : "list_27",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -6224,7 +6983,7 @@
       },
       "post" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "create_16",
+        "operationId" : "create_19",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7299,7 +8058,7 @@
     "/api/v1/attendance" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "list_24",
+        "operationId" : "list_28",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -7334,7 +8093,7 @@
       },
       "post" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "mark",
+        "operationId" : "mark_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7362,7 +8121,7 @@
     "/api/v1/assignments" : {
       "post" : {
         "tags" : [ "assignment-controller" ],
-        "operationId" : "create_17",
+        "operationId" : "create_20",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7390,7 +8149,7 @@
     "/api/v1/assignments/{assignmentPublicId}/submissions" : {
       "get" : {
         "tags" : [ "submission-controller" ],
-        "operationId" : "list_25",
+        "operationId" : "list_29",
         "parameters" : [ {
           "name" : "assignmentPublicId",
           "in" : "path",
@@ -7468,7 +8227,7 @@
     "/api/v1/assets" : {
       "get" : {
         "tags" : [ "asset-controller" ],
-        "operationId" : "list_26",
+        "operationId" : "list_30",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -7503,7 +8262,7 @@
       },
       "post" : {
         "tags" : [ "asset-controller" ],
-        "operationId" : "create_18",
+        "operationId" : "create_21",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7531,7 +8290,7 @@
     "/api/v1/assets/{assetPublicId}/assignments" : {
       "get" : {
         "tags" : [ "asset-assignment-controller" ],
-        "operationId" : "list_27",
+        "operationId" : "list_31",
         "parameters" : [ {
           "name" : "assetPublicId",
           "in" : "path",
@@ -7780,7 +8539,7 @@
       "get" : {
         "tags" : [ "Alert Rules" ],
         "summary" : "List the caller's tenant's alert rules",
-        "operationId" : "list_28",
+        "operationId" : "list_32",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -7800,7 +8559,7 @@
       "post" : {
         "tags" : [ "Alert Rules" ],
         "summary" : "Create an alert rule for the caller's tenant",
-        "operationId" : "create_19",
+        "operationId" : "create_22",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -7841,7 +8600,7 @@
     "/api/v1/admissions" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "list_29",
+        "operationId" : "list_33",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -9571,7 +10330,7 @@
     "/api/v1/academic-years" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "list_30",
+        "operationId" : "list_34",
         "parameters" : [ {
           "name" : "page",
           "in" : "query",
@@ -9606,7 +10365,7 @@
       },
       "post" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "create_20",
+        "operationId" : "create_23",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -9912,7 +10671,7 @@
     "/api/v1/vehicles/{publicId}" : {
       "get" : {
         "tags" : [ "vehicle-controller" ],
-        "operationId" : "get_3",
+        "operationId" : "get_4",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10346,6 +11105,55 @@
         } ]
       }
     },
+    "/api/v1/tenant-settings/sms-providers/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "SMS Providers (Tenant)" ],
+        "summary" : "Activate Tenant SMS Provider Config",
+        "description" : "Marks the given provider type as this tenant's active override, deactivating any other active provider for this tenant.",
+        "operationId" : "activateTenantSmsProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseSmsProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/tenant-settings/security" : {
       "get" : {
         "tags" : [ "Tenant Security Settings" ],
@@ -10392,6 +11200,55 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiResponseTenantSecuritySettingsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/push-providers/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "Push Providers (Tenant)" ],
+        "summary" : "Activate Tenant Push Provider Config",
+        "description" : "Marks the given provider type as this tenant's active override. Does not deactivate any other provider type — FCM and APNS coexist.",
+        "operationId" : "activateTenantPushProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePushProviderConfigResponse"
                 }
               }
             }
@@ -10600,6 +11457,42 @@
         }
       }
     },
+    "/api/v1/subjects/{publicId}/curriculum" : {
+      "patch" : {
+        "tags" : [ "subject-controller" ],
+        "operationId" : "assignCurriculum",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AssignSubjectCurriculumRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SubjectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/students/{publicId}/withdraw" : {
       "patch" : {
         "tags" : [ "student-controller" ],
@@ -10688,10 +11581,46 @@
         }
       }
     },
+    "/api/v1/salary-structures/{publicId}/supersede" : {
+      "patch" : {
+        "tags" : [ "salary-structure-controller" ],
+        "operationId" : "supersede",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SupersedeSalaryStructureRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SalaryStructureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/routes/{publicId}" : {
       "get" : {
         "tags" : [ "route-controller" ],
-        "operationId" : "get_4",
+        "operationId" : "get_5",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10774,10 +11703,62 @@
         }
       }
     },
+    "/api/v1/payslips/{publicId}/finalize" : {
+      "patch" : {
+        "tags" : [ "payslip-controller" ],
+        "operationId" : "finalizePayslip",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayslipResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payslips/{publicId}/disburse" : {
+      "patch" : {
+        "tags" : [ "payslip-controller" ],
+        "operationId" : "disburse",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayslipResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/leave-types/{publicId}" : {
       "get" : {
         "tags" : [ "leave-type-controller" ],
-        "operationId" : "get_5",
+        "operationId" : "get_6",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -10820,6 +11801,58 @@
           },
           "required" : true
         },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LeaveTypeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leave-types/{publicId}/mark-unpaid" : {
+      "patch" : {
+        "tags" : [ "leave-type-controller" ],
+        "operationId" : "markUnpaid",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LeaveTypeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/leave-types/{publicId}/mark-paid" : {
+      "patch" : {
+        "tags" : [ "leave-type-controller" ],
+        "operationId" : "markPaid",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -10941,6 +11974,72 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/LeaveRequestResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardians/{guardianPublicId}/students/{studentPublicId}/consent/revoke" : {
+      "patch" : {
+        "tags" : [ "guardian-controller" ],
+        "operationId" : "revokeConsent",
+        "parameters" : [ {
+          "name" : "guardianPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentGuardianLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/guardians/{guardianPublicId}/students/{studentPublicId}/consent/grant" : {
+      "patch" : {
+        "tags" : [ "guardian-controller" ],
+        "operationId" : "grantConsent",
+        "parameters" : [ {
+          "name" : "guardianPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StudentGuardianLinkResponse"
                 }
               }
             }
@@ -11170,10 +12269,62 @@
         }
       }
     },
+    "/api/v1/exams/{publicId}/complete" : {
+      "patch" : {
+        "tags" : [ "exam-controller" ],
+        "operationId" : "complete",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exams/{publicId}/cancel" : {
+      "patch" : {
+        "tags" : [ "exam-controller" ],
+        "operationId" : "cancel_1",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExamResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/events/{publicId}" : {
       "get" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "get_6",
+        "operationId" : "get_7",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11233,7 +12384,7 @@
     "/api/v1/events/{publicId}/cancel" : {
       "patch" : {
         "tags" : [ "event-controller" ],
-        "operationId" : "cancel_1",
+        "operationId" : "cancel_2",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11347,7 +12498,7 @@
     "/api/v1/departments/{publicId}" : {
       "get" : {
         "tags" : [ "department-controller" ],
-        "operationId" : "get_7",
+        "operationId" : "get_8",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11466,10 +12617,122 @@
         }
       }
     },
+    "/api/v1/custom-field-definitions/{publicId}" : {
+      "get" : {
+        "tags" : [ "custom-field-definition-controller" ],
+        "operationId" : "get_9",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CustomFieldDefinitionResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "custom-field-definition-controller" ],
+        "operationId" : "updateDetails_5",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateCustomFieldDefinitionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CustomFieldDefinitionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/custom-field-definitions/{publicId}/deactivate" : {
+      "patch" : {
+        "tags" : [ "custom-field-definition-controller" ],
+        "operationId" : "deactivate_6",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CustomFieldDefinitionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/custom-field-definitions/{publicId}/activate" : {
+      "patch" : {
+        "tags" : [ "custom-field-definition-controller" ],
+        "operationId" : "activate",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CustomFieldDefinitionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/curricula/{publicId}" : {
       "get" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "get_8",
+        "operationId" : "get_10",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11493,7 +12756,7 @@
       },
       "patch" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "updateDetails_5",
+        "operationId" : "updateDetails_6",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11565,7 +12828,7 @@
     "/api/v1/curricula/{publicId}/deactivate" : {
       "patch" : {
         "tags" : [ "curriculum-controller" ],
-        "operationId" : "deactivate_6",
+        "operationId" : "deactivate_7",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11653,7 +12916,7 @@
     "/api/v1/classrooms/{publicId}/curriculum" : {
       "patch" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "assignCurriculum",
+        "operationId" : "assignCurriculum_1",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11758,10 +13021,122 @@
         }
       }
     },
+    "/api/v1/certificate-templates/{publicId}" : {
+      "get" : {
+        "tags" : [ "certificate-template-controller" ],
+        "operationId" : "get_11",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CertificateTemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch" : {
+        "tags" : [ "certificate-template-controller" ],
+        "operationId" : "updateDetails_7",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateCertificateTemplateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CertificateTemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificate-templates/{publicId}/deactivate" : {
+      "patch" : {
+        "tags" : [ "certificate-template-controller" ],
+        "operationId" : "deactivate_8",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CertificateTemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificate-templates/{publicId}/activate" : {
+      "patch" : {
+        "tags" : [ "certificate-template-controller" ],
+        "operationId" : "activate_1",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CertificateTemplateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/books/{publicId}/deactivate" : {
       "patch" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "deactivate_7",
+        "operationId" : "deactivate_9",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11839,7 +13214,7 @@
     "/api/v1/boards/{publicId}" : {
       "get" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "get_9",
+        "operationId" : "get_12",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11863,7 +13238,7 @@
       },
       "patch" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "updateDetails_6",
+        "operationId" : "updateDetails_8",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -11899,7 +13274,7 @@
     "/api/v1/boards/{publicId}/deactivate" : {
       "patch" : {
         "tags" : [ "board-controller" ],
-        "operationId" : "deactivate_8",
+        "operationId" : "deactivate_10",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -12314,6 +13689,55 @@
         }
       }
     },
+    "/api/v1/admin/sms-providers/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "SMS Providers (Admin)" ],
+        "summary" : "Activate SMS Provider Config",
+        "description" : "Marks the given provider type as the platform default, deactivating any other active provider.",
+        "operationId" : "activateSmsProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseSmsProviderConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/admin/scheduler/jobs/{jobName}/enable" : {
       "patch" : {
         "tags" : [ "Job Management" ],
@@ -12353,6 +13777,55 @@
         "responses" : {
           "200" : {
             "description" : "OK"
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/push-providers/{providerType}/activate" : {
+      "patch" : {
+        "tags" : [ "Push Providers (Admin)" ],
+        "summary" : "Activate Push Provider Config",
+        "description" : "Marks the given provider type active as the platform default. Does not deactivate any other provider type — FCM and APNS coexist.",
+        "operationId" : "activatePushProviderConfig",
+        "parameters" : [ {
+          "name" : "providerType",
+          "in" : "path",
+          "description" : "Provider type",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Provider activated successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "No config exists for the given provider type",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponsePushProviderConfigResponse"
+                }
+              }
+            }
           }
         },
         "security" : [ {
@@ -12785,8 +14258,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
-            "type" : "string",
-            "enum" : [ "STORAGE_BYTES", "FILE_UPLOADS", "PARENT_LOGINS", "MOBILE_APP_SESSIONS", "REPORTS_GENERATED", "CUSTOM_REPORTS", "BULK_IMPORTS", "STUDENTS_COUNT", "TEACHERS_COUNT", "PARENTS_COUNT", "CLASSES_COUNT", "API_CALLS", "ACTIVE_USERS_LAST_30_DAYS" ]
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -12817,8 +14289,7 @@
           "in" : "query",
           "required" : false,
           "schema" : {
-            "type" : "string",
-            "enum" : [ "STORAGE_BYTES", "FILE_UPLOADS", "PARENT_LOGINS", "MOBILE_APP_SESSIONS", "REPORTS_GENERATED", "CUSTOM_REPORTS", "BULK_IMPORTS", "STUDENTS_COUNT", "TEACHERS_COUNT", "PARENTS_COUNT", "CLASSES_COUNT", "API_CALLS", "ACTIVE_USERS_LAST_30_DAYS" ]
+            "type" : "string"
           }
         }, {
           "name" : "startDate",
@@ -12866,8 +14337,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
-            "type" : "string",
-            "enum" : [ "STORAGE_BYTES", "FILE_UPLOADS", "PARENT_LOGINS", "MOBILE_APP_SESSIONS", "REPORTS_GENERATED", "CUSTOM_REPORTS", "BULK_IMPORTS", "STUDENTS_COUNT", "TEACHERS_COUNT", "PARENTS_COUNT", "CLASSES_COUNT", "API_CALLS", "ACTIVE_USERS_LAST_30_DAYS" ]
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -12956,7 +14426,7 @@
     "/api/v1/timetable-entries/{publicId}" : {
       "get" : {
         "tags" : [ "timetable-controller" ],
-        "operationId" : "get_10",
+        "operationId" : "get_13",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13008,7 +14478,7 @@
     "/api/v1/terms/{publicId}" : {
       "get" : {
         "tags" : [ "term-controller" ],
-        "operationId" : "get_11",
+        "operationId" : "get_14",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13104,6 +14574,122 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/tenant-settings/sms-providers" : {
+      "get" : {
+        "tags" : [ "SMS Providers (Tenant)" ],
+        "summary" : "List Tenant SMS Provider Configs",
+        "description" : "Lists the calling tenant's own configured SMS provider rows.",
+        "operationId" : "getTenantSmsProviderConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/sms-providers/effective" : {
+      "get" : {
+        "tags" : [ "SMS Providers (Tenant)" ],
+        "summary" : "Get Effective SMS Provider",
+        "description" : "The provider actually in effect for the calling tenant right now — its own override if active, else the platform default.",
+        "operationId" : "getEffectiveSmsProvider",
+        "responses" : {
+          "200" : {
+            "description" : "Effective provider resolved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/push-providers" : {
+      "get" : {
+        "tags" : [ "Push Providers (Tenant)" ],
+        "summary" : "List Tenant Push Provider Configs",
+        "description" : "Lists the calling tenant's own configured push provider rows.",
+        "operationId" : "getTenantPushProviderConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/tenant-settings/push-providers/effective" : {
+      "get" : {
+        "tags" : [ "Push Providers (Tenant)" ],
+        "summary" : "Get Effective Push Providers",
+        "description" : "Which push provider(s) are actually in effect for the calling tenant right now — FCM and APNS are independent, so both may be true at once.",
+        "operationId" : "getEffectivePushProviders",
+        "responses" : {
+          "200" : {
+            "description" : "Effective providers resolved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
       }
     },
     "/api/v1/tenant-settings/payment-gateways" : {
@@ -13235,7 +14821,7 @@
     "/api/v1/teachers/{publicId}" : {
       "get" : {
         "tags" : [ "teacher-controller" ],
-        "operationId" : "get_12",
+        "operationId" : "get_15",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13426,7 +15012,7 @@
     "/api/v1/subjects/{publicId}" : {
       "get" : {
         "tags" : [ "subject-controller" ],
-        "operationId" : "get_13",
+        "operationId" : "get_16",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13449,10 +15035,44 @@
         }
       }
     },
+    "/api/v1/students/{studentPublicId}/certificates/{certificatePublicId}/download" : {
+      "get" : {
+        "tags" : [ "certificate-controller" ],
+        "operationId" : "download",
+        "parameters" : [ {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "certificatePublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/students/{publicId}" : {
       "get" : {
         "tags" : [ "student-controller" ],
-        "operationId" : "get_14",
+        "operationId" : "get_17",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13818,6 +15438,32 @@
         } ]
       }
     },
+    "/api/v1/salary-structures/{publicId}" : {
+      "get" : {
+        "tags" : [ "salary-structure-controller" ],
+        "operationId" : "get_18",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SalaryStructureResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/reports/executions/{id}" : {
       "get" : {
         "tags" : [ "Report Management" ],
@@ -13971,7 +15617,7 @@
     "/api/v1/periods/{publicId}" : {
       "get" : {
         "tags" : [ "period-controller" ],
-        "operationId" : "get_15",
+        "operationId" : "get_19",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -13994,10 +15640,106 @@
         }
       }
     },
+    "/api/v1/period-attendance/{publicId}" : {
+      "get" : {
+        "tags" : [ "period-attendance-controller" ],
+        "operationId" : "get_20",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PeriodAttendanceResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payslips" : {
+      "get" : {
+        "tags" : [ "payslip-controller" ],
+        "operationId" : "list_35",
+        "parameters" : [ {
+          "name" : "teacherPublicId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PagePayslipResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/payslips/{publicId}" : {
+      "get" : {
+        "tags" : [ "payslip-controller" ],
+        "operationId" : "get_21",
+        "parameters" : [ {
+          "name" : "publicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PayslipResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizations/{organizationPublicId}/rollup-report" : {
       "get" : {
         "tags" : [ "organization-rollup-controller" ],
-        "operationId" : "get_16",
+        "operationId" : "get_22",
         "parameters" : [ {
           "name" : "organizationPublicId",
           "in" : "path",
@@ -14349,7 +16091,7 @@
     "/api/v1/guardians/{publicId}" : {
       "get" : {
         "tags" : [ "guardian-controller" ],
-        "operationId" : "get_17",
+        "operationId" : "get_23",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14412,7 +16154,7 @@
     "/api/v1/grading-scales/{publicId}" : {
       "get" : {
         "tags" : [ "grading-scale-controller" ],
-        "operationId" : "get_18",
+        "operationId" : "get_24",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14438,7 +16180,7 @@
     "/api/v1/grades/{publicId}" : {
       "get" : {
         "tags" : [ "grade-controller" ],
-        "operationId" : "get_19",
+        "operationId" : "get_25",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14553,7 +16295,7 @@
     "/api/v1/fee-structures/{publicId}" : {
       "get" : {
         "tags" : [ "fee-structure-controller" ],
-        "operationId" : "get_20",
+        "operationId" : "get_26",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14579,7 +16321,7 @@
     "/api/v1/fee-payments/{publicId}" : {
       "get" : {
         "tags" : [ "fee-payment-controller" ],
-        "operationId" : "get_21",
+        "operationId" : "get_27",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14631,7 +16373,7 @@
     "/api/v1/exams/{publicId}" : {
       "get" : {
         "tags" : [ "exam-controller" ],
-        "operationId" : "get_22",
+        "operationId" : "get_28",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -14910,6 +16652,36 @@
         }
       }
     },
+    "/api/v1/custom-field-definitions/active" : {
+      "get" : {
+        "tags" : [ "custom-field-definition-controller" ],
+        "operationId" : "listActive_1",
+        "parameters" : [ {
+          "name" : "entityType",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "STUDENT", "TEACHER" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CustomFieldDefinitionResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/currencies" : {
       "get" : {
         "tags" : [ "Currency Management" ],
@@ -14937,7 +16709,7 @@
     "/api/v1/classrooms/{publicId}" : {
       "get" : {
         "tags" : [ "classroom-controller" ],
-        "operationId" : "get_23",
+        "operationId" : "get_29",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -15033,10 +16805,57 @@
         }
       }
     },
+    "/api/v1/certificates/verify/{verificationCode}" : {
+      "get" : {
+        "tags" : [ "certificate-verification-controller" ],
+        "operationId" : "verify_1",
+        "parameters" : [ {
+          "name" : "verificationCode",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CertificateVerificationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/certificate-templates/active" : {
+      "get" : {
+        "tags" : [ "certificate-template-controller" ],
+        "operationId" : "listActive_2",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/CertificateTemplateResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/books/{publicId}" : {
       "get" : {
         "tags" : [ "book-controller" ],
-        "operationId" : "get_24",
+        "operationId" : "get_30",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -15586,7 +17405,7 @@
     "/api/v1/attendance/{publicId}" : {
       "get" : {
         "tags" : [ "attendance-controller" ],
-        "operationId" : "get_25",
+        "operationId" : "get_31",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -15656,7 +17475,7 @@
     "/api/v1/assets/{publicId}" : {
       "get" : {
         "tags" : [ "asset-controller" ],
-        "operationId" : "get_26",
+        "operationId" : "get_32",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -15800,7 +17619,7 @@
     "/api/v1/admissions/{publicId}" : {
       "get" : {
         "tags" : [ "admission-controller" ],
-        "operationId" : "get_27",
+        "operationId" : "get_33",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -16017,6 +17836,35 @@
         },
         "security" : [ {
           "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/sms-providers" : {
+      "get" : {
+        "tags" : [ "SMS Providers (Admin)" ],
+        "summary" : "List SMS Provider Configs",
+        "description" : "Lists all configured platform-default SMS provider rows.",
+        "operationId" : "getSmsProviderConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
         } ]
       }
     },
@@ -16315,6 +18163,35 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiResponseListSagaLogResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/admin/push-providers" : {
+      "get" : {
+        "tags" : [ "Push Providers (Admin)" ],
+        "summary" : "List Push Provider Configs",
+        "description" : "Lists all configured platform-default push provider rows.",
+        "operationId" : "getPushProviderConfigs",
+        "responses" : {
+          "200" : {
+            "description" : "Configs retrieved successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
                 }
               }
             }
@@ -17303,7 +19180,7 @@
     "/api/v1/academic-years/{publicId}" : {
       "get" : {
         "tags" : [ "academic-year-controller" ],
-        "operationId" : "get_28",
+        "operationId" : "get_34",
         "parameters" : [ {
           "name" : "publicId",
           "in" : "path",
@@ -18509,21 +20386,17 @@
           }
         }
       },
-      "UpsertPaymentGatewayConfigRequest" : {
+      "UpsertSmsProviderConfigRequest" : {
         "type" : "object",
         "properties" : {
-          "environment" : {
+          "fromNumber" : {
             "type" : "string"
           },
-          "confirmationMode" : {
-            "type" : "string",
-            "enum" : [ "SYNCHRONOUS", "WEBHOOK", "BOTH" ]
+          "twilioAccountSid" : {
+            "type" : "string"
           },
-          "credentials" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
+          "secret" : {
+            "type" : "string"
           }
         }
       },
@@ -18539,6 +20412,140 @@
           },
           "meta" : {
             "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "ApiResponseSmsProviderConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/SmsProviderConfigResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "SmsProviderConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "providerType" : {
+            "type" : "string",
+            "enum" : [ "CONSOLE", "TWILIO" ]
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "fromNumber" : {
+            "type" : "string"
+          },
+          "twilioAccountSid" : {
+            "type" : "string"
+          },
+          "secretConfigured" : {
+            "type" : "boolean"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "UpsertPushProviderConfigRequest" : {
+        "type" : "object",
+        "properties" : {
+          "fcmProjectId" : {
+            "type" : "string"
+          },
+          "apnsBundleId" : {
+            "type" : "string"
+          },
+          "apnsTeamId" : {
+            "type" : "string"
+          },
+          "apnsKeyId" : {
+            "type" : "string"
+          },
+          "secret" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ApiResponsePushProviderConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/PushProviderConfigResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "PushProviderConfigResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "providerType" : {
+            "type" : "string",
+            "enum" : [ "FCM", "APNS" ]
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "fcmProjectId" : {
+            "type" : "string"
+          },
+          "apnsBundleId" : {
+            "type" : "string"
+          },
+          "apnsTeamId" : {
+            "type" : "string"
+          },
+          "apnsKeyId" : {
+            "type" : "string"
+          },
+          "secretConfigured" : {
+            "type" : "boolean"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "UpsertPaymentGatewayConfigRequest" : {
+        "type" : "object",
+        "properties" : {
+          "environment" : {
+            "type" : "string"
+          },
+          "confirmationMode" : {
+            "type" : "string",
+            "enum" : [ "SYNCHRONOUS", "WEBHOOK", "BOTH" ]
+          },
+          "credentials" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -18681,6 +20688,39 @@
           "updatedAt" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "SetCustomFieldValuesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "values" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "minProperties" : 1
+          }
+        },
+        "required" : [ "values" ]
+      },
+      "CustomFieldValueResponse" : {
+        "type" : "object",
+        "properties" : {
+          "fieldKey" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "fieldType" : {
+            "type" : "string"
+          },
+          "required" : {
+            "type" : "boolean"
+          },
+          "value" : {
+            "type" : "string"
           }
         }
       },
@@ -19681,6 +21721,9 @@
           "academicYearId" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "current" : {
+            "type" : "boolean"
           }
         }
       },
@@ -20748,6 +22791,10 @@
           },
           "active" : {
             "type" : "boolean"
+          },
+          "curriculumId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -20809,6 +22856,29 @@
           }
         }
       },
+      "CertificateIssuanceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "studentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "certificateTemplateId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "issuedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "verificationCode" : {
+            "type" : "string"
+          }
+        }
+      },
       "ReportCardResponse" : {
         "type" : "object",
         "properties" : {
@@ -20860,6 +22930,74 @@
           },
           "error" : {
             "type" : "string"
+          }
+        }
+      },
+      "CreateSalaryStructureRequest" : {
+        "type" : "object",
+        "properties" : {
+          "teacherPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "basicPay" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "houseRentAllowance" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "transportAllowance" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "otherAllowances" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "otherDeductions" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "effectiveFrom" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "basicPay", "effectiveFrom", "houseRentAllowance", "otherAllowances", "otherDeductions", "teacherPublicId", "transportAllowance" ]
+      },
+      "SalaryStructureResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "teacherId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "basicPay" : {
+            "type" : "number"
+          },
+          "houseRentAllowance" : {
+            "type" : "number"
+          },
+          "transportAllowance" : {
+            "type" : "number"
+          },
+          "otherAllowances" : {
+            "type" : "number"
+          },
+          "otherDeductions" : {
+            "type" : "number"
+          },
+          "effectiveFrom" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "active" : {
+            "type" : "boolean"
           }
         }
       },
@@ -21269,6 +23407,65 @@
           "displayOrder" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "MarkPeriodAttendanceRequest" : {
+        "type" : "object",
+        "properties" : {
+          "studentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "classroomId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "timetableEntryId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "attendanceDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "PRESENT", "ABSENT", "LATE", "EXCUSED" ]
+          },
+          "markedBy" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "attendanceDate", "classroomId", "status", "studentId", "timetableEntryId" ]
+      },
+      "PeriodAttendanceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "studentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "classroomId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "timetableEntryId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "attendanceDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "markedBy" : {
+            "type" : "string"
           }
         }
       },
@@ -21731,6 +23928,9 @@
             "type" : "number"
           },
           "active" : {
+            "type" : "boolean"
+          },
+          "paid" : {
             "type" : "boolean"
           }
         }
@@ -22294,9 +24494,13 @@
           "termId" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "examType" : {
+            "type" : "string",
+            "enum" : [ "UNIT_TEST", "MIDTERM", "FINAL", "QUIZ" ]
           }
         },
-        "required" : [ "classroomId", "maxMarks", "scheduledAt", "subjectId", "title" ]
+        "required" : [ "classroomId", "examType", "maxMarks", "scheduledAt", "subjectId", "title" ]
       },
       "ExamResponse" : {
         "type" : "object",
@@ -22325,6 +24529,12 @@
           "termId" : {
             "type" : "integer",
             "format" : "int64"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "examType" : {
+            "type" : "string"
           }
         }
       },
@@ -22582,6 +24792,59 @@
           }
         }
       },
+      "CreateCustomFieldDefinitionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "entityType" : {
+            "type" : "string",
+            "enum" : [ "STUDENT", "TEACHER" ]
+          },
+          "fieldKey" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "label" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "fieldType" : {
+            "type" : "string",
+            "enum" : [ "TEXT", "NUMBER", "DATE", "BOOLEAN" ]
+          },
+          "required" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "entityType", "fieldKey", "fieldType", "label" ]
+      },
+      "CustomFieldDefinitionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "entityType" : {
+            "type" : "string"
+          },
+          "fieldKey" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "fieldType" : {
+            "type" : "string"
+          },
+          "required" : {
+            "type" : "boolean"
+          },
+          "active" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "CreateCurriculumRequest" : {
         "type" : "object",
         "properties" : {
@@ -22769,6 +25032,38 @@
           },
           "fineAmount" : {
             "type" : "number"
+          }
+        }
+      },
+      "CreateCertificateTemplateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 150,
+            "minLength" : 0
+          },
+          "bodyTemplate" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "bodyTemplate", "name" ]
+      },
+      "CertificateTemplateResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "bodyTemplate" : {
+            "type" : "string"
+          },
+          "active" : {
+            "type" : "boolean"
           }
         }
       },
@@ -25652,6 +27947,16 @@
         },
         "required" : [ "email", "firstName", "lastName" ]
       },
+      "AssignSubjectCurriculumRequest" : {
+        "type" : "object",
+        "properties" : {
+          "curriculumPublicId" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "curriculumPublicId" ]
+      },
       "UpdateStudentContactDetailsRequest" : {
         "type" : "object",
         "properties" : {
@@ -25678,6 +27983,36 @@
         },
         "required" : [ "dateOfBirth", "firstName", "lastName" ]
       },
+      "SupersedeSalaryStructureRequest" : {
+        "type" : "object",
+        "properties" : {
+          "basicPay" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "houseRentAllowance" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "transportAllowance" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "otherAllowances" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "otherDeductions" : {
+            "type" : "number",
+            "minimum" : 0.0
+          },
+          "effectiveFrom" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "basicPay", "effectiveFrom", "houseRentAllowance", "otherAllowances", "otherDeductions", "transportAllowance" ]
+      },
       "UpdateRouteRequest" : {
         "type" : "object",
         "properties" : {
@@ -25698,6 +28033,64 @@
           }
         },
         "required" : [ "code", "name" ]
+      },
+      "PayslipResponse" : {
+        "type" : "object",
+        "properties" : {
+          "publicId" : {
+            "type" : "string"
+          },
+          "teacherId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "payYear" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "payMonth" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "basicPay" : {
+            "type" : "number"
+          },
+          "houseRentAllowance" : {
+            "type" : "number"
+          },
+          "transportAllowance" : {
+            "type" : "number"
+          },
+          "otherAllowances" : {
+            "type" : "number"
+          },
+          "otherDeductions" : {
+            "type" : "number"
+          },
+          "grossPay" : {
+            "type" : "number"
+          },
+          "lossOfPayDays" : {
+            "type" : "number"
+          },
+          "lossOfPayAmount" : {
+            "type" : "number"
+          },
+          "netPay" : {
+            "type" : "number"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "finalizedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "disbursedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
       },
       "UpdateLeaveTypeRequest" : {
         "type" : "object",
@@ -25835,6 +28228,24 @@
         },
         "required" : [ "headTeacherPublicId" ]
       },
+      "UpdateCustomFieldDefinitionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "fieldType" : {
+            "type" : "string",
+            "enum" : [ "TEXT", "NUMBER", "DATE", "BOOLEAN" ]
+          },
+          "required" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "fieldType", "label" ]
+      },
       "UpdateCurriculumRequest" : {
         "type" : "object",
         "properties" : {
@@ -25904,6 +28315,21 @@
           }
         },
         "required" : [ "returnedAt" ]
+      },
+      "UpdateCertificateTemplateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 150,
+            "minLength" : 0
+          },
+          "bodyTemplate" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "bodyTemplate", "name" ]
       },
       "UpdateBoardRequest" : {
         "type" : "object",
@@ -26364,19 +28790,17 @@
       "PageVehicleResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -26384,9 +28808,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -26410,8 +28836,14 @@
       "PageableObject" : {
         "type" : "object",
         "properties" : {
+          "paged" : {
+            "type" : "boolean"
+          },
           "unpaged" : {
             "type" : "boolean"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "pageNumber" : {
             "type" : "integer",
@@ -26420,12 +28852,6 @@
           "pageSize" : {
             "type" : "integer",
             "format" : "int32"
-          },
-          "paged" : {
-            "type" : "boolean"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
           },
           "offset" : {
             "type" : "integer",
@@ -26436,10 +28862,10 @@
       "SortObject" : {
         "type" : "object",
         "properties" : {
-          "unsorted" : {
+          "sorted" : {
             "type" : "boolean"
           },
-          "sorted" : {
+          "unsorted" : {
             "type" : "boolean"
           },
           "empty" : {
@@ -26588,8 +29014,7 @@
           "metricType" : {
             "type" : "string",
             "default" : "",
-            "description" : "Metric type this record measures",
-            "enum" : [ "STORAGE_BYTES", "FILE_UPLOADS", "PARENT_LOGINS", "MOBILE_APP_SESSIONS", "REPORTS_GENERATED", "CUSTOM_REPORTS", "BULK_IMPORTS", "STUDENTS_COUNT", "TEACHERS_COUNT", "PARENTS_COUNT", "CLASSES_COUNT", "API_CALLS", "ACTIVE_USERS_LAST_30_DAYS" ]
+            "description" : "Metric type this record measures"
           },
           "value" : {
             "type" : "integer",
@@ -26727,19 +29152,17 @@
       "PageTransportAssignmentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -26747,9 +29170,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -26773,19 +29198,17 @@
       "PageTimetableEntryResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -26793,9 +29216,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -26819,19 +29244,17 @@
       "PageTermResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -26839,9 +29262,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -26939,19 +29364,17 @@
       "PageTeacherResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -26959,9 +29382,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27035,19 +29460,17 @@
       "PageSubjectResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -27055,9 +29478,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27081,19 +29506,17 @@
       "PageStudentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -27101,9 +29524,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27124,22 +29549,20 @@
           }
         }
       },
-      "PageReportCardResponse" : {
+      "PageCertificateIssuanceResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -27147,9 +29570,57 @@
           "last" : {
             "type" : "boolean"
           },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CertificateIssuanceResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageReportCardResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27173,19 +29644,17 @@
       "PageGradeResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -27193,9 +29662,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27255,19 +29726,17 @@
       "PageAttendanceResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -27275,9 +29744,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27355,22 +29826,20 @@
           }
         }
       },
-      "PageRouteResponse" : {
+      "PageSalaryStructureResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -27378,9 +29847,57 @@
           "last" : {
             "type" : "boolean"
           },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SalaryStructureResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageRouteResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27442,46 +29959,23 @@
       "PageReportDefinitionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "first" : {
-            "type" : "boolean"
-          },
-          "last" : {
-            "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "content" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ReportDefinitionResponse"
             }
           },
-          "number" : {
+          "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "empty" : {
-            "type" : "boolean"
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -27505,46 +29999,23 @@
       "PageReportExecutionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "first" : {
-            "type" : "boolean"
-          },
-          "last" : {
-            "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "content" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ReportExecutionResponse"
             }
           },
-          "number" : {
+          "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "empty" : {
-            "type" : "boolean"
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -27572,8 +30043,7 @@
         "type" : "object",
         "properties" : {
           "metricType" : {
-            "type" : "string",
-            "enum" : [ "STORAGE_BYTES", "FILE_UPLOADS", "PARENT_LOGINS", "MOBILE_APP_SESSIONS", "REPORTS_GENERATED", "CUSTOM_REPORTS", "BULK_IMPORTS", "STUDENTS_COUNT", "TEACHERS_COUNT", "PARENTS_COUNT", "CLASSES_COUNT", "API_CALLS", "ACTIVE_USERS_LAST_30_DAYS" ]
+            "type" : "string"
           },
           "current" : {
             "type" : "integer",
@@ -27734,19 +30204,17 @@
       "PagePeriodResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -27754,9 +30222,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -27766,6 +30236,98 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/PeriodResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PagePeriodAttendanceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PeriodAttendanceResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PagePayslipResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PayslipResponse"
             }
           },
           "number" : {
@@ -28003,46 +30565,23 @@
       "PageNotificationTemplateResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "first" : {
-            "type" : "boolean"
-          },
-          "last" : {
-            "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "content" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/NotificationTemplateResponse"
             }
           },
-          "number" : {
+          "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "empty" : {
-            "type" : "boolean"
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -28078,19 +30617,17 @@
       "PageLessonResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28098,9 +30635,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28124,19 +30663,17 @@
       "PageLeaveTypeResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28144,9 +30681,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28170,19 +30709,17 @@
       "PageLeaveRequestResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28190,9 +30727,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28253,19 +30792,17 @@
       "PageGuardianResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28273,9 +30810,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28299,19 +30838,17 @@
       "PageGradingScaleResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28319,9 +30856,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28432,19 +30971,17 @@
       "PageFeeStructureResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28452,9 +30989,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28478,19 +31017,17 @@
       "PageFeeAssignmentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28498,9 +31035,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28524,19 +31063,17 @@
       "PageFeePaymentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28544,9 +31081,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28570,19 +31109,17 @@
       "PageExamResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28590,9 +31127,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28616,19 +31155,17 @@
       "PageEventResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28636,9 +31173,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28662,19 +31201,17 @@
       "PageEventRegistrationResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28682,9 +31219,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28708,19 +31247,17 @@
       "PageDisciplineIncidentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28728,9 +31265,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28754,19 +31293,17 @@
       "PageDepartmentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28774,9 +31311,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28797,22 +31336,20 @@
           }
         }
       },
-      "PageCurriculumResponse" : {
+      "PageCustomFieldDefinitionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28820,9 +31357,57 @@
           "last" : {
             "type" : "boolean"
           },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CustomFieldDefinitionResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageCurriculumResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28902,19 +31487,17 @@
       "PageClassroomResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28922,9 +31505,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28948,19 +31533,17 @@
       "PageCirculationResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -28968,9 +31551,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -28991,22 +31576,35 @@
           }
         }
       },
-      "PageBookResponse" : {
+      "CertificateVerificationResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
+          "studentName" : {
+            "type" : "string"
           },
+          "certificateName" : {
+            "type" : "string"
+          },
+          "issuedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "PageCertificateTemplateResponse" : {
+        "type" : "object",
+        "properties" : {
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -29014,9 +31612,57 @@
           "last" : {
             "type" : "boolean"
           },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CertificateTemplateResponse"
+            }
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PageBookResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "numberOfElements" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "first" : {
+            "type" : "boolean"
+          },
+          "last" : {
+            "type" : "boolean"
+          },
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -29040,19 +31686,17 @@
       "PageBoardResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -29060,9 +31704,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -29587,19 +32233,17 @@
       "PageSubmissionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -29607,9 +32251,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -29633,19 +32279,17 @@
       "PageAssignmentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -29653,9 +32297,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -29679,19 +32325,17 @@
       "PageAssetResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -29699,9 +32343,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -29725,19 +32371,17 @@
       "PageAssetAssignmentResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -29745,9 +32389,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -29936,19 +32582,17 @@
       "PageAdmissionResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -29956,9 +32600,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",
@@ -30031,46 +32677,23 @@
       "PageAdminUsageMetricResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "first" : {
-            "type" : "boolean"
-          },
-          "last" : {
-            "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "content" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/AdminUsageMetricResponse"
             }
           },
-          "number" : {
+          "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "empty" : {
-            "type" : "boolean"
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -31157,46 +33780,23 @@
       "PageCriticalErrorResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "first" : {
-            "type" : "boolean"
-          },
-          "last" : {
-            "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "content" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/CriticalErrorResponse"
             }
           },
-          "number" : {
+          "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "empty" : {
-            "type" : "boolean"
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -31220,46 +33820,23 @@
       "PageSystemAuditLogResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
-          },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
-          },
-          "first" : {
-            "type" : "boolean"
-          },
-          "last" : {
-            "type" : "boolean"
-          },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "content" : {
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/SystemAuditLogResponse"
             }
           },
-          "number" : {
+          "pageNumber" : {
             "type" : "integer",
             "format" : "int32"
           },
-          "empty" : {
-            "type" : "boolean"
+          "pageSize" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -31445,19 +34022,17 @@
       "PageAcademicYearResponse" : {
         "type" : "object",
         "properties" : {
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
           },
-          "pageable" : {
-            "$ref" : "#/components/schemas/PageableObject"
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
           },
-          "sort" : {
-            "$ref" : "#/components/schemas/SortObject"
+          "numberOfElements" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "first" : {
             "type" : "boolean"
@@ -31465,9 +34040,11 @@
           "last" : {
             "type" : "boolean"
           },
-          "numberOfElements" : {
-            "type" : "integer",
-            "format" : "int32"
+          "pageable" : {
+            "$ref" : "#/components/schemas/PageableObject"
+          },
+          "sort" : {
+            "$ref" : "#/components/schemas/SortObject"
           },
           "size" : {
             "type" : "integer",

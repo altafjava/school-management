@@ -75,7 +75,8 @@ class StudentGpaServiceTest {
 	}
 
 	private Exam examScheduledAt(long id, long classroomId, LocalDateTime scheduledAt) {
-		Exam exam = Exam.create("Midterm", 5L, classroomId, scheduledAt, BigDecimal.valueOf(100), null);
+		Exam exam = Exam.create("Midterm", 5L, classroomId, scheduledAt, BigDecimal.valueOf(100), null,
+				com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
 		exam.setId(id);
 		return exam;
 	}

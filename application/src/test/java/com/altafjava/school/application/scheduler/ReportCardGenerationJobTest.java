@@ -79,7 +79,7 @@ class ReportCardGenerationJobTest {
 		Term term = termWithId(5L, "Term 1");
 		Student student1 = studentWithId(1L);
 		Student student2 = studentWithId(2L);
-		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.of(term));
+		when(termRepository.findCurrentByTenantId(eq(1L))).thenReturn(Optional.of(term));
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student1, student2));
 		when(tenantAdminNotifier.notifyAll(eq(1L), any(), any())).thenReturn(1);
@@ -94,7 +94,7 @@ class ReportCardGenerationJobTest {
 
 	@Test
 	void execute_withNoCurrentTerm_skipsWithoutError() {
-		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.empty());
+		when(termRepository.findCurrentByTenantId(eq(1L))).thenReturn(Optional.empty());
 
 		JobExecutionResult result = job.execute(context());
 
@@ -106,7 +106,7 @@ class ReportCardGenerationJobTest {
 	@Test
 	void execute_withNoActiveStudents_doesNotNotify() {
 		Term term = termWithId(5L, "Term 1");
-		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.of(term));
+		when(termRepository.findCurrentByTenantId(eq(1L))).thenReturn(Optional.of(term));
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of());
 
@@ -121,7 +121,7 @@ class ReportCardGenerationJobTest {
 		Term term = termWithId(5L, "Term 1");
 		Student student1 = studentWithId(1L);
 		Student student2 = studentWithId(2L);
-		when(termRepository.findCurrentByTenantId(eq(1L), any(LocalDate.class))).thenReturn(Optional.of(term));
+		when(termRepository.findCurrentByTenantId(eq(1L))).thenReturn(Optional.of(term));
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student1, student2));
 		when(reportCardService.generate(1L, 5L)).thenThrow(new RuntimeException("storage unavailable"));

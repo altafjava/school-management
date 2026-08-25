@@ -17,11 +17,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
+import com.altafjava.school.domain.exam.model.ExamStatus;
+import com.altafjava.school.domain.exam.model.ExamType;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.domain.term.repository.TermRepository;
@@ -57,7 +60,7 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 5L, 99L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100), null));
+						BigDecimal.valueOf(100), null, ExamType.MIDTERM));
 
 		verify(examRepository, never()).save(any());
 	}
@@ -69,7 +72,7 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 99L, 10L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100), null));
+						BigDecimal.valueOf(100), null, ExamType.MIDTERM));
 
 		verify(examRepository, never()).save(any());
 	}
@@ -81,7 +84,7 @@ class ExamServiceTest {
 		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		assertDoesNotThrow(() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
-				BigDecimal.valueOf(100), null));
+				BigDecimal.valueOf(100), null, ExamType.MIDTERM));
 	}
 
 	@Test
@@ -92,13 +95,14 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100), 99L));
+						BigDecimal.valueOf(100), 99L, ExamType.MIDTERM));
 
 		verify(examRepository, never()).save(any());
 	}
 
 	private Exam examWithPublicId(UUID publicId) {
-		Exam exam = Exam.create("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100), null);
+		Exam exam = Exam.create("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100), null,
+				ExamType.MIDTERM);
 		exam.setPublicId(publicId);
 		return exam;
 	}
@@ -137,5 +141,49 @@ class ExamServiceTest {
 		when(termRepository.existsByIdAndTenantId(99L, 1L)).thenReturn(false);
 
 		assertThrows(ResourceNotFoundException.class, () -> examService.assignTerm(publicId.toString(), 99L));
+	}
+
+	@Test
+	void complete_scheduledExam_setsStatusCompleted() {
+		UUID publicId = UUID.randomUUID();
+		Exam exam = examWithPublicId(publicId);
+		when(examRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(exam));
+		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Exam completed = examService.complete(publicId.toString());
+
+		assertEquals(ExamStatus.COMPLETED, completed.getStatus());
+	}
+
+	@Test
+	void complete_alreadyCancelledExam_throwsBusinessException() {
+		UUID publicId = UUID.randomUUID();
+		Exam exam = examWithPublicId(publicId);
+		exam.cancel();
+		when(examRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(exam));
+
+		assertThrows(BusinessException.class, () -> examService.complete(publicId.toString()));
+	}
+
+	@Test
+	void cancel_scheduledExam_setsStatusCancelled() {
+		UUID publicId = UUID.randomUUID();
+		Exam exam = examWithPublicId(publicId);
+		when(examRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(exam));
+		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Exam cancelled = examService.cancel(publicId.toString());
+
+		assertEquals(ExamStatus.CANCELLED, cancelled.getStatus());
+	}
+
+	@Test
+	void cancel_alreadyCompletedExam_throwsBusinessException() {
+		UUID publicId = UUID.randomUUID();
+		Exam exam = examWithPublicId(publicId);
+		exam.complete();
+		when(examRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(exam));
+
+		assertThrows(BusinessException.class, () -> examService.cancel(publicId.toString()));
 	}
 }

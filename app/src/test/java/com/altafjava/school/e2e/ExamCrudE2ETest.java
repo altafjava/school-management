@@ -142,7 +142,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Midterm\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100}")
+						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100,\"examType\":\"MIDTERM\"}")
 				.when()
 				.post("/api/v1/exams")
 				.then()
@@ -174,7 +174,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + studentToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Final\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-05-01T09:00:00\",\"maxMarks\":100}")
+						+ ",\"scheduledAt\":\"2026-05-01T09:00:00\",\"maxMarks\":100,\"examType\":\"FINAL\"}")
 				.when()
 				.post("/api/v1/exams")
 				.then()
@@ -191,7 +191,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Quiz\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-04-01T09:00:00\",\"maxMarks\":50}")
+						+ ",\"scheduledAt\":\"2026-04-01T09:00:00\",\"maxMarks\":50,\"examType\":\"QUIZ\"}")
 				.when()
 				.post("/api/v1/exams")
 				.then()
@@ -212,6 +212,72 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/exams/" + publicId)
 				.then()
 				.statusCode(HttpStatus.NOT_FOUND.value());
+	}
+
+	@Test
+	void completeThenCancelExam_asTenantAdmin_transitionsStatus() {
+		String accessToken = login();
+		Long classroomId = createClassroomAndGetInternalId(accessToken, "CLS-EX4");
+		Long subjectId = createSubjectAndGetInternalId(accessToken, "MATH-EX4");
+		String publicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"title\":\"Unit Test\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
+						+ ",\"scheduledAt\":\"2026-03-05T09:00:00\",\"maxMarks\":50,\"examType\":\"UNIT_TEST\"}")
+				.when()
+				.post("/api/v1/exams")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.body("status", equalTo("SCHEDULED"))
+				.extract().path("publicId");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.patch("/api/v1/exams/" + publicId + "/complete")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("status", equalTo("COMPLETED"));
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.patch("/api/v1/exams/" + publicId + "/cancel")
+				.then()
+				.statusCode(HttpStatus.BAD_REQUEST.value());
+	}
+
+	@Test
+	void cancelExam_asTeacherRole_returns403() {
+		String accessToken = login();
+		Long classroomId = createClassroomAndGetInternalId(accessToken, "CLS-EX5");
+		Long subjectId = createSubjectAndGetInternalId(accessToken, "SCI-EX5");
+		String publicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"title\":\"Quiz\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
+						+ ",\"scheduledAt\":\"2026-03-06T09:00:00\",\"maxMarks\":50,\"examType\":\"QUIZ\"}")
+				.when()
+				.post("/api/v1/exams")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.patch("/api/v1/exams/" + publicId + "/cancel")
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
 	}
 
 	private String login() {

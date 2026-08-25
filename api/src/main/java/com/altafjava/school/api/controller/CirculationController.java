@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,7 @@ import com.altafjava.school.api.dto.request.CheckoutBookRequest;
 import com.altafjava.school.api.dto.request.ReturnBookRequest;
 import com.altafjava.school.api.dto.response.CirculationResponse;
 import com.altafjava.school.api.mapper.CirculationMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.CirculationService;
 
 @RestController
@@ -29,9 +29,13 @@ public class CirculationController {
 	private final CirculationService circulationService;
 	private final CirculationMapper circulationMapper;
 
-	public CirculationController(CirculationService circulationService, CirculationMapper circulationMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public CirculationController(CirculationService circulationService, CirculationMapper circulationMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.circulationService = circulationService;
 		this.circulationMapper = circulationMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -40,7 +44,7 @@ public class CirculationController {
 			@RequestParam String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return circulationService.listForStudent(studentPublicId, PageRequest.of(page, Math.min(size, 100)))
+		return circulationService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
 				.map(circulationMapper::toResponse);
 	}
 

@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +16,7 @@ import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateAcademicYearRequest;
 import com.altafjava.school.api.dto.response.AcademicYearResponse;
 import com.altafjava.school.api.mapper.AcademicYearMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AcademicYearService;
 
@@ -27,9 +27,13 @@ public class AcademicYearController {
 	private final AcademicYearService academicYearService;
 	private final AcademicYearMapper academicYearMapper;
 
-	public AcademicYearController(AcademicYearService academicYearService, AcademicYearMapper academicYearMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public AcademicYearController(AcademicYearService academicYearService, AcademicYearMapper academicYearMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.academicYearService = academicYearService;
 		this.academicYearMapper = academicYearMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -37,7 +41,7 @@ public class AcademicYearController {
 	public Page<AcademicYearResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return academicYearService.listAcademicYears(PageRequest.of(page, Math.min(size, 100)))
+		return academicYearService.listAcademicYears(pageableResolver.resolve(page, size))
 				.map(academicYearMapper::toResponse);
 	}
 

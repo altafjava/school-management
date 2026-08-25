@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +16,7 @@ import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateTermRequest;
 import com.altafjava.school.api.dto.response.TermResponse;
 import com.altafjava.school.api.mapper.TermMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.TermService;
 
@@ -27,9 +27,12 @@ public class TermController {
 	private final TermService termService;
 	private final TermMapper termMapper;
 
-	public TermController(TermService termService, TermMapper termMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public TermController(TermService termService, TermMapper termMapper, SpringDataPageableResolver pageableResolver) {
 		this.termService = termService;
 		this.termMapper = termMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -37,7 +40,7 @@ public class TermController {
 	public Page<TermResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return termService.listTerms(PageRequest.of(page, Math.min(size, 100)))
+		return termService.listTerms(pageableResolver.resolve(page, size))
 				.map(termMapper::toResponse);
 	}
 

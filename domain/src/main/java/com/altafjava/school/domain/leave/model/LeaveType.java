@@ -33,11 +33,18 @@ public class LeaveType extends SoftDeletableEntity {
 	@Column(name = "active", nullable = false)
 	private boolean active;
 
+	// Whether leave under this type is compensated. Payroll's loss-of-pay calculation is the only
+	// consumer today — everything created before this column existed defaults to paid, matching the
+	// prior (implicit) behavior where all leave was treated as compensated.
+	@Column(name = "paid", nullable = false)
+	private boolean paid;
+
 	public static LeaveType create(String name, BigDecimal defaultAnnualDays) {
 		return LeaveType.builder()
 				.name(name)
 				.defaultAnnualDays(defaultAnnualDays)
 				.active(true)
+				.paid(true)
 				.build();
 	}
 
@@ -52,5 +59,13 @@ public class LeaveType extends SoftDeletableEntity {
 
 	public void deactivate() {
 		this.active = false;
+	}
+
+	public void markUnpaid() {
+		this.paid = false;
+	}
+
+	public void markPaid() {
+		this.paid = true;
 	}
 }

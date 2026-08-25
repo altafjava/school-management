@@ -28,5 +28,12 @@
     <include file="db/domain/changesets/021-inventory.xml"/>
     <include file="db/domain/changesets/022-library.xml"/>
     <include file="db/domain/changesets/023-seed-dashboard-roles.xml"/>
+    <include file="db/domain/changesets/024-exam-status-type.xml"/>
+    <include file="db/domain/changesets/025-term-current.xml"/>
+    <include file="db/domain/changesets/026-subject-curriculum.xml"/>
+    <include file="db/domain/changesets/027-period-attendance.xml"/>
+    <include file="db/domain/changesets/028-payroll.xml"/>
+    <include file="db/domain/changesets/029-certificates.xml"/>
+    <include file="db/domain/changesets/030-custom-field-definitions.xml"/>
 
 </databaseChangeLog>

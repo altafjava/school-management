@@ -15,6 +15,8 @@ public interface TimetableEntryRepository extends JpaRepository<TimetableEntry, 
 
 	Optional<TimetableEntry> findByPublicIdAndTenantId(UUID publicId, Long tenantId);
 
+	Optional<TimetableEntry> findByIdAndTenantId(Long id, Long tenantId);
+
 	List<TimetableEntry> findAllByTenantIdAndClassroomId(Long tenantId, Long classroomId);
 
 	List<TimetableEntry> findAllByTenantIdAndTeacherId(Long tenantId, Long teacherId);

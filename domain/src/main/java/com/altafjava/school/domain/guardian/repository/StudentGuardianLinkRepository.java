@@ -16,6 +16,11 @@ public interface StudentGuardianLinkRepository extends JpaRepository<StudentGuar
 
 	boolean existsByGuardianIdAndStudentIdAndTenantId(Long guardianId, Long studentId, Long tenantId);
 
+	Optional<StudentGuardianLink> findByGuardianIdAndStudentIdAndTenantId(Long guardianId, Long studentId,
+			Long tenantId);
+
+	List<StudentGuardianLink> findAllByGuardianIdAndTenantId(Long guardianId, Long tenantId);
+
 	@Query("SELECT l FROM StudentGuardianLink l WHERE l.tenantId = :tenantId AND l.guardianId = :guardianId")
 	Page<StudentGuardianLink> findByGuardianId(@Param("tenantId") Long tenantId,
 			@Param("guardianId") Long guardianId, Pageable pageable);

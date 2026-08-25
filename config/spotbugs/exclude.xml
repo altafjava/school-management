@@ -92,4 +92,39 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on StudentCustomFieldController's 3-arg constructor: flags storing the
+      injected CustomFieldValueService (an application service, same category of type as
+      BookController/RouteController's injected services above) into a field. Same standard
+      constructor-injection pattern, investigated 2026-08-25: no mutable state leak, reference
+      never handed back to a caller — consistent detector noise, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.api.controller.StudentCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!--
+      EI_EXPOSE_REP2 on CertificateService's 9-arg constructor: flags storing the injected
+      StorageService (a platform interface) into a field — the exact same finding already
+      investigated and excluded for ReportCardService above, on the identical StorageService type.
+      Investigated 2026-08-25: no mutable state leak, reference never handed back to a caller.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.application.service.CertificateService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!--
+      EI_EXPOSE_REP2 on CustomFieldValueService's 2-arg constructor: flags storing the injected
+      EntityAttributeService (a platform application-layer interface, same category of type as
+      TenantAdminNotifier/CirculationService's injected platform services above) into a field.
+      Same standard constructor-injection pattern, investigated 2026-08-25: no mutable state leak,
+      reference never handed back to a caller — consistent detector noise, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.application.service.CustomFieldValueService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

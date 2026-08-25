@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.school.api.dto.request.PostLessonRequest;
 import com.altafjava.school.api.dto.response.LessonResponse;
 import com.altafjava.school.api.mapper.LessonMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.LessonService;
 
@@ -26,9 +26,13 @@ public class LessonController {
 	private final LessonService lessonService;
 	private final LessonMapper lessonMapper;
 
-	public LessonController(LessonService lessonService, LessonMapper lessonMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public LessonController(LessonService lessonService, LessonMapper lessonMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.lessonService = lessonService;
 		this.lessonMapper = lessonMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@PostMapping
@@ -48,7 +52,7 @@ public class LessonController {
 	public Page<LessonResponse> listByClassroom(@PathVariable String classroomPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return lessonService.listByClassroom(classroomPublicId, PageRequest.of(page, Math.min(size, 100)))
+		return lessonService.listByClassroom(classroomPublicId, pageableResolver.resolve(page, size))
 				.map(lessonMapper::toResponse);
 	}
 }

@@ -48,8 +48,9 @@ class ControllerAuthorizationFitnessTest {
 			"com.altafjava.school.api.controller.GuardianSelfRegistrationController",
 			"com.altafjava.school.api.controller.FeePaymentWebhookController");
 
-	private static final Set<String> KNOWN_PUBLIC_ENDPOINTS = Set
-			.of("com.altafjava.school.api.controller.AdmissionController#apply");
+	private static final Set<String> KNOWN_PUBLIC_ENDPOINTS = Set.of(
+			"com.altafjava.school.api.controller.AdmissionController#apply",
+			"com.altafjava.school.api.controller.CertificateVerificationController#verify");
 
 	@ArchTest
 	static final ArchRule controllersMustDeclareAuthorization = classes()
