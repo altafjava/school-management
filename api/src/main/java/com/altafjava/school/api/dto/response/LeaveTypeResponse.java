@@ -6,5 +6,6 @@ public record LeaveTypeResponse(
 		String publicId,
 		String name,
 		BigDecimal defaultAnnualDays,
-		boolean active) {
+		boolean active,
+		boolean paid) {
 }

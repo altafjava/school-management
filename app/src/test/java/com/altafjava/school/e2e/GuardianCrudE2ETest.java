@@ -131,6 +131,93 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.statusCode(HttpStatus.NOT_FOUND.value());
 	}
 
+	@Test
+	void grantThenRevokeConsent_asTenantAdmin_updatesConsentGivenAt() {
+		String accessToken = login();
+		String guardianPublicId = createGuardian(accessToken, "consent1-jane@school.test");
+		String studentPublicId = createStudent(accessToken, "consent1-STU");
+		linkGuardianToStudent(accessToken, guardianPublicId, studentPublicId);
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.patch("/api/v1/guardians/" + guardianPublicId + "/students/" + studentPublicId + "/consent/grant")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("consentGivenAt", notNullValue());
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.patch("/api/v1/guardians/" + guardianPublicId + "/students/" + studentPublicId + "/consent/revoke")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("consentGivenAt", org.hamcrest.Matchers.nullValue());
+	}
+
+	@Test
+	void grantConsent_asTeacherRole_returns403() {
+		String accessToken = login();
+		String guardianPublicId = createGuardian(accessToken, "consent2-jane@school.test");
+		String studentPublicId = createStudent(accessToken, "consent2-STU");
+		linkGuardianToStudent(accessToken, guardianPublicId, studentPublicId);
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.contentType(ContentType.JSON)
+				.when()
+				.patch("/api/v1/guardians/" + guardianPublicId + "/students/" + studentPublicId + "/consent/grant")
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
+	}
+
+	private String createGuardian(String accessToken, String email) {
+		return given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"email\":\"" + email + "\","
+						+ "\"phone\":\"555-0100\"}")
+				.when()
+				.post("/api/v1/guardians")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+	}
+
+	private String createStudent(String accessToken, String studentCode) {
+		return given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"studentCode\":\"" + studentCode + "\",\"firstName\":\"Alice\",\"lastName\":\"Smith\","
+						+ "\"email\":\"" + studentCode.toLowerCase() + "@school.test\",\"dateOfBirth\":\"2012-01-01\"}")
+				.when()
+				.post("/api/v1/students")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+	}
+
+	private void linkGuardianToStudent(String accessToken, String guardianPublicId, String studentPublicId) {
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"studentPublicId\":\"" + studentPublicId + "\",\"relationshipType\":\"MOTHER\","
+						+ "\"primaryContact\":true}")
+				.when()
+				.post("/api/v1/guardians/" + guardianPublicId + "/students")
+				.then()
+				.statusCode(HttpStatus.CREATED.value());
+	}
+
 	private String login() {
 		return login(tenantId, adminEmail, adminPassword);
 	}

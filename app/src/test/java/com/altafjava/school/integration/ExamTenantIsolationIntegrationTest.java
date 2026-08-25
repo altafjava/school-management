@@ -89,7 +89,7 @@ class ExamTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 5", "A", academicYearPublicId, null);
 		Subject subject = subjectService.create("MATH-" + UUID.randomUUID().toString().substring(0, 6), "Math", null);
 		examService.schedule("Midterm", subject.getId(), classroom.getId(), LocalDateTime.now().plusDays(7),
-				BigDecimal.valueOf(100), null);
+				BigDecimal.valueOf(100), null, com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
 
 		activateTenant(tenantB);
 		Page<Exam> tenantBExams = examService.listExams(PageRequest.of(0, 100));
@@ -108,7 +108,8 @@ class ExamTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		Subject subject = subjectService.create("SCI-" + UUID.randomUUID().toString().substring(0, 6), "Science",
 				null);
 		Exam exam = examService.schedule("Final", subject.getId(), classroom.getId(),
-				LocalDateTime.now().plusDays(14), BigDecimal.valueOf(100), null);
+				LocalDateTime.now().plusDays(14), BigDecimal.valueOf(100), null,
+				com.altafjava.school.domain.exam.model.ExamType.FINAL);
 		String publicId = exam.getPublicId().toString();
 
 		activateTenant(tenantB);

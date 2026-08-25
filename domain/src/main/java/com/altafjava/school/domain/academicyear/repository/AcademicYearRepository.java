@@ -15,6 +15,8 @@ public interface AcademicYearRepository extends JpaRepository<AcademicYear, Long
 
 	Optional<AcademicYear> findByCurrentTrueAndTenantId(Long tenantId);
 
+	Optional<AcademicYear> findByIdAndTenantId(Long id, Long tenantId);
+
 	boolean existsByNameAndTenantId(String name, Long tenantId);
 
 	boolean existsByIdAndTenantId(Long id, Long tenantId);

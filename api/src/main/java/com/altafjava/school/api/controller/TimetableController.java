@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +16,7 @@ import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateTimetableEntryRequest;
 import com.altafjava.school.api.dto.response.TimetableEntryResponse;
 import com.altafjava.school.api.mapper.TimetableEntryMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.TimetableService;
 
@@ -27,9 +27,13 @@ public class TimetableController {
 	private final TimetableService timetableService;
 	private final TimetableEntryMapper timetableEntryMapper;
 
-	public TimetableController(TimetableService timetableService, TimetableEntryMapper timetableEntryMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public TimetableController(TimetableService timetableService, TimetableEntryMapper timetableEntryMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.timetableService = timetableService;
 		this.timetableEntryMapper = timetableEntryMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -37,7 +41,7 @@ public class TimetableController {
 	public Page<TimetableEntryResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return timetableService.listEntries(PageRequest.of(page, Math.min(size, 100)))
+		return timetableService.listEntries(pageableResolver.resolve(page, size))
 				.map(timetableEntryMapper::toResponse);
 	}
 

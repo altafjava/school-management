@@ -61,4 +61,18 @@ public class LeaveTypeService {
 		leaveType.deactivate();
 		return leaveTypeRepository.save(leaveType);
 	}
+
+	@Transactional
+	public LeaveType markUnpaid(String publicId) {
+		LeaveType leaveType = findByPublicId(publicId);
+		leaveType.markUnpaid();
+		return leaveTypeRepository.save(leaveType);
+	}
+
+	@Transactional
+	public LeaveType markPaid(String publicId) {
+		LeaveType leaveType = findByPublicId(publicId);
+		leaveType.markPaid();
+		return leaveTypeRepository.save(leaveType);
+	}
 }

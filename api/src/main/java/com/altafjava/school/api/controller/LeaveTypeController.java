@@ -3,7 +3,6 @@ package com.altafjava.school.api.controller;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,7 @@ import com.altafjava.school.api.dto.request.CreateLeaveTypeRequest;
 import com.altafjava.school.api.dto.request.UpdateLeaveTypeRequest;
 import com.altafjava.school.api.dto.response.LeaveTypeResponse;
 import com.altafjava.school.api.mapper.LeaveTypeMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.LeaveTypeService;
 
@@ -30,9 +30,13 @@ public class LeaveTypeController {
 	private final LeaveTypeService leaveTypeService;
 	private final LeaveTypeMapper leaveTypeMapper;
 
-	public LeaveTypeController(LeaveTypeService leaveTypeService, LeaveTypeMapper leaveTypeMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public LeaveTypeController(LeaveTypeService leaveTypeService, LeaveTypeMapper leaveTypeMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.leaveTypeService = leaveTypeService;
 		this.leaveTypeMapper = leaveTypeMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -40,7 +44,7 @@ public class LeaveTypeController {
 	public Page<LeaveTypeResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return leaveTypeService.list(PageRequest.of(page, Math.min(size, 100))).map(leaveTypeMapper::toResponse);
+		return leaveTypeService.list(pageableResolver.resolve(page, size)).map(leaveTypeMapper::toResponse);
 	}
 
 	@GetMapping("/active")
@@ -74,5 +78,19 @@ public class LeaveTypeController {
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public LeaveTypeResponse deactivate(@PathVariable String publicId) {
 		return leaveTypeMapper.toResponse(leaveTypeService.deactivate(publicId));
+	}
+
+	// Drives PayrollCalculator's loss-of-pay basis (see PayslipService) — schools that want a leave
+	// category excluded from pay mark it here rather than payroll inventing its own catalog.
+	@PatchMapping("/{publicId}/mark-unpaid")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public LeaveTypeResponse markUnpaid(@PathVariable String publicId) {
+		return leaveTypeMapper.toResponse(leaveTypeService.markUnpaid(publicId));
+	}
+
+	@PatchMapping("/{publicId}/mark-paid")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public LeaveTypeResponse markPaid(@PathVariable String publicId) {
+		return leaveTypeMapper.toResponse(leaveTypeService.markPaid(publicId));
 	}
 }

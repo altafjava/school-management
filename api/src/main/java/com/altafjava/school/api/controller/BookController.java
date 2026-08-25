@@ -3,7 +3,6 @@ package com.altafjava.school.api.controller;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +21,7 @@ import com.altafjava.school.api.dto.response.BookCopyResponse;
 import com.altafjava.school.api.dto.response.BookResponse;
 import com.altafjava.school.api.mapper.BookCopyMapper;
 import com.altafjava.school.api.mapper.BookMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.BookCatalogService;
 
@@ -33,11 +33,14 @@ public class BookController {
 	private final BookMapper bookMapper;
 	private final BookCopyMapper bookCopyMapper;
 
+	private final SpringDataPageableResolver pageableResolver;
+
 	public BookController(BookCatalogService bookCatalogService, BookMapper bookMapper,
-			BookCopyMapper bookCopyMapper) {
+			BookCopyMapper bookCopyMapper, SpringDataPageableResolver pageableResolver) {
 		this.bookCatalogService = bookCatalogService;
 		this.bookMapper = bookMapper;
 		this.bookCopyMapper = bookCopyMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -45,7 +48,7 @@ public class BookController {
 	public Page<BookResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return bookCatalogService.listBooks(PageRequest.of(page, Math.min(size, 100))).map(bookMapper::toResponse);
+		return bookCatalogService.listBooks(pageableResolver.resolve(page, size)).map(bookMapper::toResponse);
 	}
 
 	@GetMapping("/{publicId}")

@@ -33,12 +33,24 @@ public class Term extends SoftDeletableEntity {
 	@Column(name = "academic_year_id", nullable = false)
 	private Long academicYearId;
 
+	@Column(name = "is_current", nullable = false)
+	private boolean current;
+
 	public static Term create(String name, LocalDate startDate, LocalDate endDate, Long academicYearId) {
 		return Term.builder()
 				.name(name)
 				.startDate(startDate)
 				.endDate(endDate)
 				.academicYearId(academicYearId)
+				.current(false)
 				.build();
+	}
+
+	public void markCurrent() {
+		this.current = true;
+	}
+
+	public void markNotCurrent() {
+		this.current = false;
 	}
 }

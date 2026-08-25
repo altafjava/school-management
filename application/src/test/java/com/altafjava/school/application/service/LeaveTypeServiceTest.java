@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,5 +54,18 @@ class LeaveTypeServiceTest {
 
 		assertThrows(BusinessException.class,
 				() -> leaveTypeService.create("Sick Leave", BigDecimal.valueOf(12)));
+	}
+
+	@Test
+	void markUnpaid_flipsPaidFlagOnResolvedLeaveType() {
+		LeaveType leaveType = LeaveType.create("Unpaid Leave", BigDecimal.ZERO);
+		UUID publicId = UUID.randomUUID();
+		leaveType.setPublicId(publicId);
+		when(leaveTypeRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(leaveType));
+		when(leaveTypeRepository.save(any(LeaveType.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		LeaveType result = leaveTypeService.markUnpaid(publicId.toString());
+
+		assertEquals(false, result.isPaid());
 	}
 }

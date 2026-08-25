@@ -11,6 +11,7 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
+import com.altafjava.school.domain.exam.model.ExamType;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.domain.term.repository.TermRepository;
@@ -45,7 +46,7 @@ public class ExamService {
 
 	@Transactional
 	public Exam schedule(String title, Long subjectId, Long classroomId,
-			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId) {
+			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId, ExamType examType) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (!classroomRepository.existsByIdAndTenantId(classroomId, tenantId)) {
 			throw new ResourceNotFoundException("Classroom not found: " + classroomId);
@@ -56,7 +57,7 @@ public class ExamService {
 		if (termId != null && !termRepository.existsByIdAndTenantId(termId, tenantId)) {
 			throw new ResourceNotFoundException("Term not found: " + termId);
 		}
-		Exam exam = Exam.create(title, subjectId, classroomId, scheduledAt, maxMarks, termId);
+		Exam exam = Exam.create(title, subjectId, classroomId, scheduledAt, maxMarks, termId, examType);
 		return examRepository.save(exam);
 	}
 
@@ -75,6 +76,20 @@ public class ExamService {
 			throw new ResourceNotFoundException("Term not found: " + termId);
 		}
 		exam.assignTerm(termId);
+		return examRepository.save(exam);
+	}
+
+	@Transactional
+	public Exam complete(String publicId) {
+		Exam exam = findByPublicId(publicId);
+		exam.complete();
+		return examRepository.save(exam);
+	}
+
+	@Transactional
+	public Exam cancel(String publicId) {
+		Exam exam = findByPublicId(publicId);
+		exam.cancel();
 		return examRepository.save(exam);
 	}
 }

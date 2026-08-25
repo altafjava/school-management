@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,7 @@ import com.altafjava.school.api.dto.request.AssignAssetRequest;
 import com.altafjava.school.api.dto.request.ReturnAssetRequest;
 import com.altafjava.school.api.dto.response.AssetAssignmentResponse;
 import com.altafjava.school.api.mapper.AssetAssignmentMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.AssetAssignmentService;
 
 @RestController
@@ -28,10 +28,13 @@ public class AssetAssignmentController {
 	private final AssetAssignmentService assetAssignmentService;
 	private final AssetAssignmentMapper assetAssignmentMapper;
 
+	private final SpringDataPageableResolver pageableResolver;
+
 	public AssetAssignmentController(AssetAssignmentService assetAssignmentService,
-			AssetAssignmentMapper assetAssignmentMapper) {
+			AssetAssignmentMapper assetAssignmentMapper, SpringDataPageableResolver pageableResolver) {
 		this.assetAssignmentService = assetAssignmentService;
 		this.assetAssignmentMapper = assetAssignmentMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -39,7 +42,7 @@ public class AssetAssignmentController {
 	public Page<AssetAssignmentResponse> list(@PathVariable String assetPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return assetAssignmentService.listForAsset(assetPublicId, PageRequest.of(page, Math.min(size, 100)))
+		return assetAssignmentService.listForAsset(assetPublicId, pageableResolver.resolve(page, size))
 				.map(assetAssignmentMapper::toResponse);
 	}
 

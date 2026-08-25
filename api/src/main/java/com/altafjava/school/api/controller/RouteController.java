@@ -3,7 +3,6 @@ package com.altafjava.school.api.controller;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +22,7 @@ import com.altafjava.school.api.dto.response.RouteResponse;
 import com.altafjava.school.api.dto.response.RouteStopResponse;
 import com.altafjava.school.api.mapper.RouteMapper;
 import com.altafjava.school.api.mapper.RouteStopMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.RouteService;
 
@@ -34,10 +34,14 @@ public class RouteController {
 	private final RouteMapper routeMapper;
 	private final RouteStopMapper routeStopMapper;
 
-	public RouteController(RouteService routeService, RouteMapper routeMapper, RouteStopMapper routeStopMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public RouteController(RouteService routeService, RouteMapper routeMapper, RouteStopMapper routeStopMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.routeService = routeService;
 		this.routeMapper = routeMapper;
 		this.routeStopMapper = routeStopMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -45,7 +49,7 @@ public class RouteController {
 	public Page<RouteResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return routeService.list(PageRequest.of(page, Math.min(size, 100))).map(routeMapper::toResponse);
+		return routeService.list(pageableResolver.resolve(page, size)).map(routeMapper::toResponse);
 	}
 
 	@GetMapping("/{publicId}")

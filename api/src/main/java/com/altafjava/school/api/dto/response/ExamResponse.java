@@ -10,5 +10,7 @@ public record ExamResponse(
 		Long classroomId,
 		LocalDateTime scheduledAt,
 		BigDecimal maxMarks,
-		Long termId) {
+		Long termId,
+		String status,
+		String examType) {
 }

@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +17,7 @@ import com.altafjava.school.api.dto.request.GradeSubmissionRequest;
 import com.altafjava.school.api.dto.request.SubmitAssignmentRequest;
 import com.altafjava.school.api.dto.response.SubmissionResponse;
 import com.altafjava.school.api.mapper.SubmissionMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.SubmissionService;
 
@@ -28,9 +28,13 @@ public class SubmissionController {
 	private final SubmissionService submissionService;
 	private final SubmissionMapper submissionMapper;
 
-	public SubmissionController(SubmissionService submissionService, SubmissionMapper submissionMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public SubmissionController(SubmissionService submissionService, SubmissionMapper submissionMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.submissionService = submissionService;
 		this.submissionMapper = submissionMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@PostMapping
@@ -47,7 +51,7 @@ public class SubmissionController {
 	public Page<SubmissionResponse> list(@PathVariable String assignmentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return submissionService.list(assignmentPublicId, PageRequest.of(page, Math.min(size, 100)))
+		return submissionService.list(assignmentPublicId, pageableResolver.resolve(page, size))
 				.map(submissionMapper::toResponse);
 	}
 

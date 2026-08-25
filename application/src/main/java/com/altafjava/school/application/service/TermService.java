@@ -46,6 +46,10 @@ public class TermService {
 					"Term already exists: " + name + " for academic year " + academicYearId);
 		}
 		Term term = Term.create(name, startDate, endDate, academicYearId);
+		if (!startDate.isAfter(LocalDate.now()) && !endDate.isBefore(LocalDate.now())) {
+			termRepository.findCurrentByTenantId(tenantId).ifPresent(Term::markNotCurrent);
+			term.markCurrent();
+		}
 		return termRepository.save(term);
 	}
 }

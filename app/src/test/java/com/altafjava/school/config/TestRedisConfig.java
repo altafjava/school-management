@@ -18,7 +18,6 @@ import org.springframework.data.redis.connection.RedisStringCommands;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import com.altafjava.platform.application.migration.MigrationLockService;
 import com.altafjava.platform.application.security.TokenBlacklist;
-import com.altafjava.platform.domain.subscription.model.MetricType;
 import com.altafjava.platform.domain.subscription.service.UsageTrackingService;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
@@ -97,18 +96,18 @@ public class TestRedisConfig {
 		private final Map<String, Long> usage = new ConcurrentHashMap<>();
 
 		@Override
-		public long incrementUsage(Long tenantId, MetricType metricType, long amount) {
-			return usage.merge(tenantId + ":" + metricType.name(), amount, Long::sum);
+		public long incrementUsage(Long tenantId, String metricType, long amount) {
+			return usage.merge(tenantId + ":" + metricType, amount, Long::sum);
 		}
 
 		@Override
-		public long getCurrentUsage(Long tenantId, MetricType metricType) {
-			return usage.getOrDefault(tenantId + ":" + metricType.name(), 0L);
+		public long getCurrentUsage(Long tenantId, String metricType) {
+			return usage.getOrDefault(tenantId + ":" + metricType, 0L);
 		}
 
 		@Override
-		public void resetUsage(Long tenantId, MetricType metricType) {
-			usage.remove(tenantId + ":" + metricType.name());
+		public void resetUsage(Long tenantId, String metricType) {
+			usage.remove(tenantId + ":" + metricType);
 		}
 	}
 

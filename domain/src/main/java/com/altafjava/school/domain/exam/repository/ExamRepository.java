@@ -26,6 +26,8 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 
 	Optional<Exam> findByIdAndTenantId(Long id, Long tenantId);
 
+	List<Exam> findAllByIdInAndTenantId(List<Long> ids, Long tenantId);
+
 	@Query("SELECT e.id FROM Exam e WHERE e.tenantId = :tenantId AND e.classroomId IN :classroomIds")
 	List<Long> findIdsByClassroomIdInAndTenantId(@Param("classroomIds") List<Long> classroomIds,
 			@Param("tenantId") Long tenantId);

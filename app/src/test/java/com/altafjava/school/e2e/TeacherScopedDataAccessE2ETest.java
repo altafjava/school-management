@@ -262,7 +262,7 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + adminToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"" + title + "\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100}")
+						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100,\"examType\":\"MIDTERM\"}")
 				.when()
 				.post("/api/v1/exams")
 				.then()

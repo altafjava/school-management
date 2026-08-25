@@ -3,7 +3,6 @@ package com.altafjava.school.api.controller;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,7 @@ import com.altafjava.school.api.dto.request.CreateGradingScaleRequest;
 import com.altafjava.school.api.dto.request.UpdateGradingScaleThresholdsRequest;
 import com.altafjava.school.api.dto.response.GradingScaleResponse;
 import com.altafjava.school.api.mapper.GradingScaleMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.GradingScaleService;
 import com.altafjava.school.application.service.GradingScaleThresholdInput;
@@ -32,9 +32,13 @@ public class GradingScaleController {
 	private final GradingScaleService gradingScaleService;
 	private final GradingScaleMapper gradingScaleMapper;
 
-	public GradingScaleController(GradingScaleService gradingScaleService, GradingScaleMapper gradingScaleMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public GradingScaleController(GradingScaleService gradingScaleService, GradingScaleMapper gradingScaleMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.gradingScaleService = gradingScaleService;
 		this.gradingScaleMapper = gradingScaleMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -42,7 +46,7 @@ public class GradingScaleController {
 	public Page<GradingScaleResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return gradingScaleService.list(PageRequest.of(page, Math.min(size, 100))).map(this::toResponse);
+		return gradingScaleService.list(pageableResolver.resolve(page, size)).map(this::toResponse);
 	}
 
 	@GetMapping("/{publicId}")

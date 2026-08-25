@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +16,7 @@ import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreatePeriodRequest;
 import com.altafjava.school.api.dto.response.PeriodResponse;
 import com.altafjava.school.api.mapper.PeriodMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.PeriodService;
 
@@ -27,9 +27,13 @@ public class PeriodController {
 	private final PeriodService periodService;
 	private final PeriodMapper periodMapper;
 
-	public PeriodController(PeriodService periodService, PeriodMapper periodMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public PeriodController(PeriodService periodService, PeriodMapper periodMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.periodService = periodService;
 		this.periodMapper = periodMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -37,7 +41,7 @@ public class PeriodController {
 	public Page<PeriodResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return periodService.listPeriods(PageRequest.of(page, Math.min(size, 100)))
+		return periodService.listPeriods(pageableResolver.resolve(page, size))
 				.map(periodMapper::toResponse);
 	}
 

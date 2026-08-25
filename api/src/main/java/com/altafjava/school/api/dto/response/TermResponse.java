@@ -7,5 +7,6 @@ public record TermResponse(
 		String name,
 		LocalDate startDate,
 		LocalDate endDate,
-		Long academicYearId) {
+		Long academicYearId,
+		boolean current) {
 }

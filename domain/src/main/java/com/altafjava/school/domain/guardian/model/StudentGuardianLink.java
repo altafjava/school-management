@@ -53,4 +53,8 @@ public class StudentGuardianLink extends SoftDeletableEntity {
 	public void giveConsent() {
 		this.consentGivenAt = Instant.now();
 	}
+
+	public void revokeConsent() {
+		this.consentGivenAt = null;
+	}
 }

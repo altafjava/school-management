@@ -128,6 +128,85 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.statusCode(HttpStatus.NOT_FOUND.value());
 	}
 
+	@Test
+	void assignCurriculum_asTenantAdmin_setsCurriculumId() {
+		String accessToken = login();
+		String subjectPublicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"code\":\"PHY-101\",\"name\":\"Physics\"}")
+				.when()
+				.post("/api/v1/subjects")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+		String curriculumPublicId = createCurriculum(accessToken, "IB-DP");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"curriculumPublicId\":\"" + curriculumPublicId + "\"}")
+				.when()
+				.patch("/api/v1/subjects/" + subjectPublicId + "/curriculum")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("curriculumId", notNullValue());
+	}
+
+	@Test
+	void assignCurriculum_asTeacherRole_returns403() {
+		String accessToken = login();
+		String subjectPublicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"code\":\"CHEM-101\",\"name\":\"Chemistry\"}")
+				.when()
+				.post("/api/v1/subjects")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+		String curriculumPublicId = createCurriculum(accessToken, "CHEM-CURR");
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.contentType(ContentType.JSON)
+				.body("{\"curriculumPublicId\":\"" + curriculumPublicId + "\"}")
+				.when()
+				.patch("/api/v1/subjects/" + subjectPublicId + "/curriculum")
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
+	}
+
+	private String createCurriculum(String accessToken, String codeSuffix) {
+		String boardPublicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"name\":\"Board-" + codeSuffix + "\",\"code\":\"BRD-" + codeSuffix + "\"}")
+				.when()
+				.post("/api/v1/boards")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+
+		return given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"boardPublicId\":\"" + boardPublicId + "\",\"name\":\"Curriculum-" + codeSuffix
+						+ "\",\"code\":\"CUR-" + codeSuffix + "\"}")
+				.when()
+				.post("/api/v1/curricula")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+	}
+
 	private String login() {
 		return login(tenantId, adminEmail, adminPassword);
 	}

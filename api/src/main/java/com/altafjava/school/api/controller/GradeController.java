@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.school.api.dto.request.RecordGradeRequest;
 import com.altafjava.school.api.dto.response.GradeResponse;
 import com.altafjava.school.api.mapper.GradeMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.GradeService;
 
@@ -26,9 +26,13 @@ public class GradeController {
 	private final GradeService gradeService;
 	private final GradeMapper gradeMapper;
 
-	public GradeController(GradeService gradeService, GradeMapper gradeMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public GradeController(GradeService gradeService, GradeMapper gradeMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.gradeService = gradeService;
 		this.gradeMapper = gradeMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -36,7 +40,7 @@ public class GradeController {
 	public Page<GradeResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return gradeService.listGrades(PageRequest.of(page, Math.min(size, 100)))
+		return gradeService.listGrades(pageableResolver.resolve(page, size))
 				.map(gradeMapper::toResponse);
 	}
 

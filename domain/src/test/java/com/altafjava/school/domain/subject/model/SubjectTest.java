@@ -25,4 +25,13 @@ class SubjectTest {
 
 		assertFalse(subject.isActive());
 	}
+
+	@Test
+	void assignCurriculum_setsCurriculumId() {
+		Subject subject = Subject.create("SCI-101", "Science", null);
+
+		subject.assignCurriculum(7L);
+
+		assertEquals(7L, subject.getCurriculumId());
+	}
 }

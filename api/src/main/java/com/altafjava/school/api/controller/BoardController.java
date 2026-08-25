@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,7 @@ import com.altafjava.school.api.dto.request.CreateBoardRequest;
 import com.altafjava.school.api.dto.request.UpdateBoardRequest;
 import com.altafjava.school.api.dto.response.BoardResponse;
 import com.altafjava.school.api.mapper.BoardMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.BoardService;
 
@@ -29,9 +29,13 @@ public class BoardController {
 	private final BoardService boardService;
 	private final BoardMapper boardMapper;
 
-	public BoardController(BoardService boardService, BoardMapper boardMapper) {
+	private final SpringDataPageableResolver pageableResolver;
+
+	public BoardController(BoardService boardService, BoardMapper boardMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.boardService = boardService;
 		this.boardMapper = boardMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -39,7 +43,7 @@ public class BoardController {
 	public Page<BoardResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return boardService.list(PageRequest.of(page, Math.min(size, 100))).map(boardMapper::toResponse);
+		return boardService.list(pageableResolver.resolve(page, size)).map(boardMapper::toResponse);
 	}
 
 	@GetMapping("/{publicId}")

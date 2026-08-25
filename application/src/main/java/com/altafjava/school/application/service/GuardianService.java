@@ -79,6 +79,33 @@ public class GuardianService {
 		return saved;
 	}
 
+	@Transactional
+	public StudentGuardianLink grantConsent(String guardianPublicId, String studentPublicId) {
+		StudentGuardianLink link = findLink(guardianPublicId, studentPublicId);
+		link.giveConsent();
+		return studentGuardianLinkRepository.save(link);
+	}
+
+	@Transactional
+	public StudentGuardianLink revokeConsent(String guardianPublicId, String studentPublicId) {
+		StudentGuardianLink link = findLink(guardianPublicId, studentPublicId);
+		link.revokeConsent();
+		return studentGuardianLinkRepository.save(link);
+	}
+
+	private StudentGuardianLink findLink(String guardianPublicId, String studentPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Guardian guardian = guardianRepository.findByPublicIdAndTenantId(UUID.fromString(guardianPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Guardian not found: " + guardianPublicId));
+		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
+		return studentGuardianLinkRepository
+				.findByGuardianIdAndStudentIdAndTenantId(guardian.getId(), student.getId(), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException(
+						"No guardian-student link found for guardian " + guardianPublicId + " and student "
+								+ studentPublicId));
+	}
+
 	@Transactional(readOnly = true)
 	public Page<Student> listLinkedStudentsForCurrentUser(Pageable pageable) {
 		Long tenantId = TenantContext.getCurrentTenantId();

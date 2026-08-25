@@ -2,10 +2,10 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +22,7 @@ import com.altafjava.school.api.dto.response.StudentResponse;
 import com.altafjava.school.api.mapper.GuardianMapper;
 import com.altafjava.school.api.mapper.StudentGuardianLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.GuardianService;
 
@@ -34,12 +35,16 @@ public class GuardianController {
 	private final StudentGuardianLinkMapper studentGuardianLinkMapper;
 	private final StudentMapper studentMapper;
 
+	private final SpringDataPageableResolver pageableResolver;
+
 	public GuardianController(GuardianService guardianService, GuardianMapper guardianMapper,
-			StudentGuardianLinkMapper studentGuardianLinkMapper, StudentMapper studentMapper) {
+			StudentGuardianLinkMapper studentGuardianLinkMapper, StudentMapper studentMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.guardianService = guardianService;
 		this.guardianMapper = guardianMapper;
 		this.studentGuardianLinkMapper = studentGuardianLinkMapper;
 		this.studentMapper = studentMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -47,7 +52,7 @@ public class GuardianController {
 	public Page<GuardianResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return guardianService.listGuardians(PageRequest.of(page, Math.min(size, 100)))
+		return guardianService.listGuardians(pageableResolver.resolve(page, size))
 				.map(guardianMapper::toResponse);
 	}
 
@@ -81,12 +86,28 @@ public class GuardianController {
 				request.primaryContact()));
 	}
 
+	@PatchMapping("/{guardianPublicId}/students/{studentPublicId}/consent/grant")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PARENT)
+	public StudentGuardianLinkResponse grantConsent(@PathVariable String guardianPublicId,
+			@PathVariable String studentPublicId) {
+		return studentGuardianLinkMapper.toResponse(
+				guardianService.grantConsent(guardianPublicId, studentPublicId));
+	}
+
+	@PatchMapping("/{guardianPublicId}/students/{studentPublicId}/consent/revoke")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PARENT)
+	public StudentGuardianLinkResponse revokeConsent(@PathVariable String guardianPublicId,
+			@PathVariable String studentPublicId) {
+		return studentGuardianLinkMapper.toResponse(
+				guardianService.revokeConsent(guardianPublicId, studentPublicId));
+	}
+
 	@GetMapping("/me/students")
 	@PreAuthorize(SchoolRoles.HAS_PARENT)
 	public Page<StudentResponse> myStudents(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return guardianService.listLinkedStudentsForCurrentUser(PageRequest.of(page, Math.min(size, 100)))
+		return guardianService.listLinkedStudentsForCurrentUser(pageableResolver.resolve(page, size))
 				.map(studentMapper::toResponse);
 	}
 }

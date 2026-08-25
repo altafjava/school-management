@@ -1,10 +1,13 @@
 package com.altafjava.school.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -21,6 +24,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import com.altafjava.platform.application.event.publisher.EventPublisher;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
@@ -65,14 +70,19 @@ class ReportCardServiceTest {
 	private StudentDataAccessGuard studentDataAccessGuard;
 	@Mock
 	private EventPublisher eventPublisher;
+	@Mock
+	private PlatformTransactionManager transactionManager;
 
 	private ReportCardService reportCardService;
 
 	@BeforeEach
 	void setUp() {
+		// TransactionTemplate.execute() calls transactionManager.getTransaction(...) then commit(...)
+		// around the callback — stub just enough of the real contract for the callback to run.
+		lenient().when(transactionManager.getTransaction(any())).thenReturn(mock(TransactionStatus.class));
 		reportCardService = new ReportCardService(reportCardRepository, studentRepository, termRepository,
 				gradeRepository, examRepository, subjectRepository, storageService, pdfGenerator,
-				studentDataAccessGuard, eventPublisher);
+				studentDataAccessGuard, eventPublisher, transactionManager);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -100,7 +110,8 @@ class ReportCardServiceTest {
 	}
 
 	private Exam examAt(long id, LocalDateTime scheduledAt) {
-		Exam exam = Exam.create("Midterm", 5L, 2L, scheduledAt, BigDecimal.valueOf(100), null);
+		Exam exam = Exam.create("Midterm", 5L, 2L, scheduledAt, BigDecimal.valueOf(100), null,
+				com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
 		exam.setId(id);
 		return exam;
 	}
@@ -113,12 +124,13 @@ class ReportCardServiceTest {
 		Grade grade = gradeWithId(100L, 50L, BigDecimal.valueOf(85));
 		Exam exam = examAt(50L, LocalDateTime.of(2026, 2, 1, 9, 0));
 		Subject subject = Subject.create("MATH", "Mathematics", null);
+		subject.setId(5L);
 
 		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
 		when(termRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(term));
 		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of(grade));
-		when(examRepository.findByIdAndTenantId(50L, 1L)).thenReturn(Optional.of(exam));
-		when(subjectRepository.findByIdAndTenantId(5L, 1L)).thenReturn(Optional.of(subject));
+		when(examRepository.findAllByIdInAndTenantId(List.of(50L), 1L)).thenReturn(List.of(exam));
+		when(subjectRepository.findAllByIdInAndTenantId(List.of(5L), 1L)).thenReturn(List.of(subject));
 		when(pdfGenerator.generate(eq(student), eq(term), any())).thenReturn("pdf-bytes".getBytes());
 		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
 		when(reportCardRepository.save(any(ReportCard.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -133,6 +145,11 @@ class ReportCardServiceTest {
 		assertEquals(1L, result.getStudentId());
 		verify(storageService).uploadFile(anyString(), any(byte[].class), eq("application/pdf"));
 		verify(eventPublisher).publish(any());
+		// Batched — exactly one IN-query per lookup type, never one per Grade row.
+		verify(examRepository, times(1)).findAllByIdInAndTenantId(any(), any());
+		verify(subjectRepository, times(1)).findAllByIdInAndTenantId(any(), any());
+		verify(examRepository, never()).findByIdAndTenantId(any(), any());
+		verify(subjectRepository, never()).findByIdAndTenantId(any(), any());
 	}
 
 	@Test
@@ -146,7 +163,7 @@ class ReportCardServiceTest {
 		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
 		when(termRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(term));
 		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of(grade));
-		when(examRepository.findByIdAndTenantId(50L, 1L)).thenReturn(Optional.of(examOutsideRange));
+		when(examRepository.findAllByIdInAndTenantId(List.of(50L), 1L)).thenReturn(List.of(examOutsideRange));
 		when(pdfGenerator.generate(eq(student), eq(term), any())).thenReturn("pdf-bytes".getBytes());
 		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
 		when(reportCardRepository.save(any(ReportCard.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -156,7 +173,9 @@ class ReportCardServiceTest {
 		ArgumentCaptor<List<ReportCardLine>> linesCaptor = ArgumentCaptor.forClass(List.class);
 		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture());
 		assertTrue(linesCaptor.getValue().isEmpty());
+		// The out-of-range exam means no grade survives to the subject-batching step at all.
 		verify(subjectRepository, never()).findByIdAndTenantId(any(), any());
+		verify(subjectRepository, never()).findAllByIdInAndTenantId(any(), any());
 	}
 
 	@Test
@@ -184,5 +203,65 @@ class ReportCardServiceTest {
 
 		org.junit.jupiter.api.Assertions.assertThrows(ResourceNotFoundException.class,
 				() -> reportCardService.generate(1L, 10L));
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void generate_withMultipleGradesAcrossDifferentExamsAndSubjects_batchesLookupsInsteadOfPerRowQueries() {
+		Student student = studentWithId(1L);
+		Term term = termWithId(10L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31));
+		Grade gradeA = Grade.create(1L, 5L, 50L, BigDecimal.valueOf(85), "A", "teacher");
+		gradeA.setId(100L);
+		Grade gradeB = Grade.create(1L, 6L, 51L, BigDecimal.valueOf(90), "A", "teacher");
+		gradeB.setId(101L);
+		Grade gradeC = Grade.create(1L, 5L, 52L, BigDecimal.valueOf(70), "B", "teacher");
+		gradeC.setId(102L);
+		Exam examA = examAt(50L, LocalDateTime.of(2026, 2, 1, 9, 0));
+		Exam examB = examAt(51L, LocalDateTime.of(2026, 2, 5, 9, 0));
+		Exam examC = examAt(52L, LocalDateTime.of(2026, 2, 10, 9, 0));
+		Subject subjectMath = Subject.create("MATH", "Mathematics", null);
+		subjectMath.setId(5L);
+		Subject subjectSci = Subject.create("SCI", "Science", null);
+		subjectSci.setId(6L);
+
+		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
+		when(termRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(term));
+		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of(gradeA, gradeB, gradeC));
+		when(examRepository.findAllByIdInAndTenantId(List.of(50L, 51L, 52L), 1L))
+				.thenReturn(List.of(examA, examB, examC));
+		when(subjectRepository.findAllByIdInAndTenantId(List.of(5L, 6L), 1L))
+				.thenReturn(List.of(subjectMath, subjectSci));
+		when(pdfGenerator.generate(eq(student), eq(term), any())).thenReturn("pdf-bytes".getBytes());
+		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
+		when(reportCardRepository.save(any(ReportCard.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		reportCardService.generate(1L, 10L);
+
+		ArgumentCaptor<List<ReportCardLine>> linesCaptor = ArgumentCaptor.forClass(List.class);
+		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture());
+		assertEquals(3, linesCaptor.getValue().size());
+		// Exactly one batched IN-query for exams and one for subjects, no matter how many grades.
+		verify(examRepository, times(1)).findAllByIdInAndTenantId(any(), any());
+		verify(subjectRepository, times(1)).findAllByIdInAndTenantId(any(), any());
+		verify(examRepository, never()).findByIdAndTenantId(any(), any());
+		verify(subjectRepository, never()).findByIdAndTenantId(any(), any());
+	}
+
+	@Test
+	void generate_whenDbWriteFailsAfterSuccessfulUpload_cleansUpOrphanedUploadAndRethrows() {
+		Student student = studentWithId(1L);
+		Term term = termWithId(10L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31));
+		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
+		when(termRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(term));
+		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of());
+		when(pdfGenerator.generate(eq(student), eq(term), any())).thenReturn("pdf-bytes".getBytes());
+		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
+		when(reportCardRepository.save(any(ReportCard.class))).thenThrow(new RuntimeException("db unavailable"));
+
+		assertThrows(RuntimeException.class, () -> reportCardService.generate(1L, 10L));
+
+		ArgumentCaptor<String> uploadedKeyCaptor = ArgumentCaptor.forClass(String.class);
+		verify(storageService).uploadFile(uploadedKeyCaptor.capture(), any(byte[].class), eq("application/pdf"));
+		verify(storageService).deleteFile(uploadedKeyCaptor.getValue());
 	}
 }

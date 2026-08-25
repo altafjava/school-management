@@ -36,6 +36,7 @@ import com.altafjava.school.config.TestStorageConfig;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.reportcard.repository.ReportCardRepository;
 import com.altafjava.school.domain.term.model.Term;
+import com.altafjava.school.domain.term.repository.TermRepository;
 
 /**
  * Proves the ReportCardGeneration scheduler job is genuinely wired end to end: running it against
@@ -70,6 +71,9 @@ class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 	@Autowired
 	private ReportCardRepository reportCardRepository;
 
+	@Autowired
+	private TermRepository termRepository;
+
 	private Tenant tenant;
 	private String adminEmail;
 	private Term currentTerm;
@@ -90,6 +94,11 @@ class ReportCardGenerationJobIntegrationTest extends SchoolIntegrationTestBase {
 				LocalDate.now().plusMonths(6), true);
 		currentTerm = termService.create("Term 1", LocalDate.now().minusDays(30), LocalDate.now().plusDays(30),
 				academicYear.getId());
+		// TermRepository.findCurrentByTenantId now reads the explicit is_current flag rather than
+		// computing it from date ranges — TermService.create() deliberately does not auto-mark a
+		// newly created term current (that's TermRolloverJob's job), so this test marks it directly.
+		currentTerm.markCurrent();
+		currentTerm = termRepository.save(currentTerm);
 	}
 
 	@AfterEach

@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +18,7 @@ import com.altafjava.school.api.dto.request.AssignTransportRequest;
 import com.altafjava.school.api.dto.request.EndTransportAssignmentRequest;
 import com.altafjava.school.api.dto.response.TransportAssignmentResponse;
 import com.altafjava.school.api.mapper.TransportAssignmentMapper;
+import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.TransportAssignmentService;
 
@@ -29,10 +29,13 @@ public class TransportAssignmentController {
 	private final TransportAssignmentService transportAssignmentService;
 	private final TransportAssignmentMapper transportAssignmentMapper;
 
+	private final SpringDataPageableResolver pageableResolver;
+
 	public TransportAssignmentController(TransportAssignmentService transportAssignmentService,
-			TransportAssignmentMapper transportAssignmentMapper) {
+			TransportAssignmentMapper transportAssignmentMapper, SpringDataPageableResolver pageableResolver) {
 		this.transportAssignmentService = transportAssignmentService;
 		this.transportAssignmentMapper = transportAssignmentMapper;
+		this.pageableResolver = pageableResolver;
 	}
 
 	@GetMapping
@@ -41,7 +44,7 @@ public class TransportAssignmentController {
 			@RequestParam String routePublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return transportAssignmentService.listForRoute(routePublicId, PageRequest.of(page, Math.min(size, 100)))
+		return transportAssignmentService.listForRoute(routePublicId, pageableResolver.resolve(page, size))
 				.map(transportAssignmentMapper::toResponse);
 	}
 
