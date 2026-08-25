@@ -20,6 +20,7 @@ import com.altafjava.school.api.dto.request.CreateClassroomRequest;
 import com.altafjava.school.api.dto.request.EnrollStudentInClassroomRequest;
 import com.altafjava.school.api.dto.request.MoveClassroomAcademicYearRequest;
 import com.altafjava.school.api.dto.request.ReassignClassTeacherRequest;
+import com.altafjava.school.api.dto.request.UpdateClassroomCapacityRequest;
 import com.altafjava.school.api.dto.response.ClassroomResponse;
 import com.altafjava.school.api.dto.response.StudentClassroomLinkResponse;
 import com.altafjava.school.api.dto.response.StudentResponse;
@@ -99,6 +100,13 @@ public class ClassroomController {
 			@Valid @RequestBody MoveClassroomAcademicYearRequest request) {
 		return classroomMapper.toResponse(
 				classroomService.moveToAcademicYear(publicId, request.academicYearPublicId()));
+	}
+
+	@PatchMapping("/{publicId}/capacity")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public ClassroomResponse updateCapacity(@PathVariable String publicId,
+			@Valid @RequestBody UpdateClassroomCapacityRequest request) {
+		return classroomMapper.toResponse(classroomService.updateCapacity(publicId, request.capacity()));
 	}
 
 	@PatchMapping("/{publicId}/curriculum")

@@ -41,5 +41,6 @@
     <include file="db/domain/changesets/034-helpdesk.xml"/>
     <include file="db/domain/changesets/035-counseling.xml"/>
     <include file="db/domain/changesets/036-alumni.xml"/>
+    <include file="db/domain/changesets/037-classroom-capacity.xml"/>
 
 </databaseChangeLog>

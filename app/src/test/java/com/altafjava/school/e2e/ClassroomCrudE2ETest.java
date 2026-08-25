@@ -158,6 +158,74 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 				.statusCode(HttpStatus.NOT_FOUND.value());
 	}
 
+	@Test
+	void updateCapacity_asTenantAdmin_enforcesOnNextEnrollment() {
+		String accessToken = login();
+		String academicYearPublicId = createAcademicYear(tenantId, "2025-26");
+		String publicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("""
+						{
+						  "classCode": "CLS-CAP-E2E",
+						  "grade": "Grade 8",
+						  "section": "A",
+						  "academicYearPublicId": "%s"
+						}
+						""".formatted(academicYearPublicId))
+				.when()
+				.post("/api/v1/classrooms")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("{\"capacity\": 1}")
+				.when()
+				.patch("/api/v1/classrooms/" + publicId + "/capacity")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("capacity", equalTo(1));
+	}
+
+	@Test
+	void updateCapacity_asTeacherRole_returns403() {
+		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
+		String accessToken = login();
+		String academicYearPublicId = createAcademicYear(tenantId, "2025-26");
+		String publicId = given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("""
+						{
+						  "classCode": "CLS-CAP-E2E-2",
+						  "grade": "Grade 8",
+						  "section": "B",
+						  "academicYearPublicId": "%s"
+						}
+						""".formatted(academicYearPublicId))
+				.when()
+				.post("/api/v1/classrooms")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + teacherToken)
+				.contentType(ContentType.JSON)
+				.body("{\"capacity\": 1}")
+				.when()
+				.patch("/api/v1/classrooms/" + publicId + "/capacity")
+				.then()
+				.statusCode(HttpStatus.FORBIDDEN.value());
+	}
+
 	private String createAcademicYear(Long forTenantId, String name) {
 		TenantContext.ForTesting.setCurrentTenant(forTenantId, null, null, TenantType.SHARED);
 		try {

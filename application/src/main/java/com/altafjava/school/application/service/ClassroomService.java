@@ -98,6 +98,13 @@ public class ClassroomService {
 	}
 
 	@Transactional
+	public Classroom updateCapacity(String publicId, Integer capacity) {
+		Classroom classroom = findByPublicId(publicId);
+		classroom.updateCapacity(capacity);
+		return classroomRepository.save(classroom);
+	}
+
+	@Transactional
 	public Classroom assignCurriculum(String publicId, String curriculumPublicId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		Classroom classroom = findByPublicId(publicId);
@@ -124,6 +131,11 @@ public class ClassroomService {
 			throw new BusinessException(
 					"Student " + studentPublicId + " is already enrolled in a classroom for academic year "
 							+ academicYearPublicId);
+		}
+		if (classroom.getCapacity() != null
+				&& studentClassroomLinkRepository.countByClassroomId(tenantId, classroom.getId()) >= classroom
+						.getCapacity()) {
+			throw new BusinessException("Classroom " + classroomPublicId + " is at full capacity");
 		}
 		StudentClassroomLink link = StudentClassroomLink.create(student.getId(), classroom.getId(),
 				academicYear.getId(), LocalDate.now());
