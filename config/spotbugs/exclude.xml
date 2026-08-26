@@ -127,4 +127,26 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on AttendanceController/StudentController's constructors: flags storing the
+      injected AttendanceService (an application service, same category of type as
+      StudentCustomFieldController/CustomFieldValueController's injected services above) into a
+      field. StudentController already injected this exact same AttendanceService reference before
+      today's change and was not previously flagged — adding two new methods to AttendanceService
+      (updateStatus/delete, for real offline-sync apply/conflict handling) perturbed this
+      detector's analysis enough to newly flag it, the same inconsistency-across-structurally-
+      identical-constructors already documented for every entry above. Investigated 2026-08-26: no
+      mutable state leak, reference never handed back to a caller — consistent detector noise, not
+      a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.api.controller.AttendanceController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.StudentController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

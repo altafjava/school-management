@@ -107,4 +107,22 @@ public class AttendanceService {
 		Attendance attendance = Attendance.create(studentId, classroomId, attendanceDate, status, markedBy);
 		return attendanceRepository.save(attendance);
 	}
+
+	@Transactional
+	public Attendance updateStatus(String publicId, AttendanceStatus status) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Attendance attendance = attendanceRepository.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Attendance record not found: " + publicId));
+		attendance.updateStatus(status);
+		return attendanceRepository.save(attendance);
+	}
+
+	@Transactional
+	public void delete(String publicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Attendance attendance = attendanceRepository.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Attendance record not found: " + publicId));
+		attendance.softDelete("attendance-deletion");
+		attendanceRepository.save(attendance);
+	}
 }
