@@ -14,10 +14,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import com.altafjava.platform.application.branding.TenantBrandingService;
 import com.altafjava.platform.application.event.publisher.EventPublisher;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.file.service.StorageService;
+import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.platform.domain.tenant.repository.TenantRepository;
 import com.altafjava.school.application.reportcard.ReportCardLine;
 import com.altafjava.school.application.reportcard.ReportCardPdfGenerator;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
@@ -51,12 +54,15 @@ public class ReportCardService {
 	private final StudentDataAccessGuard studentDataAccessGuard;
 	private final EventPublisher eventPublisher;
 	private final TransactionTemplate transactionTemplate;
+	private final TenantRepository tenantRepository;
+	private final TenantBrandingService tenantBrandingService;
 
 	public ReportCardService(ReportCardRepository reportCardRepository, StudentRepository studentRepository,
 			TermRepository termRepository, GradeRepository gradeRepository, ExamRepository examRepository,
 			SubjectRepository subjectRepository, StorageService storageService, ReportCardPdfGenerator pdfGenerator,
 			StudentDataAccessGuard studentDataAccessGuard, EventPublisher eventPublisher,
-			PlatformTransactionManager transactionManager) {
+			PlatformTransactionManager transactionManager, TenantRepository tenantRepository,
+			TenantBrandingService tenantBrandingService) {
 		this.reportCardRepository = reportCardRepository;
 		this.studentRepository = studentRepository;
 		this.termRepository = termRepository;
@@ -68,6 +74,8 @@ public class ReportCardService {
 		this.studentDataAccessGuard = studentDataAccessGuard;
 		this.eventPublisher = eventPublisher;
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
+		this.tenantRepository = tenantRepository;
+		this.tenantBrandingService = tenantBrandingService;
 	}
 
 	@Transactional(readOnly = true)
@@ -118,8 +126,12 @@ public class ReportCardService {
 				.orElseThrow(() -> new ResourceNotFoundException("Term not found: " + termId));
 
 		List<ReportCardLine> lines = buildReportLines(tenantId, studentId, term);
+		String tenantName = tenantRepository.findById(tenantId)
+				.map(Tenant::getName)
+				.orElse("");
+		byte[] logoBytes = tenantBrandingService.getLogoBytes(tenantId).orElse(null);
 
-		byte[] pdf = pdfGenerator.generate(student, term, lines);
+		byte[] pdf = pdfGenerator.generate(student, term, lines, tenantName, logoBytes);
 		String storageKey = String.format("tenants/%d/report-cards/%d/%d/%s.pdf", tenantId, studentId, termId,
 				UUID.randomUUID());
 		storageService.uploadFile(storageKey, pdf, "application/pdf");

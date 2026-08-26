@@ -24,11 +24,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
+import com.altafjava.platform.application.branding.TenantBrandingService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.platform.domain.file.service.StorageService;
+import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.platform.domain.tenant.repository.TenantRepository;
 import com.altafjava.school.application.certificate.CertificatePdfGenerator;
 import com.altafjava.school.application.certificate.CertificateVerificationResult;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
@@ -65,15 +68,22 @@ class CertificateServiceTest {
 	private CertificatePdfGenerator pdfGenerator;
 	@Mock
 	private PlatformTransactionManager transactionManager;
+	@Mock
+	private TenantRepository tenantRepository;
+	@Mock
+	private TenantBrandingService tenantBrandingService;
 
 	private CertificateService certificateService;
 
 	@BeforeEach
 	void setUp() {
 		lenient().when(transactionManager.getTransaction(any())).thenReturn(mock(TransactionStatus.class));
+		Tenant tenant = Tenant.builder().name("Test School").build();
+		lenient().when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
+		lenient().when(tenantBrandingService.getLogoBytes(1L)).thenReturn(Optional.empty());
 		certificateService = new CertificateService(certificateIssuanceRepository, certificateTemplateRepository,
 				studentRepository, studentClassroomLinkRepository, classroomRepository, academicYearRepository,
-				storageService, pdfGenerator, transactionManager);
+				storageService, pdfGenerator, transactionManager, tenantRepository, tenantBrandingService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -115,7 +125,8 @@ class CertificateServiceTest {
 		when(academicYearRepository.findByCurrentTrueAndTenantId(1L)).thenReturn(Optional.of(year));
 		when(classroomRepository.findByIdAndTenantId(5L, 1L)).thenReturn(Optional.of(classroom));
 		when(academicYearRepository.findByIdAndTenantId(7L, 1L)).thenReturn(Optional.of(year));
-		when(pdfGenerator.generate(eq("Bonafide Certificate"), anyString())).thenReturn("pdf-bytes".getBytes());
+		when(pdfGenerator.generate(eq("Bonafide Certificate"), anyString(), anyString(), any()))
+				.thenReturn("pdf-bytes".getBytes());
 		when(certificateIssuanceRepository.existsByVerificationCodeAndTenantId(anyString(), eq(1L)))
 				.thenReturn(false);
 		when(certificateIssuanceRepository.save(any(CertificateIssuance.class)))
@@ -125,7 +136,7 @@ class CertificateServiceTest {
 				99L);
 
 		ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-		verify(pdfGenerator).generate(eq("Bonafide Certificate"), bodyCaptor.capture());
+		verify(pdfGenerator).generate(eq("Bonafide Certificate"), bodyCaptor.capture(), anyString(), any());
 		assertEquals("This certifies Alice Smith of Grade 5 A, admitted 2020-06-01.", bodyCaptor.getValue());
 		assertEquals(1L, result.getStudentId());
 		assertEquals(10L, result.getCertificateTemplateId());
@@ -171,7 +182,7 @@ class CertificateServiceTest {
 		when(certificateTemplateRepository.findByPublicIdAndTenantId(templatePublicId, 1L))
 				.thenReturn(Optional.of(template));
 		when(studentClassroomLinkRepository.findByStudentId(1L, 1L)).thenReturn(List.of());
-		when(pdfGenerator.generate(anyString(), anyString())).thenReturn("pdf-bytes".getBytes());
+		when(pdfGenerator.generate(anyString(), anyString(), anyString(), any())).thenReturn("pdf-bytes".getBytes());
 		when(certificateIssuanceRepository.existsByVerificationCodeAndTenantId(anyString(), eq(1L)))
 				.thenReturn(false);
 		when(certificateIssuanceRepository.save(any(CertificateIssuance.class)))
