@@ -2,9 +2,12 @@ package com.altafjava.school.config;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.PlatformConfigurer;
+import com.altafjava.platform.core.sync.OfflineSyncEntityHandler;
+import com.altafjava.school.application.sync.AttendanceOfflineSyncHandler;
 
 /**
  * School-specific platform configuration.
@@ -12,6 +15,21 @@ import com.altafjava.platform.core.PlatformConfigurer;
  */
 @Component
 public class SchoolPlatformConfigurer implements PlatformConfigurer {
+
+	// Built once from the constructor-injected singleton handler bean, not inside
+	// offlineSyncEntityHandlers() itself — that method is called on every sync operation, and a
+	// handler with any in-memory state would lose it between calls if reconstructed each time
+	// (see PlatformConfigurer#offlineSyncEntityHandlers's Javadoc).
+	private final Map<String, OfflineSyncEntityHandler> offlineSyncEntityHandlers;
+
+	public SchoolPlatformConfigurer(AttendanceOfflineSyncHandler attendanceOfflineSyncHandler) {
+		this.offlineSyncEntityHandlers = Map.of("attendance", attendanceOfflineSyncHandler);
+	}
+
+	@Override
+	public Map<String, OfflineSyncEntityHandler> offlineSyncEntityHandlers() {
+		return offlineSyncEntityHandlers;
+	}
 
 	@Override
 	public String platformName() {

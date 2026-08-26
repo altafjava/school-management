@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.attendance.repository;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -49,4 +50,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
 	long countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(Long studentId, Long tenantId, LocalDate from,
 			LocalDate to, AttendanceStatus status);
+
+	// Offline-sync delta pulls — @SQLRestriction("deleted = false") means a soft-deleted row is
+	// invisible here, so a delete never surfaces as a tombstone via this query; acceptable for now
+	// since AttendanceOfflineSyncHandler's own delete() path already reflects the deletion in its
+	// synchronous response, only a later independent delta pull would miss it.
+	List<Attendance> findByTenantIdAndUpdatedAtAfter(Long tenantId, Instant updatedAt);
 }

@@ -50,4 +50,8 @@ public class Attendance extends SoftDeletableEntity {
 				.markedBy(markedBy)
 				.build();
 	}
+
+	public void updateStatus(AttendanceStatus status) {
+		this.status = status;
+	}
 }

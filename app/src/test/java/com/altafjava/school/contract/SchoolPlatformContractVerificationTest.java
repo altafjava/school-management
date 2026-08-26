@@ -6,12 +6,14 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.event.TransactionalEventListener;
 import com.altafjava.platform.application.event.events.TenantCreatedEvent;
 import com.altafjava.platform.core.PlatformConfigurer;
 import com.altafjava.school.application.listener.SchoolTenantProvisioningListener;
+import com.altafjava.school.application.sync.AttendanceOfflineSyncHandler;
 import com.altafjava.school.config.SchoolPlatformConfigurer;
 
 /**
@@ -45,7 +47,11 @@ class SchoolPlatformContractVerificationTest {
 	@Test
 	@DisplayName("SchoolPlatformConfigurer.platformName returns a non-blank value")
 	void schoolPlatformConfigurer_platformName_isNonBlank() {
-		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer();
+		// None of these tests touch offlineSyncEntityHandlers/the injected handler bean.
+		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
+		// though none of these tests touch offlineSyncEntityHandlers() itself.
+		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
+				Mockito.mock(AttendanceOfflineSyncHandler.class));
 		assertThat(configurer.platformName())
 				.as("SchoolPlatformConfigurer.platformName must return a non-blank platform name")
 				.isNotBlank();
@@ -54,7 +60,11 @@ class SchoolPlatformContractVerificationTest {
 	@Test
 	@DisplayName("SchoolPlatformConfigurer.domainTenantChangelogPaths returns at least one changelog")
 	void schoolPlatformConfigurer_domainTenantChangelogPaths_atLeastOne() {
-		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer();
+		// None of these tests touch offlineSyncEntityHandlers/the injected handler bean.
+		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
+		// though none of these tests touch offlineSyncEntityHandlers() itself.
+		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
+				Mockito.mock(AttendanceOfflineSyncHandler.class));
 		List<String> paths = configurer.domainTenantChangelogPaths();
 		assertThat(paths)
 				.as("School domain must register at least one Liquibase changelog for tenant schema seeding")
@@ -64,7 +74,11 @@ class SchoolPlatformContractVerificationTest {
 	@Test
 	@DisplayName("SchoolPlatformConfigurer.maxTenantsPerInstance returns a positive value")
 	void schoolPlatformConfigurer_maxTenantsPerInstance_isPositive() {
-		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer();
+		// None of these tests touch offlineSyncEntityHandlers/the injected handler bean.
+		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
+		// though none of these tests touch offlineSyncEntityHandlers() itself.
+		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
+				Mockito.mock(AttendanceOfflineSyncHandler.class));
 		assertThat(configurer.maxTenantsPerInstance())
 				.as("maxTenantsPerInstance must be a positive integer")
 				.isPositive();
@@ -112,7 +126,11 @@ class SchoolPlatformContractVerificationTest {
 	@Test
 	@DisplayName("SchoolPlatformConfigurer.accessTokenExpiry does not exceed 24 hours")
 	void schoolPlatformConfigurer_accessTokenExpiry_isReasonable() {
-		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer();
+		// None of these tests touch offlineSyncEntityHandlers/the injected handler bean.
+		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
+		// though none of these tests touch offlineSyncEntityHandlers() itself.
+		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
+				Mockito.mock(AttendanceOfflineSyncHandler.class));
 		assertThat(configurer.accessTokenExpiry().toHours())
 				.as("Access token expiry should not exceed 24 hours for security reasons")
 				.isLessThanOrEqualTo(24);
