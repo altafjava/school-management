@@ -10,20 +10,18 @@
 # ---------------------------------------------------------------------------
 # Build stage — compiles school-saas and produces the Spring Boot executable jar.
 #
-# com.altafjava.platform:* is resolved from GitHub Packages (see settings.gradle), which
-# requires a token with read:packages on platform-saas. Pass it as a BuildKit secret — never as
-# a build-arg or ENV, both of which get baked into the image's layer history and remain
-# recoverable from it indefinitely:
+# com.altafjava.platform:* resolves from mavenLocal() first (see settings.gradle). The
+# "platform-m2" build context mounts the runner's ~/.m2/repository (populated by platform-saas's
+# publishToMavenLocal on the same machine) read-only into the container. GitHub Packages
+# (github_actor/platform_saas_token secrets) is only a fallback.
 #
 #   DOCKER_BUILDKIT=1 docker build \
+#     --build-context platform-m2="$HOME/.m2/repository" \
 #     --secret id=github_actor,env=GITHUB_ACTOR \
 #     --secret id=platform_saas_token,env=PLATFORM_SAAS_TOKEN \
 #     -t school-saas:local .
 #
-# CI (.github/workflows/ci.yml, job "docker-build") passes the same two secrets from
-# ${{ github.actor }} / ${{ secrets.PLATFORM_SAAS_TOKEN }}. Local development that has already
-# run `platform-saas`'s `./gradlew publishToMavenLocal` needs neither secret — settings.gradle
-# tries mavenLocal() before GitHub Packages.
+# CI (.github/workflows/docker-build.yml) passes the same context and secrets.
 # ---------------------------------------------------------------------------
 FROM eclipse-temurin:25-jdk-noble AS build
 WORKDIR /workspace
@@ -34,6 +32,7 @@ RUN chmod +x gradlew
 RUN --mount=type=secret,id=github_actor \
     --mount=type=secret,id=platform_saas_token \
     --mount=type=cache,target=/root/.gradle,sharing=locked \
+    --mount=type=bind,from=platform-m2,target=/root/.m2/repository,ro \
     GITHUB_ACTOR="$(cat /run/secrets/github_actor 2>/dev/null || true)" \
     PLATFORM_SAAS_TOKEN="$(cat /run/secrets/platform_saas_token 2>/dev/null || true)" \
     ./gradlew :app:bootJar --no-daemon
