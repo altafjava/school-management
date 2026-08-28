@@ -144,7 +144,8 @@ class AssignmentServiceTest {
 		when(studentClassroomLinkRepository.findByClassroomId(1L, 5L, PageRequest.of(0, 1000)))
 				.thenReturn(new PageImpl<>(java.util.List.of(link)));
 		Student student = studentWithId(20L);
-		when(studentRepository.findByIdAndTenantId(20L, 1L)).thenReturn(Optional.of(student));
+		when(studentRepository.findAllByIdInAndTenantId(java.util.List.of(20L), 1L))
+				.thenReturn(java.util.List.of(student));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.of(99L));
 		LocalDate dueDate = LocalDate.now().plusDays(7);
 
@@ -169,7 +170,8 @@ class AssignmentServiceTest {
 		when(studentClassroomLinkRepository.findByClassroomId(1L, 5L, PageRequest.of(0, 1000)))
 				.thenReturn(new PageImpl<>(java.util.List.of(link)));
 		Student student = studentWithId(20L);
-		when(studentRepository.findByIdAndTenantId(20L, 1L)).thenReturn(Optional.of(student));
+		when(studentRepository.findAllByIdInAndTenantId(java.util.List.of(20L), 1L))
+				.thenReturn(java.util.List.of(student));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.empty());
 
 		assertDoesNotThrow(() -> assignmentService.create(CLASSROOM_PUBLIC_ID.toString(),
