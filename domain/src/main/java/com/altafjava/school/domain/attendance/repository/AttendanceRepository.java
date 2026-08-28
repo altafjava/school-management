@@ -2,6 +2,7 @@ package com.altafjava.school.domain.attendance.repository;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,6 +51,26 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 
 	long countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(Long studentId, Long tenantId, LocalDate from,
 			LocalDate to, AttendanceStatus status);
+
+	/**
+	 * Same as {@link #countByStudentIdAndTenantIdAndAttendanceDateBetween}, excluding any date in
+	 * {@code excludedDates} (the tenant's holiday calendar) from both the range and the count —
+	 * only called when that set is non-empty, see {@code AttendanceService#calculatePercentage}.
+	 */
+	@Query("SELECT COUNT(a) FROM Attendance a WHERE a.studentId = :studentId AND a.tenantId = :tenantId "
+			+ "AND a.attendanceDate BETWEEN :from AND :to AND a.attendanceDate NOT IN :excludedDates")
+	long countByStudentIdAndTenantIdAndAttendanceDateBetweenExcludingDates(@Param("studentId") Long studentId,
+			@Param("tenantId") Long tenantId, @Param("from") LocalDate from, @Param("to") LocalDate to,
+			@Param("excludedDates") Collection<LocalDate> excludedDates);
+
+	/** Same as {@link #countByStudentIdAndTenantIdAndAttendanceDateBetweenExcludingDates}, filtered by status. */
+	@Query("SELECT COUNT(a) FROM Attendance a WHERE a.studentId = :studentId AND a.tenantId = :tenantId "
+			+ "AND a.attendanceDate BETWEEN :from AND :to AND a.status = :status "
+			+ "AND a.attendanceDate NOT IN :excludedDates")
+	long countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatusExcludingDates(
+			@Param("studentId") Long studentId, @Param("tenantId") Long tenantId, @Param("from") LocalDate from,
+			@Param("to") LocalDate to, @Param("status") AttendanceStatus status,
+			@Param("excludedDates") Collection<LocalDate> excludedDates);
 
 	/**
 	 * One row per {@code studentId} present in {@code studentIds} — batched alternative to calling

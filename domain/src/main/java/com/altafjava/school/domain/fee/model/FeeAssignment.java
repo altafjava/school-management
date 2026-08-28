@@ -1,5 +1,7 @@
 package com.altafjava.school.domain.fee.model;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -37,6 +39,20 @@ public class FeeAssignment extends SoftDeletableEntity {
 	@Column(name = "classroom_id")
 	private Long classroomId;
 
+	// Nullable — no due date means no late fee is ever applied for this assignment, regardless of
+	// the owning FeeStructure's late-fee policy (see FeeBalanceCalculator).
+	@Column(name = "due_date")
+	private LocalDate dueDate;
+
+	// Per-assignment overrides of the owning FeeStructure's grace-days/late-fee-percentage
+	// defaults — null defers to the structure's value, which itself may defer to a hardcoded
+	// system default (0 grace days, 0% late fee). See FeeBalanceCalculator.
+	@Column(name = "grace_days")
+	private Integer graceDays;
+
+	@Column(name = "late_fee_percentage", precision = 5, scale = 2)
+	private BigDecimal lateFeePercentage;
+
 	public static FeeAssignment forStudent(Long feeStructureId, Long studentId) {
 		return FeeAssignment.builder()
 				.feeStructureId(feeStructureId)
@@ -51,5 +67,11 @@ public class FeeAssignment extends SoftDeletableEntity {
 				.scope(FeeAssignmentScope.CLASSROOM)
 				.classroomId(classroomId)
 				.build();
+	}
+
+	public void configureDueDate(LocalDate dueDate, Integer graceDays, BigDecimal lateFeePercentage) {
+		this.dueDate = dueDate;
+		this.graceDays = graceDays;
+		this.lateFeePercentage = lateFeePercentage;
 	}
 }

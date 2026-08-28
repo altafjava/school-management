@@ -118,7 +118,7 @@ class FeeOnlinePaymentServiceTest {
 		when(feeStructureRepository.findByPublicIdAndTenantId(any(), any())).thenReturn(Optional.of(feeStructure()));
 		when(feePaymentService.calculateBalanceForStudent(eq(1L), any())).thenReturn(List.of(
 				new FeeBalance(20L, "Tuition", BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000),
-						BigDecimal.ZERO)));
+						BigDecimal.ZERO, BigDecimal.ZERO, null)));
 		when(paymentGatewayResolver.resolve(1L)).thenReturn(Optional.empty());
 
 		BusinessException exception = assertThrows(BusinessException.class,
@@ -134,7 +134,7 @@ class FeeOnlinePaymentServiceTest {
 		when(feeStructureRepository.findByPublicIdAndTenantId(any(), any())).thenReturn(Optional.of(feeStructure()));
 		when(feePaymentService.calculateBalanceForStudent(eq(1L), any())).thenReturn(List.of(
 				new FeeBalance(20L, "Tuition", BigDecimal.valueOf(1000), BigDecimal.valueOf(1000), BigDecimal.ZERO,
-						BigDecimal.ZERO)));
+						BigDecimal.ZERO, BigDecimal.ZERO, null)));
 
 		assertThrows(BusinessException.class, () -> service.createCharge(STUDENT_PUBLIC_ID, FEE_STRUCTURE_PUBLIC_ID));
 		verify(paymentGatewayResolver, never()).resolve(any());
@@ -146,7 +146,7 @@ class FeeOnlinePaymentServiceTest {
 		when(feeStructureRepository.findByPublicIdAndTenantId(any(), any())).thenReturn(Optional.of(feeStructure()));
 		when(feePaymentService.calculateBalanceForStudent(eq(1L), any())).thenReturn(List.of(
 				new FeeBalance(20L, "Tuition", BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.valueOf(1000),
-						BigDecimal.ZERO)));
+						BigDecimal.ZERO, BigDecimal.ZERO, null)));
 		when(paymentGatewayResolver.resolve(1L)).thenReturn(Optional.of(resolvedConfig()));
 		when(paymentGatewayCredentialsDecryptor.decrypt(any())).thenReturn(credentials());
 		when(paymentGatewayProviderRegistry.resolve(PaymentGatewayType.STRIPE)).thenReturn(paymentGatewayProvider);

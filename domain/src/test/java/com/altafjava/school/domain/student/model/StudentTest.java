@@ -82,4 +82,20 @@ class StudentTest {
 		assertEquals("alicia@school.test", student.getEmail());
 		assertEquals(LocalDate.of(2010, 2, 2), student.getDateOfBirth());
 	}
+
+	@Test
+	void erasePii_clearsContactPiiButKeepsOperationalIdentifiers() {
+		Student student = newStudent();
+		student.updatePhone("+14155552671");
+
+		student.erasePii();
+
+		assertEquals("[erased]", student.getFirstName());
+		assertEquals("[erased]", student.getLastName());
+		assertEquals(null, student.getEmail());
+		assertEquals(null, student.getPhone());
+		assertEquals(null, student.getAddress());
+		assertEquals("STU-001", student.getStudentCode());
+		assertEquals(LocalDate.of(2010, 1, 1), student.getDateOfBirth());
+	}
 }

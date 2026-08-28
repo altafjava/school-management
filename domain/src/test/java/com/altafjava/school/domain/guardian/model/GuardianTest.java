@@ -27,4 +27,17 @@ class GuardianTest {
 
 		assertThrows(BusinessException.class, () -> guardian.linkUserAccount(99L));
 	}
+
+	@Test
+	void erasePii_clearsContactPii() {
+		Guardian guardian = newGuardian();
+
+		guardian.erasePii();
+
+		assertEquals("[erased]", guardian.getFirstName());
+		assertEquals("[erased]", guardian.getLastName());
+		assertEquals(null, guardian.getEmail());
+		assertEquals(null, guardian.getPhone());
+		assertEquals(null, guardian.getAddress());
+	}
 }

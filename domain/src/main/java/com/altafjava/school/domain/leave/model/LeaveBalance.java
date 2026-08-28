@@ -1,6 +1,7 @@
 package com.altafjava.school.domain.leave.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -36,6 +37,14 @@ public class LeaveBalance extends SoftDeletableEntity {
 	@Column(name = "used_days", nullable = false, precision = 5, scale = 1)
 	private BigDecimal usedDays;
 
+	// How much of allocatedDays came from the previous academic year's carry-forward, and when
+	// that portion is forfeited if unused — see LeaveCarryForwardExpiryJob.
+	@Column(name = "carried_forward_days", nullable = false, precision = 5, scale = 1)
+	private BigDecimal carriedForwardDays;
+
+	@Column(name = "carry_forward_expires_at")
+	private LocalDate carryForwardExpiresAt;
+
 	public static LeaveBalance allocate(Long teacherId, Long leaveTypeId, Long academicYearId,
 			BigDecimal allocatedDays) {
 		return LeaveBalance.builder()
@@ -44,6 +53,7 @@ public class LeaveBalance extends SoftDeletableEntity {
 				.academicYearId(academicYearId)
 				.allocatedDays(allocatedDays)
 				.usedDays(BigDecimal.ZERO)
+				.carriedForwardDays(BigDecimal.ZERO)
 				.build();
 	}
 
@@ -62,5 +72,31 @@ public class LeaveBalance extends SoftDeletableEntity {
 	public void credit(BigDecimal days) {
 		BigDecimal reversed = this.usedDays.subtract(days);
 		this.usedDays = reversed.max(BigDecimal.ZERO);
+	}
+
+	// Adds a carry-forward amount on top of whatever this balance was already allocated (its
+	// default annual days) — called once, right after LeaveBalance.allocate, when the previous
+	// academic year's LeaveType had carryForwardEnabled and a remaining balance to bring forward.
+	public void applyCarryForward(BigDecimal days, LocalDate expiresAt) {
+		this.allocatedDays = this.allocatedDays.add(days);
+		this.carriedForwardDays = days;
+		this.carryForwardExpiresAt = expiresAt;
+	}
+
+	/**
+	 * Forfeits whatever carried-forward days remain unused once their expiry date has passed —
+	 * reduces {@code allocatedDays} back down by the unused portion and clears the carry-forward
+	 * tracking fields, so it is a no-op if called again. Returns the number of days forfeited (zero
+	 * if nothing was due to expire).
+	 */
+	public BigDecimal forfeitExpiredCarryForward(LocalDate today) {
+		if (carryForwardExpiresAt == null || today.isBefore(carryForwardExpiresAt)) {
+			return BigDecimal.ZERO;
+		}
+		BigDecimal forfeited = carriedForwardDays.min(remainingDays()).max(BigDecimal.ZERO);
+		this.allocatedDays = this.allocatedDays.subtract(forfeited);
+		this.carriedForwardDays = BigDecimal.ZERO;
+		this.carryForwardExpiresAt = null;
+		return forfeited;
 	}
 }

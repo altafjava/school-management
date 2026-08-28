@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.dto.request.ConfigureLeaveCarryForwardRequest;
 import com.altafjava.school.api.dto.request.CreateLeaveTypeRequest;
 import com.altafjava.school.api.dto.request.UpdateLeaveTypeRequest;
 import com.altafjava.school.api.dto.response.LeaveTypeResponse;
@@ -92,5 +93,25 @@ public class LeaveTypeController {
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public LeaveTypeResponse markPaid(@PathVariable String publicId) {
 		return leaveTypeMapper.toResponse(leaveTypeService.markPaid(publicId));
+	}
+
+	@PatchMapping("/{publicId}/restrict-during-probation")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public LeaveTypeResponse restrictDuringProbation(@PathVariable String publicId) {
+		return leaveTypeMapper.toResponse(leaveTypeService.restrictDuringProbation(publicId));
+	}
+
+	@PatchMapping("/{publicId}/allow-during-probation")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public LeaveTypeResponse allowDuringProbation(@PathVariable String publicId) {
+		return leaveTypeMapper.toResponse(leaveTypeService.allowDuringProbation(publicId));
+	}
+
+	@PatchMapping("/{publicId}/carry-forward")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public LeaveTypeResponse configureCarryForward(@PathVariable String publicId,
+			@Valid @RequestBody ConfigureLeaveCarryForwardRequest request) {
+		return leaveTypeMapper.toResponse(leaveTypeService.configureCarryForward(publicId, request.enabled(),
+				request.maxCarryForwardDays(), request.carryForwardExpiryMonths()));
 	}
 }

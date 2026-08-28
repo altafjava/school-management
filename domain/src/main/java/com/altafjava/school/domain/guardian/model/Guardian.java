@@ -70,4 +70,15 @@ public class Guardian extends SoftDeletableEntity {
 	public void updatePhone(String phone) {
 		this.phone = phone;
 	}
+
+	// GDPR/DPDP erasure (see DomainPiiHandler) — mirrors the platform's own User tombstone
+	// strategy: firstName/lastName can't go null (NOT NULL columns) so they get an opaque
+	// placeholder, everything else PII-bearing is cleared.
+	public void erasePii() {
+		this.firstName = "[erased]";
+		this.lastName = "[erased]";
+		this.email = null;
+		this.phone = null;
+		this.address = null;
+	}
 }

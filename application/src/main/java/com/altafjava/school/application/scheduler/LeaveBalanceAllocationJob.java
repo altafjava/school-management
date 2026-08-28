@@ -72,8 +72,7 @@ public class LeaveBalanceAllocationJob implements JobExecutionStrategy {
 		int allocated = 0;
 		for (var leaveType : activeLeaveTypes) {
 			for (var teacher : teachers) {
-				leaveBalanceService.allocateIfAbsent(teacher.getId(), leaveType.getId(), academicYear.getId(),
-						leaveType.getDefaultAnnualDays());
+				leaveBalanceService.allocateWithCarryForward(teacher, leaveType, academicYear);
 				allocated++;
 			}
 		}

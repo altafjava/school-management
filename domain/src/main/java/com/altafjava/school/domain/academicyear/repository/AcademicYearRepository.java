@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.academicyear.repository;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -20,4 +21,9 @@ public interface AcademicYearRepository extends JpaRepository<AcademicYear, Long
 	boolean existsByNameAndTenantId(String name, Long tenantId);
 
 	boolean existsByIdAndTenantId(Long id, Long tenantId);
+
+	// The academic year immediately preceding one that starts on startDate — used to resolve leave
+	// carry-forward source balances. Years are ordered by startDate, not an explicit link column.
+	Optional<AcademicYear> findFirstByTenantIdAndStartDateBeforeOrderByStartDateDesc(Long tenantId,
+			LocalDate startDate);
 }

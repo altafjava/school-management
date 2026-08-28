@@ -116,7 +116,7 @@ class ReportCardTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 				LocalDate.now().minusMonths(1), LocalDate.now().plusMonths(5), true);
 		Term term = termService.create("Term 1", LocalDate.now().minusDays(10), LocalDate.now().plusDays(10),
 				year.getId());
-		reportCardService.generate(student.getId(), term.getId());
+		reportCardService.generate(student.getId(), term.getId(), null, null);
 		String studentPublicId = student.getPublicId().toString();
 
 		activateTenant(tenantB);
@@ -136,7 +136,7 @@ class ReportCardTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 				LocalDate.now().minusMonths(1), LocalDate.now().plusMonths(5), true);
 		Term term = termService.create("Term 1", LocalDate.now().minusDays(10), LocalDate.now().plusDays(10),
 				year.getId());
-		ReportCard reportCard = reportCardService.generate(student.getId(), term.getId());
+		ReportCard reportCard = reportCardService.generate(student.getId(), term.getId(), null, null);
 		String reportCardPublicId = reportCard.getPublicId().toString();
 		String studentPublicId = student.getPublicId().toString();
 

@@ -39,12 +39,32 @@ public class LeaveType extends SoftDeletableEntity {
 	@Column(name = "paid", nullable = false)
 	private boolean paid;
 
+	// Whether a probationary teacher may request this leave type — defaults true so existing leave
+	// types keep their prior (implicit) behavior of being available to everyone.
+	@Column(name = "available_during_probation", nullable = false)
+	private boolean availableDuringProbation;
+
+	@Column(name = "carry_forward_enabled", nullable = false)
+	private boolean carryForwardEnabled;
+
+	// Cap on days carried into the next academic year — null means "unlimited" when carry-forward
+	// is enabled.
+	@Column(name = "max_carry_forward_days", precision = 5, scale = 1)
+	private BigDecimal maxCarryForwardDays;
+
+	// Carried-forward days not used within this many months of the new academic year's start are
+	// forfeited (see LeaveCarryForwardExpiryJob) — null means carried-forward days never expire.
+	@Column(name = "carry_forward_expiry_months")
+	private Integer carryForwardExpiryMonths;
+
 	public static LeaveType create(String name, BigDecimal defaultAnnualDays) {
 		return LeaveType.builder()
 				.name(name)
 				.defaultAnnualDays(defaultAnnualDays)
 				.active(true)
 				.paid(true)
+				.availableDuringProbation(true)
+				.carryForwardEnabled(false)
 				.build();
 	}
 
@@ -67,5 +87,20 @@ public class LeaveType extends SoftDeletableEntity {
 
 	public void markPaid() {
 		this.paid = true;
+	}
+
+	public void restrictDuringProbation() {
+		this.availableDuringProbation = false;
+	}
+
+	public void allowDuringProbation() {
+		this.availableDuringProbation = true;
+	}
+
+	public void configureCarryForward(boolean enabled, BigDecimal maxCarryForwardDays,
+			Integer carryForwardExpiryMonths) {
+		this.carryForwardEnabled = enabled;
+		this.maxCarryForwardDays = enabled ? maxCarryForwardDays : null;
+		this.carryForwardExpiryMonths = enabled ? carryForwardExpiryMonths : null;
 	}
 }

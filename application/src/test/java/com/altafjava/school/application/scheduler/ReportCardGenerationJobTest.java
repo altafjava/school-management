@@ -86,8 +86,8 @@ class ReportCardGenerationJobTest {
 
 		JobExecutionResult result = job.execute(context());
 
-		verify(reportCardService).generate(1L, 5L);
-		verify(reportCardService).generate(2L, 5L);
+		verify(reportCardService).generate(1L, 5L, null, null);
+		verify(reportCardService).generate(2L, 5L, null, null);
 		verify(tenantAdminNotifier).notifyAll(eq(1L), any(), org.mockito.ArgumentMatchers.contains("2"));
 		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 2, "notifiedCount", 1), null), result);
 	}
@@ -98,7 +98,7 @@ class ReportCardGenerationJobTest {
 
 		JobExecutionResult result = job.execute(context());
 
-		verify(reportCardService, never()).generate(anyLong(), anyLong());
+		verify(reportCardService, never()).generate(anyLong(), anyLong(), any(), any());
 		verify(tenantAdminNotifier, never()).notifyAll(any(), any(), any());
 		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 0, "notifiedCount", 0), null), result);
 	}
@@ -124,12 +124,12 @@ class ReportCardGenerationJobTest {
 		when(termRepository.findCurrentByTenantId(eq(1L))).thenReturn(Optional.of(term));
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student1, student2));
-		when(reportCardService.generate(1L, 5L)).thenThrow(new RuntimeException("storage unavailable"));
+		when(reportCardService.generate(1L, 5L, null, null)).thenThrow(new RuntimeException("storage unavailable"));
 		when(tenantAdminNotifier.notifyAll(eq(1L), any(), any())).thenReturn(1);
 
 		JobExecutionResult result = job.execute(context());
 
-		verify(reportCardService).generate(2L, 5L);
+		verify(reportCardService).generate(2L, 5L, null, null);
 		assertEquals(new JobExecutionResult.Success(Map.of("generatedCount", 1, "notifiedCount", 1), null), result);
 	}
 }

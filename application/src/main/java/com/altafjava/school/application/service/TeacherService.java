@@ -102,6 +102,20 @@ public class TeacherService {
 		return teacherRepository.save(teacher);
 	}
 
+	@Transactional
+	public Teacher setProbationPeriod(String publicId, LocalDate probationEndDate) {
+		Teacher teacher = findByPublicId(publicId);
+		teacher.setProbationPeriod(probationEndDate);
+		return teacherRepository.save(teacher);
+	}
+
+	@Transactional
+	public Teacher endProbation(String publicId) {
+		Teacher teacher = findByPublicId(publicId);
+		teacher.endProbation();
+		return teacherRepository.save(teacher);
+	}
+
 	private Long resolveDepartmentId(String departmentPublicId) {
 		if (departmentPublicId == null) {
 			return null;

@@ -75,4 +75,26 @@ public class LeaveTypeService {
 		leaveType.markPaid();
 		return leaveTypeRepository.save(leaveType);
 	}
+
+	@Transactional
+	public LeaveType restrictDuringProbation(String publicId) {
+		LeaveType leaveType = findByPublicId(publicId);
+		leaveType.restrictDuringProbation();
+		return leaveTypeRepository.save(leaveType);
+	}
+
+	@Transactional
+	public LeaveType allowDuringProbation(String publicId) {
+		LeaveType leaveType = findByPublicId(publicId);
+		leaveType.allowDuringProbation();
+		return leaveTypeRepository.save(leaveType);
+	}
+
+	@Transactional
+	public LeaveType configureCarryForward(String publicId, boolean enabled, BigDecimal maxCarryForwardDays,
+			Integer carryForwardExpiryMonths) {
+		LeaveType leaveType = findByPublicId(publicId);
+		leaveType.configureCarryForward(enabled, maxCarryForwardDays, carryForwardExpiryMonths);
+		return leaveTypeRepository.save(leaveType);
+	}
 }

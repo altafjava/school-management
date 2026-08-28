@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateTeacherRequest;
+import com.altafjava.school.api.dto.request.SetTeacherProbationRequest;
 import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
 import com.altafjava.school.api.dto.request.UpdateTeacherContactDetailsRequest;
 import com.altafjava.school.api.dto.request.UpdateTeacherHrDetailsRequest;
@@ -97,5 +98,18 @@ public class TeacherController {
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public TeacherResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
 		return teacherMapper.toResponse(teacherService.updateAddress(publicId, addressMapper.toDomain(request)));
+	}
+
+	@PatchMapping("/{publicId}/probation")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public TeacherResponse setProbationPeriod(@PathVariable String publicId,
+			@Valid @RequestBody SetTeacherProbationRequest request) {
+		return teacherMapper.toResponse(teacherService.setProbationPeriod(publicId, request.probationEndDate()));
+	}
+
+	@PatchMapping("/{publicId}/probation/end")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public TeacherResponse endProbation(@PathVariable String publicId) {
+		return teacherMapper.toResponse(teacherService.endProbation(publicId));
 	}
 }

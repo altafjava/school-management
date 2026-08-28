@@ -149,4 +149,51 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on AttendanceService/LeaveRequestService's constructors: flags storing the
+      newly-injected HolidayService (an application-layer service, same category of type as
+      CustomFieldValueService's injected EntityAttributeService above) into a field. Same standard
+      constructor-injection pattern, investigated 2026-08-27 (Phase 2, item 2.1): no mutable state
+      leak, reference never handed back to a caller — consistent detector noise, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.application.service.AttendanceService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.application.service.LeaveRequestService"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!--
+      EI_EXPOSE_REP2 on HolidayController/TeacherController's constructors: flags storing the
+      injected application service references into fields. Same standard constructor-injection
+      pattern as every other controller in this module (e.g. BookController/RouteController
+      above), investigated 2026-08-27 (Phase 2, item 2.1/2.3): no mutable state leak, reference
+      never handed back to a caller — consistent detector noise, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.api.controller.HolidayController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.TeacherController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!--
+      EI_EXPOSE_REP2 on SchoolPlatformConfigurer's constructor: flags storing the injected
+      StudentGuardianPiiHandler (an application-layer service, same category of type as
+      AttendanceOfflineSyncHandler already constructor-injected here without being flagged) into a
+      field. Same standard constructor-injection pattern, investigated 2026-08-28 (Phase 2, item
+      2.6): no mutable state leak, reference never handed back to a caller — consistent detector
+      noise, not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.config.SchoolPlatformConfigurer"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

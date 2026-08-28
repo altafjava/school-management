@@ -63,6 +63,8 @@ class LeaveRequestServiceTest {
 	private TenantAdminNotifier tenantAdminNotifier;
 	@Mock
 	private NotificationService notificationService;
+	@Mock
+	private HolidayService holidayService;
 
 	private LeaveRequestService leaveRequestService;
 
@@ -70,7 +72,7 @@ class LeaveRequestServiceTest {
 	void setUp() {
 		leaveRequestService = new LeaveRequestService(leaveRequestRepository, leaveTypeRepository,
 				leaveBalanceRepository, teacherRepository, academicYearRepository, tenantAdminNotifier,
-				notificationService);
+				notificationService, holidayService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -153,7 +155,7 @@ class LeaveRequestServiceTest {
 		UUID requestPublicId = UUID.randomUUID();
 		authenticateAsUser(CURRENT_USER_ID);
 		LeaveRequest request = LeaveRequest.submit(10L, 20L, 30L, LocalDate.now().plusDays(1),
-				LocalDate.now().plusDays(2), "Personal");
+				LocalDate.now().plusDays(2), "Personal", BigDecimal.valueOf(2));
 		LeaveBalance balance = LeaveBalance.allocate(10L, 20L, 30L, BigDecimal.TEN);
 		when(leaveRequestRepository.findByPublicIdAndTenantId(requestPublicId, 1L)).thenReturn(Optional.of(request));
 		when(leaveBalanceRepository.findByTeacherIdAndLeaveTypeIdAndAcademicYearIdAndTenantId(10L, 20L, 30L, 1L))
@@ -171,7 +173,7 @@ class LeaveRequestServiceTest {
 	void approve_withNoBalanceAllocated_throwsBusinessException() {
 		UUID requestPublicId = UUID.randomUUID();
 		LeaveRequest request = LeaveRequest.submit(10L, 20L, 30L, LocalDate.now().plusDays(1),
-				LocalDate.now().plusDays(2), "Personal");
+				LocalDate.now().plusDays(2), "Personal", BigDecimal.valueOf(2));
 		when(leaveRequestRepository.findByPublicIdAndTenantId(requestPublicId, 1L)).thenReturn(Optional.of(request));
 		when(leaveBalanceRepository.findByTeacherIdAndLeaveTypeIdAndAcademicYearIdAndTenantId(10L, 20L, 30L, 1L))
 				.thenReturn(Optional.empty());
@@ -184,7 +186,7 @@ class LeaveRequestServiceTest {
 		UUID requestPublicId = UUID.randomUUID();
 		authenticateAsUser(CURRENT_USER_ID);
 		LeaveRequest request = LeaveRequest.submit(10L, 20L, 30L, LocalDate.now().plusDays(3),
-				LocalDate.now().plusDays(4), "Personal");
+				LocalDate.now().plusDays(4), "Personal", BigDecimal.valueOf(2));
 		when(leaveRequestRepository.findByPublicIdAndTenantId(requestPublicId, 1L)).thenReturn(Optional.of(request));
 		when(teacherRepository.findByUserIdAndTenantId(CURRENT_USER_ID, 1L))
 				.thenReturn(Optional.of(teacherWithId(10L)));
@@ -200,7 +202,7 @@ class LeaveRequestServiceTest {
 		UUID requestPublicId = UUID.randomUUID();
 		authenticateAsUser(CURRENT_USER_ID);
 		LeaveRequest request = LeaveRequest.submit(999L, 20L, 30L, LocalDate.now().plusDays(3),
-				LocalDate.now().plusDays(4), "Personal");
+				LocalDate.now().plusDays(4), "Personal", BigDecimal.valueOf(2));
 		when(leaveRequestRepository.findByPublicIdAndTenantId(requestPublicId, 1L)).thenReturn(Optional.of(request));
 		when(teacherRepository.findByUserIdAndTenantId(CURRENT_USER_ID, 1L))
 				.thenReturn(Optional.of(teacherWithId(10L)));
@@ -214,7 +216,7 @@ class LeaveRequestServiceTest {
 		UUID requestPublicId = UUID.randomUUID();
 		authenticateAsUser(CURRENT_USER_ID);
 		LeaveRequest request = LeaveRequest.submit(10L, 20L, 30L, LocalDate.now().plusDays(3),
-				LocalDate.now().plusDays(4), "Personal");
+				LocalDate.now().plusDays(4), "Personal", BigDecimal.valueOf(2));
 		request.approve(1L);
 		LeaveBalance balance = LeaveBalance.allocate(10L, 20L, 30L, BigDecimal.TEN);
 		balance.deduct(request.getDaysRequested());

@@ -7,5 +7,7 @@ public record FeeStructureResponse(
 		String name,
 		BigDecimal amount,
 		String frequency,
-		String planType) {
+		String planType,
+		Integer graceDays,
+		BigDecimal lateFeePercentage) {
 }
