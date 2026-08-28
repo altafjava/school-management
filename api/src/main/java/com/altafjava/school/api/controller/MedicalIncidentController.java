@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.RecordMedicalIncidentRequest;
 import com.altafjava.school.api.dto.response.MedicalIncidentResponse;
 import com.altafjava.school.api.mapper.MedicalIncidentMapper;
@@ -38,7 +37,7 @@ public class MedicalIncidentController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('MEDICAL_INCIDENT_MANAGE')")
 	public Page<MedicalIncidentResponse> listAll(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -47,7 +46,7 @@ public class MedicalIncidentController {
 	}
 
 	@GetMapping("/students/{studentPublicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('MEDICAL_INCIDENT_MANAGE')")
 	public Page<MedicalIncidentResponse> listForStudent(@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -57,7 +56,7 @@ public class MedicalIncidentController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('MEDICAL_INCIDENT_MANAGE')")
 	public MedicalIncidentResponse record(@Valid @RequestBody RecordMedicalIncidentRequest request) {
 		return medicalIncidentMapper.toResponse(medicalIncidentService.record(request.studentPublicId(),
 				request.occurredAt(), request.description(), request.treatmentGiven()));

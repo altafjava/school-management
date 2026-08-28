@@ -13,13 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateVehicleRequest;
 import com.altafjava.school.api.dto.request.UpdateVehicleRequest;
 import com.altafjava.school.api.dto.response.VehicleResponse;
 import com.altafjava.school.api.mapper.VehicleMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.VehicleService;
 
 @RestController
@@ -39,7 +37,7 @@ public class VehicleController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VEHICLE_READ')")
 	public Page<VehicleResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -47,21 +45,21 @@ public class VehicleController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VEHICLE_READ')")
 	public VehicleResponse get(@PathVariable String publicId) {
 		return vehicleMapper.toResponse(vehicleService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VEHICLE_WRITE')")
 	public VehicleResponse create(@Valid @RequestBody CreateVehicleRequest request) {
 		return vehicleMapper.toResponse(vehicleService.create(request.registrationNumber(), request.capacity(),
 				request.driverName(), request.driverContact()));
 	}
 
 	@PatchMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VEHICLE_WRITE')")
 	public VehicleResponse updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateVehicleRequest request) {
 		return vehicleMapper.toResponse(vehicleService.updateDetails(publicId, request.capacity(),
@@ -69,7 +67,7 @@ public class VehicleController {
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VEHICLE_WRITE')")
 	public VehicleResponse deactivate(@PathVariable String publicId) {
 		return vehicleMapper.toResponse(vehicleService.deactivate(publicId));
 	}

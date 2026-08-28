@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateStudentRequest;
 import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
@@ -44,7 +43,6 @@ import com.altafjava.school.api.mapper.GradeMapper;
 import com.altafjava.school.api.mapper.ReportCardMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AttendanceService;
 import com.altafjava.school.application.service.FeePaymentService;
 import com.altafjava.school.application.service.GpaResult;
@@ -109,7 +107,7 @@ public class StudentController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_READ')")
 	public Page<StudentResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
@@ -119,13 +117,13 @@ public class StudentController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_READ')")
 	public StudentResponse get(@PathVariable String publicId) {
 		return studentMapper.toResponse(studentService.findByPublicId(publicId));
 	}
 
 	@PostMapping("/bulk-import")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public BulkImportResponse bulkImport(@RequestParam("file") MultipartFile file) {
 		try (var inputStream = file.getInputStream()) {
 			return bulkImportMapper.toResponse(studentBulkImportService.importCsv(inputStream));
@@ -136,7 +134,7 @@ public class StudentController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public StudentResponse enroll(@Valid @RequestBody CreateStudentRequest request) {
 		Student student = studentService.enroll(
 				request.studentCode(),
@@ -148,25 +146,25 @@ public class StudentController {
 	}
 
 	@PatchMapping("/{publicId}/withdraw")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public StudentResponse withdraw(@PathVariable String publicId) {
 		return studentMapper.toResponse(studentService.withdraw(publicId));
 	}
 
 	@PatchMapping("/{publicId}/transfer")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public StudentResponse transfer(@PathVariable String publicId) {
 		return studentMapper.toResponse(studentService.transfer(publicId));
 	}
 
 	@PatchMapping("/{publicId}/graduate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public StudentResponse graduate(@PathVariable String publicId) {
 		return studentMapper.toResponse(studentService.graduate(publicId));
 	}
 
 	@PatchMapping("/{publicId}/contact-details")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public StudentResponse updateContactDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateStudentContactDetailsRequest request) {
 		return studentMapper.toResponse(studentService.updateContactDetails(publicId, request.firstName(),
@@ -174,20 +172,20 @@ public class StudentController {
 	}
 
 	@PatchMapping("/{publicId}/phone")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public StudentResponse updatePhone(@PathVariable String publicId,
 			@Valid @RequestBody UpdatePhoneRequest request) {
 		return studentMapper.toResponse(studentService.updatePhone(publicId, request.phone()));
 	}
 
 	@PatchMapping("/{publicId}/address")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public StudentResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
 		return studentMapper.toResponse(studentService.updateAddress(publicId, addressMapper.toDomain(request)));
 	}
 
 	@GetMapping("/{publicId}/grades")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public Page<GradeResponse> grades(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -196,19 +194,19 @@ public class StudentController {
 	}
 
 	@GetMapping("/{publicId}/gpa/term")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public GpaResponse termGpa(@PathVariable String publicId, @RequestParam String termPublicId) {
 		return toGpaResponse(studentGpaService.calculateTermGpa(publicId, termPublicId));
 	}
 
 	@GetMapping("/{publicId}/gpa/academic-year")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public GpaResponse academicYearGpa(@PathVariable String publicId, @RequestParam String academicYearPublicId) {
 		return toGpaResponse(studentGpaService.calculateAcademicYearGpa(publicId, academicYearPublicId));
 	}
 
 	@GetMapping("/{publicId}/gpa/cumulative")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public GpaResponse cumulativeGpa(@PathVariable String publicId) {
 		return toGpaResponse(studentGpaService.calculateCumulativeGpa(publicId));
 	}
@@ -218,7 +216,7 @@ public class StudentController {
 	}
 
 	@GetMapping("/{publicId}/attendance")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public Page<AttendanceResponse> attendance(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -227,7 +225,7 @@ public class StudentController {
 	}
 
 	@GetMapping("/{publicId}/attendance/percentage")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public AttendancePercentageResponse attendancePercentage(@PathVariable String publicId,
 			@RequestParam LocalDate fromDate,
 			@RequestParam LocalDate toDate) {
@@ -236,13 +234,13 @@ public class StudentController {
 	}
 
 	@GetMapping("/{publicId}/fee-balance")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_FEE_BALANCE_READ')")
 	public List<FeeBalanceResponse> feeBalance(@PathVariable String publicId) {
 		return feeBalanceMapper.toResponseList(feePaymentService.calculateBalance(publicId));
 	}
 
 	@GetMapping("/{publicId}/report-cards")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public Page<ReportCardResponse> reportCards(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -252,7 +250,7 @@ public class StudentController {
 
 	@PostMapping("/{publicId}/report-cards")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
 	public ReportCardResponse generateReportCard(@PathVariable String publicId,
 			@RequestParam String termPublicId,
 			@RequestParam(required = false) String teacherRemarks,
@@ -265,7 +263,7 @@ public class StudentController {
 	}
 
 	@GetMapping("/{publicId}/report-cards/{reportCardPublicId}/download")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public ResponseEntity<byte[]> downloadReportCard(@PathVariable String publicId,
 			@PathVariable String reportCardPublicId) {
 		ReportCard reportCard = reportCardService.findByPublicId(publicId, reportCardPublicId);

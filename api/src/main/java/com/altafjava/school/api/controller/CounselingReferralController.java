@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.ReferForCounselingRequest;
 import com.altafjava.school.api.dto.request.ScheduleCounselingReferralRequest;
 import com.altafjava.school.api.dto.response.CounselingReferralResponse;
@@ -40,7 +39,7 @@ public class CounselingReferralController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public Page<CounselingReferralResponse> listAll(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -49,7 +48,7 @@ public class CounselingReferralController {
 	}
 
 	@GetMapping("/students/{studentPublicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public Page<CounselingReferralResponse> listForStudent(@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -58,21 +57,21 @@ public class CounselingReferralController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingReferralResponse get(@PathVariable String publicId) {
 		return counselingReferralMapper.toResponse(counselingReferralService.get(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingReferralResponse refer(@Valid @RequestBody ReferForCounselingRequest request) {
 		return counselingReferralMapper
 				.toResponse(counselingReferralService.refer(request.studentPublicId(), request.reason()));
 	}
 
 	@PatchMapping("/{publicId}/schedule")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingReferralResponse schedule(@PathVariable String publicId,
 			@Valid @RequestBody ScheduleCounselingReferralRequest request) {
 		return counselingReferralMapper.toResponse(
@@ -80,13 +79,13 @@ public class CounselingReferralController {
 	}
 
 	@PatchMapping("/{publicId}/complete")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingReferralResponse complete(@PathVariable String publicId) {
 		return counselingReferralMapper.toResponse(counselingReferralService.complete(publicId));
 	}
 
 	@PatchMapping("/{publicId}/decline")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingReferralResponse decline(@PathVariable String publicId) {
 		return counselingReferralMapper.toResponse(counselingReferralService.decline(publicId));
 	}

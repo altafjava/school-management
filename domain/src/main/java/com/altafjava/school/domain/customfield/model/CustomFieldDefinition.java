@@ -54,12 +54,22 @@ public class CustomFieldDefinition extends SoftDeletableEntity {
 	@Embedded
 	private CustomFieldValidationRule validationRule;
 
-	// Rendering hints for a frontend form builder — never interpreted by this backend itself.
+	// Ordering/grouping hints — displayOrder/displayGroup are opaque to this backend (a frontend
+	// interprets them), but displayGroupOrder and visibilityCondition ARE interpreted here, by
+	// CustomFieldValueService#getGroupedValues, since "which group comes first" and "is this field
+	// visible right now" both require doing something with a full definitions+values, not just
+	// carrying data through.
 	@Column(name = "display_order", nullable = false)
 	private int displayOrder;
 
 	@Column(name = "display_group", length = 100)
 	private String displayGroup;
+
+	@Column(name = "display_group_order", nullable = false)
+	private int displayGroupOrder;
+
+	@Embedded
+	private CustomFieldVisibilityCondition visibilityCondition;
 
 	public static CustomFieldDefinition create(CustomFieldEntityType entityType, String fieldKey, String label,
 			CustomFieldType fieldType, boolean required) {
@@ -91,9 +101,21 @@ public class CustomFieldDefinition extends SoftDeletableEntity {
 		return validationRule != null ? validationRule : CustomFieldValidationRule.builder().build();
 	}
 
-	public void reorder(int displayOrder, String displayGroup) {
+	// Same Hibernate embedded-collapses-to-null gotcha as getValidationRule() above — a field with
+	// no visibility rule set must read back as an empty (isPresent() == false) condition, not null.
+	public CustomFieldVisibilityCondition getVisibilityCondition() {
+		return visibilityCondition != null ? visibilityCondition : CustomFieldVisibilityCondition.builder().build();
+	}
+
+	public void updateVisibilityCondition(CustomFieldVisibilityCondition visibilityCondition) {
+		this.visibilityCondition = visibilityCondition != null ? visibilityCondition
+				: CustomFieldVisibilityCondition.builder().build();
+	}
+
+	public void reorder(int displayOrder, String displayGroup, int displayGroupOrder) {
 		this.displayOrder = displayOrder;
 		this.displayGroup = displayGroup;
+		this.displayGroupOrder = displayGroupOrder;
 	}
 
 	public void activate() {

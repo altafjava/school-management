@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateGuardianRequest;
 import com.altafjava.school.api.dto.request.LinkGuardianRequest;
@@ -26,7 +25,6 @@ import com.altafjava.school.api.mapper.GuardianMapper;
 import com.altafjava.school.api.mapper.StudentGuardianLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.GuardianService;
 
 @RestController
@@ -53,7 +51,7 @@ public class GuardianController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
 	public Page<GuardianResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -62,14 +60,14 @@ public class GuardianController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
 	public GuardianResponse get(@PathVariable String publicId) {
 		return guardianMapper.toResponse(guardianService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
 	public GuardianResponse create(@Valid @RequestBody CreateGuardianRequest request) {
 		return guardianMapper.toResponse(guardianService.create(
 				request.firstName(),
@@ -80,13 +78,13 @@ public class GuardianController {
 	}
 
 	@PatchMapping("/{publicId}/address")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
 	public GuardianResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
 		return guardianMapper.toResponse(guardianService.updateAddress(publicId, addressMapper.toDomain(request)));
 	}
 
 	@PatchMapping("/{publicId}/phone")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
 	public GuardianResponse updatePhone(@PathVariable String publicId,
 			@Valid @RequestBody UpdatePhoneRequest request) {
 		return guardianMapper.toResponse(guardianService.updatePhone(publicId, request.phone()));
@@ -94,7 +92,7 @@ public class GuardianController {
 
 	@PostMapping("/{publicId}/students")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
 	public StudentGuardianLinkResponse linkStudent(@PathVariable String publicId,
 			@Valid @RequestBody LinkGuardianRequest request) {
 		return studentGuardianLinkMapper.toResponse(guardianService.linkToStudent(
@@ -105,7 +103,7 @@ public class GuardianController {
 	}
 
 	@PatchMapping("/{guardianPublicId}/students/{studentPublicId}/consent/grant")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PARENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_CONSENT_MANAGE')")
 	public StudentGuardianLinkResponse grantConsent(@PathVariable String guardianPublicId,
 			@PathVariable String studentPublicId) {
 		return studentGuardianLinkMapper.toResponse(
@@ -113,7 +111,7 @@ public class GuardianController {
 	}
 
 	@PatchMapping("/{guardianPublicId}/students/{studentPublicId}/consent/revoke")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PARENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_CONSENT_MANAGE')")
 	public StudentGuardianLinkResponse revokeConsent(@PathVariable String guardianPublicId,
 			@PathVariable String studentPublicId) {
 		return studentGuardianLinkMapper.toResponse(
@@ -121,7 +119,7 @@ public class GuardianController {
 	}
 
 	@GetMapping("/me/students")
-	@PreAuthorize(SchoolRoles.HAS_PARENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_SELF_SERVICE')")
 	public Page<StudentResponse> myStudents(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {

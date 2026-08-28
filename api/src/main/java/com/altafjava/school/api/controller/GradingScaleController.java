@@ -14,13 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateGradingScaleRequest;
 import com.altafjava.school.api.dto.request.UpdateGradingScaleThresholdsRequest;
 import com.altafjava.school.api.dto.response.GradingScaleResponse;
 import com.altafjava.school.api.mapper.GradingScaleMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.GradingScaleService;
 import com.altafjava.school.application.service.GradingScaleThresholdInput;
 import com.altafjava.school.domain.curriculum.model.GradingScale;
@@ -42,7 +40,7 @@ public class GradingScaleController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GRADING_SCALE_READ')")
 	public Page<GradingScaleResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -50,21 +48,21 @@ public class GradingScaleController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GRADING_SCALE_READ')")
 	public GradingScaleResponse get(@PathVariable String publicId) {
 		return toResponse(gradingScaleService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GRADING_SCALE_WRITE')")
 	public GradingScaleResponse create(@Valid @RequestBody CreateGradingScaleRequest request) {
 		GradingScale scale = gradingScaleService.create(request.name(), toInputs(request), request.isDefault());
 		return toResponse(scale);
 	}
 
 	@PatchMapping("/{publicId}/thresholds")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GRADING_SCALE_WRITE')")
 	public GradingScaleResponse updateThresholds(@PathVariable String publicId,
 			@Valid @RequestBody UpdateGradingScaleThresholdsRequest request) {
 		var thresholds = request.thresholds().stream()
@@ -74,13 +72,13 @@ public class GradingScaleController {
 	}
 
 	@PatchMapping("/{publicId}/default")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GRADING_SCALE_WRITE')")
 	public GradingScaleResponse markAsDefault(@PathVariable String publicId) {
 		return toResponse(gradingScaleService.markAsDefault(publicId));
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GRADING_SCALE_WRITE')")
 	public GradingScaleResponse deactivate(@PathVariable String publicId) {
 		return toResponse(gradingScaleService.deactivate(publicId));
 	}

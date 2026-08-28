@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.idempotency.RequireIdempotencyKey;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.RecordFeePaymentRequest;
 import com.altafjava.school.api.dto.response.FeePaymentResponse;
 import com.altafjava.school.api.mapper.FeePaymentMapper;
@@ -37,7 +36,7 @@ public class FeePaymentController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_MANAGE')")
 	public Page<FeePaymentResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -46,14 +45,14 @@ public class FeePaymentController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_MANAGE')")
 	public FeePaymentResponse get(@PathVariable String publicId) {
 		return feePaymentMapper.toResponse(feePaymentService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_MANAGE')")
 	@RequireIdempotencyKey
 	public FeePaymentResponse record(@Valid @RequestBody RecordFeePaymentRequest request) {
 		return feePaymentMapper.toResponse(feePaymentService.record(

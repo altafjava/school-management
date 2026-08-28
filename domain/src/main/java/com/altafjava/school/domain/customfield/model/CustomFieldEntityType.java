@@ -8,5 +8,5 @@ package com.altafjava.school.domain.customfield.model;
  * Extend this enum, not the design, when a further entity type is needed.
  */
 public enum CustomFieldEntityType {
-	STUDENT, TEACHER, GUARDIAN, ADMISSION
+	STUDENT, TEACHER, GUARDIAN, ADMISSION, CLASSROOM, SUBJECT, FEE_STRUCTURE, LEAVE_TYPE, HOLIDAY, TRANSPORT_ROUTE, TRANSPORT_VEHICLE, BOOK
 }

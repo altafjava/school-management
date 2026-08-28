@@ -81,9 +81,9 @@ public class AdmissionEnrollmentSaga extends SagaCoordinator {
 		this.studentGuardianLinkRepository = studentGuardianLinkRepository;
 	}
 
-	// Deliberately not @Transactional — see the Javadoc note above and AdmissionService.decide():
-	// each step below must commit on its own so a later step's failure lets compensation observe
-	// and undo what earlier steps already did.
+	// Deliberately not @Transactional — see the Javadoc note above and
+	// AdmissionService.finalizeApproval(): each step below must commit on its own so a later
+	// step's failure lets compensation observe and undo what earlier steps already did.
 	public void enroll(Long admissionId, String studentCode) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		UUID tenantPublicId = TenantContext.getCurrentTenantPublicId();

@@ -16,7 +16,6 @@ import com.altafjava.school.api.dto.request.PostLessonRequest;
 import com.altafjava.school.api.dto.response.LessonResponse;
 import com.altafjava.school.api.mapper.LessonMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.LessonService;
 
 @RestController
@@ -37,7 +36,7 @@ public class LessonController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('LESSON_WRITE')")
 	public LessonResponse post(@Valid @RequestBody PostLessonRequest request) {
 		return lessonMapper.toResponse(lessonService.post(
 				request.classroomPublicId(),
@@ -48,7 +47,7 @@ public class LessonController {
 	}
 
 	@GetMapping("/classroom/{classroomPublicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('LESSON_READ')")
 	public Page<LessonResponse> listByClassroom(@PathVariable String classroomPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {

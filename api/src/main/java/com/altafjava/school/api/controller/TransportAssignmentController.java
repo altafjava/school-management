@@ -13,13 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignTransportRequest;
 import com.altafjava.school.api.dto.request.EndTransportAssignmentRequest;
 import com.altafjava.school.api.dto.response.TransportAssignmentResponse;
 import com.altafjava.school.api.mapper.TransportAssignmentMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.TransportAssignmentService;
 
 @RestController
@@ -39,7 +37,7 @@ public class TransportAssignmentController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ASSIGNMENT_READ')")
 	public Page<TransportAssignmentResponse> listForRoute(
 			@RequestParam String routePublicId,
 			@RequestParam(defaultValue = "0") int page,
@@ -50,7 +48,7 @@ public class TransportAssignmentController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ASSIGNMENT_WRITE')")
 	public TransportAssignmentResponse assign(@Valid @RequestBody AssignTransportRequest request) {
 		return transportAssignmentMapper.toResponse(transportAssignmentService.assign(request.studentPublicId(),
 				request.routePublicId(), request.vehiclePublicId(), request.routeStopPublicId(),
@@ -58,7 +56,7 @@ public class TransportAssignmentController {
 	}
 
 	@PatchMapping("/{publicId}/end")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ASSIGNMENT_WRITE')")
 	public TransportAssignmentResponse end(@PathVariable String publicId,
 			@Valid @RequestBody EndTransportAssignmentRequest request) {
 		return transportAssignmentMapper.toResponse(transportAssignmentService.end(publicId, request.effectiveTo()));

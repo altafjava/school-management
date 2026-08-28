@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.UpsertHealthRecordRequest;
 import com.altafjava.school.api.dto.response.HealthRecordResponse;
 import com.altafjava.school.api.mapper.HealthRecordMapper;
@@ -35,13 +34,13 @@ public class HealthRecordController {
 	}
 
 	@GetMapping("/students/{studentPublicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('HEALTH_RECORD_MANAGE')")
 	public HealthRecordResponse getByStudent(@PathVariable String studentPublicId) {
 		return healthRecordMapper.toResponse(healthRecordService.getByStudent(studentPublicId));
 	}
 
 	@PutMapping("/students/{studentPublicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('HEALTH_RECORD_MANAGE')")
 	public HealthRecordResponse upsert(@PathVariable String studentPublicId,
 			@Valid @RequestBody UpsertHealthRecordRequest request) {
 		return healthRecordMapper.toResponse(healthRecordService.upsert(studentPublicId, request.bloodGroup(),

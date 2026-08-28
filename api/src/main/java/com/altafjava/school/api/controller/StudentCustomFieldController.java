@@ -10,11 +10,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.SetCustomFieldValuesRequest;
 import com.altafjava.school.api.dto.response.CustomFieldValueResponse;
+import com.altafjava.school.api.dto.response.FieldGroupResponse;
 import com.altafjava.school.api.mapper.CustomFieldValueMapper;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.CustomFieldValueService;
 import com.altafjava.school.application.service.StudentService;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
@@ -40,15 +39,26 @@ public class StudentCustomFieldController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CUSTOM_FIELD_VALUE_READ')")
 	public List<CustomFieldValueResponse> get(@PathVariable String publicId) {
 		Student student = studentService.findByPublicId(publicId);
 		return customFieldValueMapper
 				.toResponseList(customFieldValueService.getAllValues(CustomFieldEntityType.STUDENT, student.getId()));
 	}
 
+	// Same values as get(), grouped by displayGroup (ordered by displayGroupOrder) and each tagged
+	// with a resolved visible flag from its visibilityCondition — a caller renders exactly this,
+	// no group/order/conditional-visibility logic needed client-side.
+	@GetMapping("/grouped")
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CUSTOM_FIELD_VALUE_READ')")
+	public List<FieldGroupResponse> getGrouped(@PathVariable String publicId) {
+		Student student = studentService.findByPublicId(publicId);
+		return customFieldValueMapper.toGroupResponseList(
+				customFieldValueService.getGroupedValues(CustomFieldEntityType.STUDENT, student.getId()));
+	}
+
 	@PutMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CUSTOM_FIELD_VALUE_WRITE')")
 	public List<CustomFieldValueResponse> set(@PathVariable String publicId,
 			@Valid @RequestBody SetCustomFieldValuesRequest request) {
 		Student student = studentService.findByPublicId(publicId);

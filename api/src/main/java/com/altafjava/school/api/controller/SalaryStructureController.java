@@ -18,7 +18,6 @@ import com.altafjava.school.api.dto.request.SupersedeSalaryStructureRequest;
 import com.altafjava.school.api.dto.response.SalaryStructureResponse;
 import com.altafjava.school.api.mapper.SalaryStructureMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.SalaryStructureService;
 
 @RestController
@@ -38,7 +37,7 @@ public class SalaryStructureController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('SALARY_STRUCTURE_MANAGE')")
 	public Page<SalaryStructureResponse> listForTeacher(
 			@RequestParam String teacherPublicId,
 			@RequestParam(defaultValue = "0") int page,
@@ -48,14 +47,14 @@ public class SalaryStructureController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('SALARY_STRUCTURE_MANAGE')")
 	public SalaryStructureResponse get(@PathVariable String publicId) {
 		return salaryStructureMapper.toResponse(salaryStructureService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('SALARY_STRUCTURE_MANAGE')")
 	public SalaryStructureResponse create(@Valid @RequestBody CreateSalaryStructureRequest request) {
 		return salaryStructureMapper.toResponse(salaryStructureService.create(request.teacherPublicId(),
 				request.basicPay(), request.houseRentAllowance(), request.transportAllowance(),
@@ -65,7 +64,7 @@ public class SalaryStructureController {
 	// Narrow PATCH: the current active structure is superseded by a new one (never edited in
 	// place), mirroring SalaryStructureService's one-active-per-teacher invariant.
 	@PatchMapping("/{publicId}/supersede")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('SALARY_STRUCTURE_MANAGE')")
 	public SalaryStructureResponse supersede(@PathVariable String publicId,
 			@Valid @RequestBody SupersedeSalaryStructureRequest request) {
 		return salaryStructureMapper.toResponse(salaryStructureService.supersede(publicId, request.basicPay(),

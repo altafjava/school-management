@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignAssetRequest;
 import com.altafjava.school.api.dto.request.ReturnAssetRequest;
 import com.altafjava.school.api.dto.response.AssetAssignmentResponse;
@@ -38,7 +37,7 @@ public class AssetAssignmentController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public Page<AssetAssignmentResponse> list(@PathVariable String assetPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -48,7 +47,7 @@ public class AssetAssignmentController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetAssignmentResponse assign(@PathVariable String assetPublicId,
 			@Valid @RequestBody AssignAssetRequest request) {
 		return assetAssignmentMapper.toResponse(assetAssignmentService.assign(assetPublicId,
@@ -56,7 +55,7 @@ public class AssetAssignmentController {
 	}
 
 	@PatchMapping("/{assignmentPublicId}/return")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetAssignmentResponse markReturned(@PathVariable String assetPublicId,
 			@PathVariable String assignmentPublicId, @Valid @RequestBody ReturnAssetRequest request) {
 		return assetAssignmentMapper.toResponse(

@@ -19,7 +19,6 @@ import com.altafjava.platform.core.security.AuthenticatedUser;
 import com.altafjava.school.api.dto.response.CertificateIssuanceResponse;
 import com.altafjava.school.api.mapper.CertificateIssuanceMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.CertificateService;
 import com.altafjava.school.domain.certificate.model.CertificateIssuance;
 
@@ -43,7 +42,7 @@ public class CertificateController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_MANAGE')")
 	public Page<CertificateIssuanceResponse> list(@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -53,7 +52,7 @@ public class CertificateController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_MANAGE')")
 	public CertificateIssuanceResponse issue(@PathVariable String studentPublicId,
 			@RequestParam String certificateTemplatePublicId,
 			@AuthenticationPrincipal AuthenticatedUser user) {
@@ -63,7 +62,7 @@ public class CertificateController {
 	}
 
 	@GetMapping("/{certificatePublicId}/download")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_MANAGE')")
 	public ResponseEntity<byte[]> download(@PathVariable String studentPublicId,
 			@PathVariable String certificatePublicId) {
 		CertificateIssuance issuance = certificateService.findByPublicId(studentPublicId, certificatePublicId);

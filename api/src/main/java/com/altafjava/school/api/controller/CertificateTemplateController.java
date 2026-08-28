@@ -14,13 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateCertificateTemplateRequest;
 import com.altafjava.school.api.dto.request.UpdateCertificateTemplateRequest;
 import com.altafjava.school.api.dto.response.CertificateTemplateResponse;
 import com.altafjava.school.api.mapper.CertificateTemplateMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.CertificateTemplateService;
 
 // Tenant-admin-defined certificate catalog (e.g. "Bonafide Certificate", "Transfer Certificate").
@@ -44,7 +42,7 @@ public class CertificateTemplateController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_TEMPLATE_READ')")
 	public Page<CertificateTemplateResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -53,27 +51,27 @@ public class CertificateTemplateController {
 	}
 
 	@GetMapping("/active")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_TEMPLATE_READ')")
 	public List<CertificateTemplateResponse> listActive() {
 		return certificateTemplateService.listActive().stream().map(certificateTemplateMapper::toResponse).toList();
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_TEMPLATE_READ')")
 	public CertificateTemplateResponse get(@PathVariable String publicId) {
 		return certificateTemplateMapper.toResponse(certificateTemplateService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_TEMPLATE_WRITE')")
 	public CertificateTemplateResponse create(@Valid @RequestBody CreateCertificateTemplateRequest request) {
 		return certificateTemplateMapper
 				.toResponse(certificateTemplateService.create(request.name(), request.bodyTemplate()));
 	}
 
 	@PatchMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_TEMPLATE_WRITE')")
 	public CertificateTemplateResponse updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateCertificateTemplateRequest request) {
 		return certificateTemplateMapper.toResponse(
@@ -81,13 +79,13 @@ public class CertificateTemplateController {
 	}
 
 	@PatchMapping("/{publicId}/activate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_TEMPLATE_WRITE')")
 	public CertificateTemplateResponse activate(@PathVariable String publicId) {
 		return certificateTemplateMapper.toResponse(certificateTemplateService.activate(publicId));
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_TEMPLATE_WRITE')")
 	public CertificateTemplateResponse deactivate(@PathVariable String publicId) {
 		return certificateTemplateMapper.toResponse(certificateTemplateService.deactivate(publicId));
 	}

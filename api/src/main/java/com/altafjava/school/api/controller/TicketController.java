@@ -19,7 +19,6 @@ import com.altafjava.school.api.dto.request.ResolveTicketRequest;
 import com.altafjava.school.api.dto.response.TicketResponse;
 import com.altafjava.school.api.mapper.TicketMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.TicketService;
 import com.altafjava.school.domain.helpdesk.model.TicketCategory;
 import com.altafjava.school.domain.helpdesk.model.TicketStatus;
@@ -50,7 +49,7 @@ public class TicketController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_MANAGE')")
 	public Page<TicketResponse> search(
 			@RequestParam(required = false) TicketStatus status,
 			@RequestParam(required = false) TicketCategory category,
@@ -62,7 +61,7 @@ public class TicketController {
 	}
 
 	@GetMapping("/my")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_SELF_SERVICE')")
 	public Page<TicketResponse> listMine(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -70,39 +69,39 @@ public class TicketController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_MANAGE')")
 	public TicketResponse get(@PathVariable String publicId) {
 		return ticketMapper.toResponse(ticketService.get(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_SELF_SERVICE')")
 	public TicketResponse raise(@Valid @RequestBody RaiseTicketRequest request) {
 		return ticketMapper.toResponse(
 				ticketService.raise(request.category(), request.subject(), request.description()));
 	}
 
 	@PatchMapping("/{publicId}/assign")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_MANAGE')")
 	public TicketResponse assign(@PathVariable String publicId, @Valid @RequestBody AssignTicketRequest request) {
 		return ticketMapper.toResponse(ticketService.assign(publicId, request.assignedToUserId()));
 	}
 
 	@PatchMapping("/{publicId}/resolve")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_MANAGE')")
 	public TicketResponse resolve(@PathVariable String publicId, @Valid @RequestBody ResolveTicketRequest request) {
 		return ticketMapper.toResponse(ticketService.resolve(publicId, request.resolution()));
 	}
 
 	@PatchMapping("/{publicId}/close")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_MANAGE')")
 	public TicketResponse close(@PathVariable String publicId) {
 		return ticketMapper.toResponse(ticketService.close(publicId));
 	}
 
 	@PatchMapping("/{publicId}/reopen")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TICKET_MANAGE')")
 	public TicketResponse reopen(@PathVariable String publicId) {
 		return ticketMapper.toResponse(ticketService.reopen(publicId));
 	}

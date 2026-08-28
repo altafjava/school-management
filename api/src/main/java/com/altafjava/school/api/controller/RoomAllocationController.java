@@ -13,13 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AllocateRoomRequest;
 import com.altafjava.school.api.dto.request.VacateRoomAllocationRequest;
 import com.altafjava.school.api.dto.response.RoomAllocationResponse;
 import com.altafjava.school.api.mapper.RoomAllocationMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.RoomAllocationService;
 
 @RestController
@@ -39,7 +37,7 @@ public class RoomAllocationController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ROOM_ALLOCATION_READ')")
 	public Page<RoomAllocationResponse> listForRoom(
 			@RequestParam String roomPublicId,
 			@RequestParam(defaultValue = "0") int page,
@@ -50,14 +48,14 @@ public class RoomAllocationController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ROOM_ALLOCATION_WRITE')")
 	public RoomAllocationResponse allocate(@Valid @RequestBody AllocateRoomRequest request) {
 		return roomAllocationMapper.toResponse(roomAllocationService.allocate(request.studentPublicId(),
 				request.roomPublicId(), request.allocatedFrom()));
 	}
 
 	@PatchMapping("/{publicId}/vacate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ROOM_ALLOCATION_WRITE')")
 	public RoomAllocationResponse vacate(@PathVariable String publicId,
 			@Valid @RequestBody VacateRoomAllocationRequest request) {
 		return roomAllocationMapper.toResponse(roomAllocationService.vacate(publicId, request.allocatedUntil()));

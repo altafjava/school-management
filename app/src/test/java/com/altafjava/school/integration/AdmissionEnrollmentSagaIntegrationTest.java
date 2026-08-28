@@ -21,7 +21,6 @@ import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.admission.model.Admission;
 import com.altafjava.school.domain.admission.model.AdmissionStatus;
-import com.altafjava.school.domain.admission.model.DecisionOutcome;
 import com.altafjava.school.domain.admission.repository.AdmissionRepository;
 import com.altafjava.school.domain.guardian.repository.GuardianRepository;
 import com.altafjava.school.domain.guardian.repository.StudentGuardianLinkRepository;
@@ -76,14 +75,20 @@ class AdmissionEnrollmentSagaIntegrationTest extends SchoolIntegrationTestBase {
 		TenantContext.ForTesting.clear();
 	}
 
+	// Uses finalizeApproval directly (not requestApproval, its @RequiresApproval-gated caller) —
+	// this test is about the finalize-to-saga mechanics, not about whether a tenant happens to
+	// have an ADMISSION_DECISION approval workflow seeded yet (SchoolTenantProvisioningListener
+	// seeds one asynchronously, so racing that here would make requestApproval's outcome
+	// nondeterministic — fine in production where either path converges on finalizeApproval, not
+	// fine for a test asserting a specific return value).
 	@Test
 	void decide_approve_reallyCreatesStudentAndGuardianAndMarksAdmissionEnrolled() {
 		String studentCode = "STU-" + UUID.randomUUID().toString().substring(0, 8);
 		Admission submitted = admissionService.submit("Alice", "Smith", LocalDate.of(2015, 1, 1), "Bob", "Smith",
 				"bob-" + studentCode + "@family.test", "+14155552671", "Grade 3");
 
-		Admission decided = admissionService.decide(submitted.getPublicId().toString(), DecisionOutcome.APPROVED,
-				"admin", "approved", studentCode);
+		Admission decided = admissionService.finalizeApproval(submitted.getPublicId().toString(), "admin", "approved",
+				studentCode);
 
 		assertEquals(AdmissionStatus.ENROLLED, decided.getStatus());
 		var student = studentRepository.findByIdAndTenantId(decided.getEnrolledStudentId(), tenant.getId())
@@ -108,8 +113,8 @@ class AdmissionEnrollmentSagaIntegrationTest extends SchoolIntegrationTestBase {
 		Admission submitted = admissionService.submit("Carol", "White", LocalDate.of(2014, 6, 1), "Dave", "White",
 				"dave-" + collidingCode + "@family.test", "+14155552672", "Grade 4");
 
-		assertThrows(RuntimeException.class, () -> admissionService.decide(submitted.getPublicId().toString(),
-				DecisionOutcome.APPROVED, "admin", "approved", collidingCode));
+		assertThrows(RuntimeException.class, () -> admissionService.finalizeApproval(
+				submitted.getPublicId().toString(), "admin", "approved", collidingCode));
 
 		Admission reloaded = admissionRepository.findByIdAndTenantId(submitted.getId(), tenant.getId()).orElseThrow();
 		assertEquals(AdmissionStatus.APPROVED, reloaded.getStatus(),

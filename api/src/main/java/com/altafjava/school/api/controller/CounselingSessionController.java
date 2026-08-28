@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.ScheduleCounselingSessionRequest;
 import com.altafjava.school.api.dto.request.UpdateCounselingSessionNotesRequest;
 import com.altafjava.school.api.dto.response.CounselingSessionResponse;
@@ -44,7 +43,7 @@ public class CounselingSessionController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public Page<CounselingSessionResponse> listAll(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -53,7 +52,7 @@ public class CounselingSessionController {
 	}
 
 	@GetMapping("/students/{studentPublicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public Page<CounselingSessionResponse> listForStudent(@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -62,14 +61,14 @@ public class CounselingSessionController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingSessionResponse get(@PathVariable String publicId) {
 		return counselingSessionMapper.toResponse(counselingSessionService.get(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingSessionResponse schedule(@Valid @RequestBody ScheduleCounselingSessionRequest request) {
 		return counselingSessionMapper.toResponse(counselingSessionService.schedule(request.studentPublicId(),
 				request.counselorTeacherPublicId(), request.sessionDate(), request.notes(),
@@ -77,7 +76,7 @@ public class CounselingSessionController {
 	}
 
 	@PatchMapping("/{publicId}/notes")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
 	public CounselingSessionResponse updateNotes(@PathVariable String publicId,
 			@Valid @RequestBody UpdateCounselingSessionNotesRequest request) {
 		return counselingSessionMapper.toResponse(

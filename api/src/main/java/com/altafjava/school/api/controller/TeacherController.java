@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateTeacherRequest;
 import com.altafjava.school.api.dto.request.SetTeacherProbationRequest;
@@ -45,7 +44,7 @@ public class TeacherController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public Page<TeacherResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -54,14 +53,14 @@ public class TeacherController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse get(@PathVariable String publicId) {
 		return teacherMapper.toResponse(teacherService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse hire(@Valid @RequestBody CreateTeacherRequest request) {
 		return teacherMapper.toResponse(teacherService.hire(
 				request.employeeCode(),
@@ -72,7 +71,7 @@ public class TeacherController {
 	}
 
 	@PatchMapping("/{publicId}/contact-details")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse updateContactDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateTeacherContactDetailsRequest request) {
 		return teacherMapper.toResponse(teacherService.updateContactDetails(publicId, request.firstName(),
@@ -80,7 +79,7 @@ public class TeacherController {
 	}
 
 	@PatchMapping("/{publicId}/hr-details")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse updateHrDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateTeacherHrDetailsRequest request) {
 		return teacherMapper.toResponse(teacherService.updateHrDetails(publicId, request.departmentPublicId(),
@@ -88,27 +87,27 @@ public class TeacherController {
 	}
 
 	@PatchMapping("/{publicId}/phone")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse updatePhone(@PathVariable String publicId,
 			@Valid @RequestBody UpdatePhoneRequest request) {
 		return teacherMapper.toResponse(teacherService.updatePhone(publicId, request.phone()));
 	}
 
 	@PatchMapping("/{publicId}/address")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
 		return teacherMapper.toResponse(teacherService.updateAddress(publicId, addressMapper.toDomain(request)));
 	}
 
 	@PatchMapping("/{publicId}/probation")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse setProbationPeriod(@PathVariable String publicId,
 			@Valid @RequestBody SetTeacherProbationRequest request) {
 		return teacherMapper.toResponse(teacherService.setProbationPeriod(publicId, request.probationEndDate()));
 	}
 
 	@PatchMapping("/{publicId}/probation/end")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
 	public TeacherResponse endProbation(@PathVariable String publicId) {
 		return teacherMapper.toResponse(teacherService.endProbation(publicId));
 	}

@@ -1,8 +1,16 @@
 package com.altafjava.school.application.security;
 
-import com.altafjava.platform.core.security.Roles;
-
-// Role names/SpEL fragments for TEACHER/PARENT/STUDENT — mirrors platform's Roles class.
+/**
+ * The default domain role names school-saas seeds for every tenant (see
+ * {@code 008-seed-school-roles.xml}/{@code 023-seed-dashboard-roles.xml} and
+ * {@code SchoolPlatformConfigurer#domainPermissionCatalog()}). Access control no longer checks
+ * these names directly — every {@code @PreAuthorize} resolves a permission code via
+ * {@code PermissionAuthorizationService} instead, so a tenant can grant the same access to a
+ * custom role. These constants remain for the few call sites that legitimately need a role by
+ * name rather than by permission: routing a notification to "whoever holds FINANCE"
+ * ({@code FeeDefaultRiskRuleEvaluator}) and assigning the default role to a newly self-registered
+ * account ({@code GuardianSelfRegistrationService}).
+ */
 public final class SchoolRoles {
 
 	public static final String TEACHER = "TEACHER";
@@ -12,26 +20,6 @@ public final class SchoolRoles {
 	public static final String FINANCE = "FINANCE";
 	public static final String HR = "HR";
 	public static final String ACADEMIC = "ACADEMIC";
-
-	public static final String HAS_TENANT_ADMIN_OR_TEACHER = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '" + TEACHER
-			+ "')";
-	public static final String HAS_TENANT_ADMIN_OR_PRINCIPAL = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '"
-			+ PRINCIPAL + "')";
-	public static final String HAS_TENANT_ADMIN_OR_FINANCE = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '" + FINANCE
-			+ "')";
-	public static final String HAS_TENANT_ADMIN_OR_HR = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '" + HR + "')";
-	public static final String HAS_TENANT_ADMIN_OR_ACADEMIC = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '" + ACADEMIC
-			+ "')";
-	public static final String HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT = "hasAnyRole('" + Roles.TENANT_ADMIN
-			+ "', '" + TEACHER + "', '" + PARENT + "', '" + STUDENT + "')";
-	public static final String HAS_TENANT_ADMIN_OR_PARENT_OR_STUDENT = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '"
-			+ PARENT + "', '" + STUDENT + "')";
-	public static final String HAS_TENANT_ADMIN_OR_PARENT = "hasAnyRole('" + Roles.TENANT_ADMIN + "', '" + PARENT
-			+ "')";
-	public static final String HAS_PARENT_OR_STUDENT = "hasAnyRole('" + PARENT + "', '" + STUDENT + "')";
-	public static final String HAS_PARENT = "hasRole('" + PARENT + "')";
-	public static final String HAS_TEACHER = "hasRole('" + TEACHER + "')";
-	public static final String HAS_STUDENT = "hasRole('" + STUDENT + "')";
 
 	private SchoolRoles() {
 	}

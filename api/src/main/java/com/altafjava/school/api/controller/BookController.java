@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AddBookCopyRequest;
 import com.altafjava.school.api.dto.request.CreateBookRequest;
 import com.altafjava.school.api.dto.response.BookCopyResponse;
@@ -22,7 +21,6 @@ import com.altafjava.school.api.dto.response.BookResponse;
 import com.altafjava.school.api.mapper.BookCopyMapper;
 import com.altafjava.school.api.mapper.BookMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.BookCatalogService;
 
 @RestController
@@ -44,7 +42,7 @@ public class BookController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_READ')")
 	public Page<BookResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -52,46 +50,46 @@ public class BookController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_READ')")
 	public BookResponse get(@PathVariable String publicId) {
 		return bookMapper.toResponse(bookCatalogService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_MANAGE')")
 	public BookResponse create(@Valid @RequestBody CreateBookRequest request) {
 		return bookMapper.toResponse(bookCatalogService.createBook(request.isbn(), request.title(), request.author(),
 				request.publisher(), request.category()));
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_MANAGE')")
 	public BookResponse deactivate(@PathVariable String publicId) {
 		return bookMapper.toResponse(bookCatalogService.deactivateBook(publicId));
 	}
 
 	@GetMapping("/{publicId}/copies")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_READ')")
 	public List<BookCopyResponse> listCopies(@PathVariable String publicId) {
 		return bookCatalogService.listCopies(publicId).stream().map(bookCopyMapper::toResponse).toList();
 	}
 
 	@PostMapping("/{publicId}/copies")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_MANAGE')")
 	public BookCopyResponse addCopy(@PathVariable String publicId, @Valid @RequestBody AddBookCopyRequest request) {
 		return bookCopyMapper.toResponse(bookCatalogService.addCopy(publicId, request.copyCode()));
 	}
 
 	@PatchMapping("/copies/{copyPublicId}/lost")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_MANAGE')")
 	public BookCopyResponse markCopyLost(@PathVariable String copyPublicId) {
 		return bookCopyMapper.toResponse(bookCatalogService.markCopyLost(copyPublicId));
 	}
 
 	@PatchMapping("/copies/{copyPublicId}/damaged")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('BOOK_MANAGE')")
 	public BookCopyResponse markCopyDamaged(@PathVariable String copyPublicId) {
 		return bookCopyMapper.toResponse(bookCatalogService.markCopyDamaged(copyPublicId));
 	}

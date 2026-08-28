@@ -14,13 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateHolidayRequest;
 import com.altafjava.school.api.dto.request.UpdateHolidayRequest;
 import com.altafjava.school.api.dto.response.HolidayResponse;
 import com.altafjava.school.api.mapper.HolidayMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.HolidayService;
 
 // The tenant's school-calendar holiday list — feeds attendance-percentage and leave-day
@@ -43,7 +41,7 @@ public class HolidayController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_READ')")
 	public Page<HolidayResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -51,20 +49,20 @@ public class HolidayController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_READ')")
 	public HolidayResponse get(@PathVariable String publicId) {
 		return holidayMapper.toResponse(holidayService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_WRITE')")
 	public HolidayResponse create(@Valid @RequestBody CreateHolidayRequest request) {
 		return holidayMapper.toResponse(holidayService.create(request.date(), request.name(), request.recurring()));
 	}
 
 	@PatchMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_WRITE')")
 	public HolidayResponse updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateHolidayRequest request) {
 		return holidayMapper.toResponse(
@@ -73,7 +71,7 @@ public class HolidayController {
 
 	@DeleteMapping("/{publicId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_WRITE')")
 	public void delete(@PathVariable String publicId) {
 		holidayService.delete(publicId);
 	}

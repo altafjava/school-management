@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.idempotency.RequireIdempotencyKey;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CheckoutBookRequest;
 import com.altafjava.school.api.dto.request.ReturnBookRequest;
 import com.altafjava.school.api.dto.response.CirculationResponse;
@@ -39,7 +38,7 @@ public class CirculationController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CIRCULATION_MANAGE')")
 	public Page<CirculationResponse> listForStudent(
 			@RequestParam String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
@@ -50,7 +49,7 @@ public class CirculationController {
 
 	@PostMapping("/checkout")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CIRCULATION_MANAGE')")
 	@RequireIdempotencyKey
 	public CirculationResponse checkout(@Valid @RequestBody CheckoutBookRequest request) {
 		return circulationMapper.toResponse(
@@ -58,7 +57,7 @@ public class CirculationController {
 	}
 
 	@PatchMapping("/{publicId}/return")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CIRCULATION_MANAGE')")
 	@RequireIdempotencyKey
 	public CirculationResponse returnBook(@PathVariable String publicId,
 			@Valid @RequestBody ReturnBookRequest request) {

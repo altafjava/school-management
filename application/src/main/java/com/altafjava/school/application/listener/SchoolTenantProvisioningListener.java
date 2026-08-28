@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.application.alert.AlertRuleService;
 import com.altafjava.platform.application.event.events.TenantCreatedEvent;
+import com.altafjava.platform.application.service.approval.ApprovalWorkflowDefinitionService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantContextSnapshot;
+import com.altafjava.platform.domain.approval.repository.ApprovalWorkflowDefinitionRepository;
 import com.altafjava.platform.domain.notification.model.NotificationChannel;
 import com.altafjava.platform.domain.notification.model.NotificationTemplate;
 import com.altafjava.platform.domain.notification.model.NotificationType;
@@ -28,6 +30,7 @@ import com.altafjava.school.application.alert.FeeDefaultRiskRuleEvaluator;
 import com.altafjava.school.application.alert.FeePaymentReminderRuleEvaluator;
 import com.altafjava.school.application.alert.LibraryOverdueRuleEvaluator;
 import com.altafjava.school.application.alert.LowAttendanceRuleEvaluator;
+import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.academicyear.repository.AcademicYearRepository;
 import com.altafjava.school.domain.curriculum.model.GradingScale;
@@ -135,6 +138,8 @@ public class SchoolTenantProvisioningListener {
 	private final GradingScaleThresholdRepository gradingScaleThresholdRepository;
 	private final ReportDefinitionRepository reportDefinitionRepository;
 	private final AlertRuleService alertRuleService;
+	private final ApprovalWorkflowDefinitionService approvalWorkflowDefinitionService;
+	private final ApprovalWorkflowDefinitionRepository approvalWorkflowDefinitionRepository;
 	private final ObjectMapper objectMapper;
 
 	@Async("platformTaskExecutor")
@@ -150,6 +155,7 @@ public class SchoolTenantProvisioningListener {
 			seedDefaultGradingScale(event.tenantId());
 			seedDashboardReportDefinitions(event.tenantId());
 			seedDefaultAlertRules(event.tenantId());
+			seedDefaultApprovalWorkflows();
 		});
 		log.info("action=school-tenant-provisioning-complete tenantId={}", event.tenantId());
 	}
@@ -236,6 +242,31 @@ public class SchoolTenantProvisioningListener {
 				.build();
 		notificationTemplateRepository.save(template);
 		log.info("action=seed-notification-template-created tenantId={} type={}", tenantId, seed.type());
+	}
+
+	// Preserves today's admission-decision behavior out of the box (any PRINCIPAL decides, one
+	// stage) while making it genuinely tenant-editable afterward — e.g. into a "class teacher then
+	// principal" chain — purely through the approval-workflow stage API, no code change. See
+	// AdmissionService#requestApproval/AdmissionApprovalHandler.
+	private void seedDefaultApprovalWorkflows() {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		if (approvalWorkflowDefinitionRepository.findByTenantIdAndOperationCode(tenantId, "ADMISSION_DECISION")
+				.isPresent()) {
+			log.info("action=seed-approval-workflow-skipped tenantId={} operationCode=ADMISSION_DECISION "
+					+ "reason=already-exists", tenantId);
+			return;
+		}
+		approvalWorkflowDefinitionService.create(
+				"ADMISSION_DECISION",
+				"Admission Decision",
+				"Approval required to enroll a student from an admission application",
+				48,
+				true,
+				true,
+				true,
+				List.of(new ApprovalWorkflowDefinitionService.StageSpec("Principal approval",
+						List.of(SchoolRoles.PRINCIPAL), 1, 1, false)));
+		log.info("action=seed-approval-workflow-created tenantId={} operationCode=ADMISSION_DECISION", tenantId);
 	}
 
 	private void seedDefaultAlertRules(Long tenantId) {
