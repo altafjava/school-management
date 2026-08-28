@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.application.alert.AlertRuleEvaluator;
 import com.altafjava.platform.application.alert.AlertTrigger;
+import com.altafjava.platform.application.tenant.TenantFormattingService;
 import com.altafjava.platform.domain.alert.model.AlertRule;
 import com.altafjava.platform.domain.notification.model.NotificationPriority;
 import com.altafjava.school.application.scheduler.support.StudentNotificationRecipientResolver;
@@ -29,22 +30,24 @@ public class ExamScheduleReminderRuleEvaluator implements AlertRuleEvaluator {
 
 	public static final String RULE_TYPE = "EXAM_SCHEDULE_REMINDER";
 	private static final int DEFAULT_DAYS_BEFORE = 2;
-	private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("EEE, MMM d 'at' HH:mm");
+	private static final String DATE_TIME_PATTERN = "EEE, MMM d 'at' HH:mm";
 
 	private final ExamRepository examRepository;
 	private final SubjectRepository subjectRepository;
 	private final AttendanceRepository attendanceRepository;
 	private final StudentRepository studentRepository;
 	private final StudentNotificationRecipientResolver recipientResolver;
+	private final TenantFormattingService tenantFormattingService;
 
 	public ExamScheduleReminderRuleEvaluator(ExamRepository examRepository, SubjectRepository subjectRepository,
 			AttendanceRepository attendanceRepository, StudentRepository studentRepository,
-			StudentNotificationRecipientResolver recipientResolver) {
+			StudentNotificationRecipientResolver recipientResolver, TenantFormattingService tenantFormattingService) {
 		this.examRepository = examRepository;
 		this.subjectRepository = subjectRepository;
 		this.attendanceRepository = attendanceRepository;
 		this.studentRepository = studentRepository;
 		this.recipientResolver = recipientResolver;
+		this.tenantFormattingService = tenantFormattingService;
 	}
 
 	@Override
@@ -82,10 +85,11 @@ public class ExamScheduleReminderRuleEvaluator implements AlertRuleEvaluator {
 	}
 
 	private Optional<AlertTrigger> buildTrigger(Long tenantId, Exam exam, Subject subject, Student student) {
+		DateTimeFormatter dateTimeFormat = tenantFormattingService.localizedFormatter(tenantId, DATE_TIME_PATTERN);
 		return recipientResolver.resolve(tenantId, student)
 				.map(userId -> {
 					String studentName = student.getFirstName() + " " + student.getLastName();
-					String scheduledAt = exam.getScheduledAt().format(DATE_TIME_FORMAT);
+					String scheduledAt = exam.getScheduledAt().format(dateTimeFormat);
 					return new AlertTrigger(userId, "Upcoming Exam: " + exam.getTitle(),
 							subject.getName() + " exam for " + studentName + " is scheduled for " + scheduledAt + ".",
 							Map.of(

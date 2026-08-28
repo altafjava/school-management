@@ -47,6 +47,31 @@ class StudentTest {
 	}
 
 	@Test
+	void transfer_fromActive_transitionsToTransferred() {
+		Student student = newStudent();
+
+		student.transfer();
+
+		assertEquals(EnrollmentStatus.TRANSFERRED, student.getEnrollmentStatus());
+	}
+
+	@Test
+	void transfer_alreadyGraduated_throwsBusinessException() {
+		Student student = newStudent();
+		student.graduate();
+
+		assertThrows(BusinessException.class, student::transfer);
+	}
+
+	@Test
+	void graduate_alreadyTransferred_throwsBusinessException() {
+		Student student = newStudent();
+		student.transfer();
+
+		assertThrows(BusinessException.class, student::graduate);
+	}
+
+	@Test
 	void updateContactDetails_replacesMutableFields() {
 		Student student = newStudent();
 

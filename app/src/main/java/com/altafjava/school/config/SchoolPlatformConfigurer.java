@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.PlatformConfigurer;
 import com.altafjava.platform.core.sync.OfflineSyncEntityHandler;
 import com.altafjava.school.application.sync.AttendanceOfflineSyncHandler;
+import com.altafjava.school.domain.metrics.SchoolMetricTypes;
 
 /**
  * School-specific platform configuration.
@@ -70,5 +71,10 @@ public class SchoolPlatformConfigurer implements PlatformConfigurer {
 	public Set<String> additionalTrustedDeserializationPackages() {
 		// Lets the platform's Redis serializer deserialize cached com.altafjava.school.* domain types.
 		return Set.of("com.altafjava.school.");
+	}
+
+	@Override
+	public Set<String> additionalMetricTypes() {
+		return SchoolMetricTypes.ALL;
 	}
 }

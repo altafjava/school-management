@@ -28,6 +28,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import com.altafjava.platform.application.branding.TenantBrandingService;
 import com.altafjava.platform.application.event.publisher.EventPublisher;
+import com.altafjava.platform.application.tenant.TenantFormattingService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
@@ -79,6 +80,8 @@ class ReportCardServiceTest {
 	private TenantRepository tenantRepository;
 	@Mock
 	private TenantBrandingService tenantBrandingService;
+	@Mock
+	private TenantFormattingService tenantFormattingService;
 
 	private ReportCardService reportCardService;
 
@@ -90,9 +93,11 @@ class ReportCardServiceTest {
 		Tenant tenant = Tenant.builder().name("Test School").build();
 		lenient().when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
 		lenient().when(tenantBrandingService.getLogoBytes(1L)).thenReturn(Optional.empty());
+		lenient().when(tenantFormattingService.resolveLocale(1L)).thenReturn(java.util.Locale.US);
 		reportCardService = new ReportCardService(reportCardRepository, studentRepository, termRepository,
 				gradeRepository, examRepository, subjectRepository, storageService, pdfGenerator,
-				studentDataAccessGuard, eventPublisher, transactionManager, tenantRepository, tenantBrandingService);
+				studentDataAccessGuard, eventPublisher, transactionManager, tenantRepository, tenantBrandingService,
+				tenantFormattingService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -141,7 +146,7 @@ class ReportCardServiceTest {
 		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of(grade));
 		when(examRepository.findAllByIdInAndTenantId(List.of(50L), 1L)).thenReturn(List.of(exam));
 		when(subjectRepository.findAllByIdInAndTenantId(List.of(5L), 1L)).thenReturn(List.of(subject));
-		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any()))
+		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any(), any()))
 				.thenReturn("pdf-bytes".getBytes());
 		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
 		when(reportCardRepository.save(any(ReportCard.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -149,7 +154,7 @@ class ReportCardServiceTest {
 		ReportCard result = reportCardService.generate(1L, 10L);
 
 		ArgumentCaptor<List<ReportCardLine>> linesCaptor = ArgumentCaptor.forClass(List.class);
-		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture(), anyString(), any());
+		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture(), anyString(), any(), any());
 		assertEquals(1, linesCaptor.getValue().size());
 		assertEquals("Mathematics", linesCaptor.getValue().get(0).subjectName());
 		assertEquals(10L, result.getTermId());
@@ -175,7 +180,7 @@ class ReportCardServiceTest {
 		when(termRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(term));
 		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of(grade));
 		when(examRepository.findAllByIdInAndTenantId(List.of(50L), 1L)).thenReturn(List.of(examOutsideRange));
-		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any()))
+		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any(), any()))
 				.thenReturn("pdf-bytes".getBytes());
 		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
 		when(reportCardRepository.save(any(ReportCard.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -183,7 +188,7 @@ class ReportCardServiceTest {
 		reportCardService.generate(1L, 10L);
 
 		ArgumentCaptor<List<ReportCardLine>> linesCaptor = ArgumentCaptor.forClass(List.class);
-		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture(), anyString(), any());
+		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture(), anyString(), any(), any());
 		assertTrue(linesCaptor.getValue().isEmpty());
 		// The out-of-range exam means no grade survives to the subject-batching step at all.
 		verify(subjectRepository, never()).findByIdAndTenantId(any(), any());
@@ -199,7 +204,7 @@ class ReportCardServiceTest {
 		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
 		when(termRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(term));
 		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of());
-		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any()))
+		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any(), any()))
 				.thenReturn("pdf-bytes".getBytes());
 		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.of(existing));
 		when(reportCardRepository.save(any(ReportCard.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -244,7 +249,7 @@ class ReportCardServiceTest {
 				.thenReturn(List.of(examA, examB, examC));
 		when(subjectRepository.findAllByIdInAndTenantId(List.of(5L, 6L), 1L))
 				.thenReturn(List.of(subjectMath, subjectSci));
-		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any()))
+		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any(), any()))
 				.thenReturn("pdf-bytes".getBytes());
 		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
 		when(reportCardRepository.save(any(ReportCard.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -252,7 +257,7 @@ class ReportCardServiceTest {
 		reportCardService.generate(1L, 10L);
 
 		ArgumentCaptor<List<ReportCardLine>> linesCaptor = ArgumentCaptor.forClass(List.class);
-		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture(), anyString(), any());
+		verify(pdfGenerator).generate(eq(student), eq(term), linesCaptor.capture(), anyString(), any(), any());
 		assertEquals(3, linesCaptor.getValue().size());
 		// Exactly one batched IN-query for exams and one for subjects, no matter how many grades.
 		verify(examRepository, times(1)).findAllByIdInAndTenantId(any(), any());
@@ -268,7 +273,7 @@ class ReportCardServiceTest {
 		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
 		when(termRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(term));
 		when(gradeRepository.findByStudentId(1L, 1L)).thenReturn(List.of());
-		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any()))
+		when(pdfGenerator.generate(eq(student), eq(term), any(), anyString(), any(), any()))
 				.thenReturn("pdf-bytes".getBytes());
 		when(reportCardRepository.findByStudentIdAndTermIdAndTenantId(1L, 10L, 1L)).thenReturn(Optional.empty());
 		when(reportCardRepository.save(any(ReportCard.class))).thenThrow(new RuntimeException("db unavailable"));

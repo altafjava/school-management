@@ -62,6 +62,13 @@ public class StudentService {
 	}
 
 	@Transactional
+	public Student transfer(String publicId) {
+		Student student = findByPublicId(publicId);
+		student.transfer();
+		return studentRepository.save(student);
+	}
+
+	@Transactional
 	public Student graduate(String publicId) {
 		Student student = findByPublicId(publicId);
 		student.graduate();

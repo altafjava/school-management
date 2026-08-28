@@ -21,7 +21,7 @@ class ReportCardPdfGeneratorTest {
 		List<ReportCardLine> lines = List.of(
 				new ReportCardLine("Mathematics", "Midterm", BigDecimal.valueOf(85), BigDecimal.valueOf(100), "A"));
 
-		byte[] pdf = generator.generate(student, term, lines, "Test School", null);
+		byte[] pdf = generator.generate(student, term, lines, "Test School", null, java.util.Locale.US);
 
 		assertValidPdf(pdf);
 	}
@@ -31,7 +31,7 @@ class ReportCardPdfGeneratorTest {
 		Student student = Student.create("STU-002", "Bob", "Jones", "bob@school.test", LocalDate.of(2011, 2, 2));
 		Term term = Term.create("Term 1", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), 1L);
 
-		byte[] pdf = generator.generate(student, term, List.of(), "Test School", null);
+		byte[] pdf = generator.generate(student, term, List.of(), "Test School", null, java.util.Locale.US);
 
 		assertValidPdf(pdf);
 	}
@@ -43,7 +43,7 @@ class ReportCardPdfGeneratorTest {
 		List<ReportCardLine> lines = List.of(
 				new ReportCardLine("Science", "Final", BigDecimal.valueOf(70), BigDecimal.valueOf(100), "B"));
 
-		byte[] pdf = generator.generate(student, term, lines, "Branded School", onePixelPng());
+		byte[] pdf = generator.generate(student, term, lines, "Branded School", onePixelPng(), java.util.Locale.US);
 
 		assertValidPdf(pdf);
 	}
@@ -53,7 +53,8 @@ class ReportCardPdfGeneratorTest {
 		Student student = Student.create("STU-004", "Dan", "Kim", "dan@school.test", LocalDate.of(2010, 4, 4));
 		Term term = Term.create("Term 1", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), 1L);
 
-		byte[] pdf = generator.generate(student, term, List.of(), "Test School", new byte[] { 1, 2, 3 });
+		byte[] pdf = generator.generate(student, term, List.of(), "Test School", new byte[] { 1, 2, 3 },
+				java.util.Locale.US);
 
 		assertValidPdf(pdf);
 	}

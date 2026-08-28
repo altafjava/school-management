@@ -58,6 +58,23 @@ class StudentServiceTest {
 	}
 
 	@Test
+	void transfer_transitionsEnrollmentStatusToTransferred_withoutSoftDeleting() {
+		UUID publicId = UUID.randomUUID();
+		Student student = Student.create("STU-003", "Carol", "Lee", "carol@school.test", LocalDate.of(2011, 1, 1));
+		when(studentRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(student));
+		when(studentRepository.save(any(Student.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		studentService.transfer(publicId.toString());
+
+		ArgumentCaptor<Student> captor = ArgumentCaptor.forClass(Student.class);
+		verify(studentRepository).save(captor.capture());
+		assertEquals(EnrollmentStatus.TRANSFERRED, captor.getValue().getEnrollmentStatus());
+		assertFalse(captor.getValue().isDeleted(),
+				"transfer() must transition enrollmentStatus without soft-deleting — a transferred student "
+						+ "stays visible to historical/guardian views");
+	}
+
+	@Test
 	void graduate_transitionsEnrollmentStatusToGraduated_withoutSoftDeleting() {
 		UUID publicId = UUID.randomUUID();
 		Student student = Student.create("STU-002", "Bob", "Jones", "bob@school.test", LocalDate.of(2009, 1, 1));
