@@ -69,9 +69,22 @@ public class Student extends SoftDeletableEntity {
 		this.enrollmentStatus = EnrollmentStatus.WITHDRAWN;
 	}
 
+	/**
+	 * Distinct from {@link #withdraw()} — a transfer-out to another school, not a generic
+	 * withdrawal, so reporting can tell the two apart instead of collapsing every non-graduate exit
+	 * into one "withdrawn" bucket.
+	 */
+	public void transfer() {
+		if (this.enrollmentStatus == EnrollmentStatus.GRADUATED) {
+			throw new BusinessException("Cannot transfer a graduated student");
+		}
+		this.enrollmentStatus = EnrollmentStatus.TRANSFERRED;
+	}
+
 	public void graduate() {
-		if (this.enrollmentStatus == EnrollmentStatus.WITHDRAWN) {
-			throw new BusinessException("Cannot graduate a withdrawn student");
+		if (this.enrollmentStatus == EnrollmentStatus.WITHDRAWN
+				|| this.enrollmentStatus == EnrollmentStatus.TRANSFERRED) {
+			throw new BusinessException("Cannot graduate a " + this.enrollmentStatus.name().toLowerCase() + " student");
 		}
 		this.enrollmentStatus = EnrollmentStatus.GRADUATED;
 	}

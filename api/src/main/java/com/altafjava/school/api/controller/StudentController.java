@@ -147,6 +147,12 @@ public class StudentController {
 		return studentMapper.toResponse(studentService.withdraw(publicId));
 	}
 
+	@PatchMapping("/{publicId}/transfer")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public StudentResponse transfer(@PathVariable String publicId) {
+		return studentMapper.toResponse(studentService.transfer(publicId));
+	}
+
 	@PatchMapping("/{publicId}/graduate")
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public StudentResponse graduate(@PathVariable String publicId) {

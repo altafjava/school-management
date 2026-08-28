@@ -9,13 +9,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.altafjava.platform.application.alert.AlertTrigger;
+import com.altafjava.platform.application.tenant.TenantFormattingService;
 import com.altafjava.platform.domain.alert.model.AlertRule;
 import com.altafjava.platform.domain.notification.model.NotificationType;
 import com.altafjava.school.application.scheduler.support.StudentNotificationRecipientResolver;
@@ -40,12 +43,14 @@ class ExamScheduleReminderRuleEvaluatorTest {
 	private StudentRepository studentRepository;
 	@Mock
 	private StudentNotificationRecipientResolver recipientResolver;
+	@Mock
+	private TenantFormattingService tenantFormattingService;
 
 	private ExamScheduleReminderRuleEvaluator evaluator;
 
 	private void newEvaluator() {
 		evaluator = new ExamScheduleReminderRuleEvaluator(examRepository, subjectRepository, attendanceRepository,
-				studentRepository, recipientResolver);
+				studentRepository, recipientResolver, tenantFormattingService);
 	}
 
 	private AlertRule rule() {
@@ -86,6 +91,8 @@ class ExamScheduleReminderRuleEvaluatorTest {
 		when(attendanceRepository.findDistinctStudentIdsByClassroomId(1L, 10L)).thenReturn(List.of(1L));
 		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.of(77L));
+		when(tenantFormattingService.localizedFormatter(eq(1L), any()))
+				.thenReturn(DateTimeFormatter.ofPattern("EEE, MMM d 'at' HH:mm", Locale.US));
 
 		List<AlertTrigger> triggers = evaluator.evaluate(rule());
 

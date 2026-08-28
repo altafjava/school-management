@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.lowagie.text.BadElementException;
@@ -38,10 +39,12 @@ public class CertificatePdfGenerator {
 	private static final Font FOOTER_FONT = new Font(Font.HELVETICA, 8, Font.ITALIC, MUTED_TEXT);
 
 	private static final float LOGO_MAX_HEIGHT = 42f;
-	private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
-			.withZone(ZoneOffset.UTC);
+	private static final String GENERATED_AT_PATTERN = "dd MMM yyyy, HH:mm";
 
-	public byte[] generate(String certificateName, String resolvedBody, String tenantName, byte[] logoBytes) {
+	public byte[] generate(String certificateName, String resolvedBody, String tenantName, byte[] logoBytes,
+			Locale locale) {
+		DateTimeFormatter generatedAtFormat = DateTimeFormatter.ofPattern(GENERATED_AT_PATTERN, locale)
+				.withZone(ZoneOffset.UTC);
 		Document document = new Document(com.lowagie.text.PageSize.A4, 50, 50, 50, 50);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
@@ -58,7 +61,7 @@ public class CertificatePdfGenerator {
 			document.add(title);
 
 			addBody(document, resolvedBody);
-			addFooter(document);
+			addFooter(document, generatedAtFormat);
 		} catch (DocumentException e) {
 			throw new BusinessException("Failed to generate certificate PDF: " + e.getMessage());
 		} finally {
@@ -103,9 +106,9 @@ public class CertificatePdfGenerator {
 		document.add(frame);
 	}
 
-	private void addFooter(Document document) throws DocumentException {
+	private void addFooter(Document document, DateTimeFormatter generatedAtFormat) throws DocumentException {
 		Paragraph footer = new Paragraph(
-				"Generated on " + GENERATED_AT_FORMAT.format(java.time.Instant.now()) + " UTC", FOOTER_FONT);
+				"Generated on " + generatedAtFormat.format(java.time.Instant.now()) + " UTC", FOOTER_FONT);
 		footer.setAlignment(Element.ALIGN_RIGHT);
 		footer.setSpacingBefore(20f);
 		document.add(footer);

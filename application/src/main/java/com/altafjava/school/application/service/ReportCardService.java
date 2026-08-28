@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import com.altafjava.platform.application.branding.TenantBrandingService;
 import com.altafjava.platform.application.event.publisher.EventPublisher;
+import com.altafjava.platform.application.tenant.TenantFormattingService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.file.service.StorageService;
@@ -56,13 +57,14 @@ public class ReportCardService {
 	private final TransactionTemplate transactionTemplate;
 	private final TenantRepository tenantRepository;
 	private final TenantBrandingService tenantBrandingService;
+	private final TenantFormattingService tenantFormattingService;
 
 	public ReportCardService(ReportCardRepository reportCardRepository, StudentRepository studentRepository,
 			TermRepository termRepository, GradeRepository gradeRepository, ExamRepository examRepository,
 			SubjectRepository subjectRepository, StorageService storageService, ReportCardPdfGenerator pdfGenerator,
 			StudentDataAccessGuard studentDataAccessGuard, EventPublisher eventPublisher,
 			PlatformTransactionManager transactionManager, TenantRepository tenantRepository,
-			TenantBrandingService tenantBrandingService) {
+			TenantBrandingService tenantBrandingService, TenantFormattingService tenantFormattingService) {
 		this.reportCardRepository = reportCardRepository;
 		this.studentRepository = studentRepository;
 		this.termRepository = termRepository;
@@ -76,6 +78,7 @@ public class ReportCardService {
 		this.transactionTemplate = new TransactionTemplate(transactionManager);
 		this.tenantRepository = tenantRepository;
 		this.tenantBrandingService = tenantBrandingService;
+		this.tenantFormattingService = tenantFormattingService;
 	}
 
 	@Transactional(readOnly = true)
@@ -131,7 +134,8 @@ public class ReportCardService {
 				.orElse("");
 		byte[] logoBytes = tenantBrandingService.getLogoBytes(tenantId).orElse(null);
 
-		byte[] pdf = pdfGenerator.generate(student, term, lines, tenantName, logoBytes);
+		byte[] pdf = pdfGenerator.generate(student, term, lines, tenantName, logoBytes,
+				tenantFormattingService.resolveLocale(tenantId));
 		String storageKey = String.format("tenants/%d/report-cards/%d/%d/%s.pdf", tenantId, studentId, termId,
 				UUID.randomUUID());
 		storageService.uploadFile(storageKey, pdf, "application/pdf");

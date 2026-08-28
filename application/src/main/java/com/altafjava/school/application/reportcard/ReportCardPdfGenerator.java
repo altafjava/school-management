@@ -8,6 +8,7 @@ import java.math.RoundingMode;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.lowagie.text.BadElementException;
@@ -49,11 +50,12 @@ public class ReportCardPdfGenerator {
 	private static final Font SIGNATURE_FONT = new Font(Font.HELVETICA, 10, Font.NORMAL);
 
 	private static final float LOGO_MAX_HEIGHT = 48f;
-	private static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
-			.withZone(ZoneOffset.UTC);
+	private static final String GENERATED_AT_PATTERN = "dd MMM yyyy, HH:mm";
 
 	public byte[] generate(Student student, Term term, List<ReportCardLine> lines, String tenantName,
-			byte[] logoBytes) {
+			byte[] logoBytes, Locale locale) {
+		DateTimeFormatter generatedAtFormat = DateTimeFormatter.ofPattern(GENERATED_AT_PATTERN, locale)
+				.withZone(ZoneOffset.UTC);
 		Document document = new Document(com.lowagie.text.PageSize.A4, 40, 40, 40, 40);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
@@ -61,11 +63,11 @@ public class ReportCardPdfGenerator {
 			document.open();
 
 			addHeader(document, tenantName, logoBytes);
-			addStudentInfo(document, student, term);
+			addStudentInfo(document, student, term, generatedAtFormat);
 			addGradesTable(document, lines);
 			addSummary(document, lines);
 			addSignatureBlock(document);
-			addFooter(document);
+			addFooter(document, generatedAtFormat);
 		} catch (DocumentException e) {
 			throw new BusinessException("Failed to generate report card PDF: " + e.getMessage());
 		} finally {
@@ -105,14 +107,15 @@ public class ReportCardPdfGenerator {
 		document.add(new Paragraph(" "));
 	}
 
-	private void addStudentInfo(Document document, Student student, Term term) throws DocumentException {
+	private void addStudentInfo(Document document, Student student, Term term, DateTimeFormatter generatedAtFormat)
+			throws DocumentException {
 		PdfPTable info = new PdfPTable(2);
 		info.setWidthPercentage(100);
 		info.setWidths(new float[] { 1f, 1f });
 		addInfoCell(info, "Student", student.getFirstName() + " " + student.getLastName());
 		addInfoCell(info, "Student Code", student.getStudentCode());
 		addInfoCell(info, "Term", term.getName());
-		addInfoCell(info, "Generated", GENERATED_AT_FORMAT.format(java.time.Instant.now()));
+		addInfoCell(info, "Generated", generatedAtFormat.format(java.time.Instant.now()));
 		document.add(info);
 		document.add(new Paragraph(" "));
 	}
@@ -215,9 +218,9 @@ public class ReportCardPdfGenerator {
 		return cell;
 	}
 
-	private void addFooter(Document document) throws DocumentException {
+	private void addFooter(Document document, DateTimeFormatter generatedAtFormat) throws DocumentException {
 		Paragraph footer = new Paragraph(
-				"Generated on " + GENERATED_AT_FORMAT.format(java.time.Instant.now()) + " UTC", FOOTER_FONT);
+				"Generated on " + generatedAtFormat.format(java.time.Instant.now()) + " UTC", FOOTER_FONT);
 		footer.setAlignment(Element.ALIGN_RIGHT);
 		footer.setSpacingBefore(20f);
 		document.add(footer);

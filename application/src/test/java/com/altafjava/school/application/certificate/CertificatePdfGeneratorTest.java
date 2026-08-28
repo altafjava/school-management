@@ -12,7 +12,7 @@ class CertificatePdfGeneratorTest {
 	@Test
 	void generate_producesValidPdf() {
 		byte[] pdf = generator.generate("Bonafide Certificate", "This certifies that Alice Smith is a student.",
-				"Test School", null);
+				"Test School", null, java.util.Locale.US);
 
 		assertValidPdf(pdf);
 	}
@@ -20,7 +20,7 @@ class CertificatePdfGeneratorTest {
 	@Test
 	void generate_withLogo_embedsItAndStillProducesValidPdf() throws Exception {
 		byte[] pdf = generator.generate("Bonafide Certificate", "This certifies that Bob Jones is a student.",
-				"Branded School", onePixelPng());
+				"Branded School", onePixelPng(), java.util.Locale.US);
 
 		assertValidPdf(pdf);
 	}
@@ -28,7 +28,7 @@ class CertificatePdfGeneratorTest {
 	@Test
 	void generate_withCorruptLogoBytes_fallsBackToTextOnlyHeaderRatherThanFailing() {
 		byte[] pdf = generator.generate("Bonafide Certificate", "This certifies that Carol Lee is a student.",
-				"Test School", new byte[] { 1, 2, 3 });
+				"Test School", new byte[] { 1, 2, 3 }, java.util.Locale.US);
 
 		assertValidPdf(pdf);
 	}

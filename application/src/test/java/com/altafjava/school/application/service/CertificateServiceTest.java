@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import com.altafjava.platform.application.branding.TenantBrandingService;
+import com.altafjava.platform.application.tenant.TenantFormattingService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
@@ -72,6 +73,8 @@ class CertificateServiceTest {
 	private TenantRepository tenantRepository;
 	@Mock
 	private TenantBrandingService tenantBrandingService;
+	@Mock
+	private TenantFormattingService tenantFormattingService;
 
 	private CertificateService certificateService;
 
@@ -81,9 +84,11 @@ class CertificateServiceTest {
 		Tenant tenant = Tenant.builder().name("Test School").build();
 		lenient().when(tenantRepository.findById(1L)).thenReturn(Optional.of(tenant));
 		lenient().when(tenantBrandingService.getLogoBytes(1L)).thenReturn(Optional.empty());
+		lenient().when(tenantFormattingService.resolveLocale(1L)).thenReturn(java.util.Locale.US);
 		certificateService = new CertificateService(certificateIssuanceRepository, certificateTemplateRepository,
 				studentRepository, studentClassroomLinkRepository, classroomRepository, academicYearRepository,
-				storageService, pdfGenerator, transactionManager, tenantRepository, tenantBrandingService);
+				storageService, pdfGenerator, transactionManager, tenantRepository, tenantBrandingService,
+				tenantFormattingService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -125,7 +130,7 @@ class CertificateServiceTest {
 		when(academicYearRepository.findByCurrentTrueAndTenantId(1L)).thenReturn(Optional.of(year));
 		when(classroomRepository.findByIdAndTenantId(5L, 1L)).thenReturn(Optional.of(classroom));
 		when(academicYearRepository.findByIdAndTenantId(7L, 1L)).thenReturn(Optional.of(year));
-		when(pdfGenerator.generate(eq("Bonafide Certificate"), anyString(), anyString(), any()))
+		when(pdfGenerator.generate(eq("Bonafide Certificate"), anyString(), anyString(), any(), any()))
 				.thenReturn("pdf-bytes".getBytes());
 		when(certificateIssuanceRepository.existsByVerificationCodeAndTenantId(anyString(), eq(1L)))
 				.thenReturn(false);
@@ -136,7 +141,7 @@ class CertificateServiceTest {
 				99L);
 
 		ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
-		verify(pdfGenerator).generate(eq("Bonafide Certificate"), bodyCaptor.capture(), anyString(), any());
+		verify(pdfGenerator).generate(eq("Bonafide Certificate"), bodyCaptor.capture(), anyString(), any(), any());
 		assertEquals("This certifies Alice Smith of Grade 5 A, admitted 2020-06-01.", bodyCaptor.getValue());
 		assertEquals(1L, result.getStudentId());
 		assertEquals(10L, result.getCertificateTemplateId());
@@ -182,7 +187,8 @@ class CertificateServiceTest {
 		when(certificateTemplateRepository.findByPublicIdAndTenantId(templatePublicId, 1L))
 				.thenReturn(Optional.of(template));
 		when(studentClassroomLinkRepository.findByStudentId(1L, 1L)).thenReturn(List.of());
-		when(pdfGenerator.generate(anyString(), anyString(), anyString(), any())).thenReturn("pdf-bytes".getBytes());
+		when(pdfGenerator.generate(anyString(), anyString(), anyString(), any(), any()))
+				.thenReturn("pdf-bytes".getBytes());
 		when(certificateIssuanceRepository.existsByVerificationCodeAndTenantId(anyString(), eq(1L)))
 				.thenReturn(false);
 		when(certificateIssuanceRepository.save(any(CertificateIssuance.class)))
