@@ -88,8 +88,7 @@ class StudentGpaServiceTest {
 		Exam examA = examScheduledAt(1L, 10L, LocalDateTime.of(2026, 5, 1, 9, 0));
 		Exam examB = examScheduledAt(2L, 10L, LocalDateTime.of(2026, 5, 2, 9, 0));
 		when(gradeRepository.findByStudentId(1L, 3L)).thenReturn(List.of(gradeA, gradeB));
-		when(examRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(examA));
-		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(examB));
+		when(examRepository.findAllByIdInAndTenantId(List.of(1L, 2L), 1L)).thenReturn(List.of(examA, examB));
 		when(gradingScaleService.resolveEffectiveThresholds(10L)).thenReturn(List.of(
 				GradingScaleThreshold.create(99L, "A", new BigDecimal("90"), new BigDecimal("4.0")),
 				GradingScaleThreshold.create(99L, "B", new BigDecimal("80"), new BigDecimal("3.0"))));
@@ -117,8 +116,7 @@ class StudentGpaServiceTest {
 		Exam examA = examScheduledAt(1L, 10L, LocalDateTime.of(2026, 5, 1, 9, 0));
 		Exam examStale = examScheduledAt(2L, 10L, LocalDateTime.of(2026, 5, 2, 9, 0));
 		when(gradeRepository.findByStudentId(1L, 3L)).thenReturn(List.of(gradeA, gradeStale));
-		when(examRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(examA));
-		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(examStale));
+		when(examRepository.findAllByIdInAndTenantId(List.of(1L, 2L), 1L)).thenReturn(List.of(examA, examStale));
 		when(gradingScaleService.resolveEffectiveThresholds(10L)).thenReturn(List.of(
 				GradingScaleThreshold.create(99L, "A", new BigDecimal("90"), new BigDecimal("4.0"))));
 
@@ -138,8 +136,8 @@ class StudentGpaServiceTest {
 		Exam examInTerm = examScheduledAt(1L, 10L, LocalDateTime.of(2026, 5, 1, 9, 0));
 		Exam examOutOfTerm = examScheduledAt(2L, 10L, LocalDateTime.of(2026, 8, 1, 9, 0));
 		when(gradeRepository.findByStudentId(1L, 3L)).thenReturn(List.of(inTerm, outOfTerm));
-		when(examRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(examInTerm));
-		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(examOutOfTerm));
+		when(examRepository.findAllByIdInAndTenantId(List.of(1L, 2L), 1L))
+				.thenReturn(List.of(examInTerm, examOutOfTerm));
 		when(gradingScaleService.resolveEffectiveThresholds(10L)).thenReturn(List.of(
 				GradingScaleThreshold.create(99L, "A", new BigDecimal("90"), new BigDecimal("4.0"))));
 
@@ -158,7 +156,7 @@ class StudentGpaServiceTest {
 		Grade inYear = gradeWithExam(1L, "A");
 		Exam examInYear = examScheduledAt(1L, 10L, LocalDateTime.of(2026, 5, 1, 9, 0));
 		when(gradeRepository.findByStudentId(1L, 3L)).thenReturn(List.of(inYear));
-		when(examRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(examInYear));
+		when(examRepository.findAllByIdInAndTenantId(List.of(1L), 1L)).thenReturn(List.of(examInYear));
 		when(gradingScaleService.resolveEffectiveThresholds(10L)).thenReturn(List.of(
 				GradingScaleThreshold.create(99L, "A", new BigDecimal("90"), new BigDecimal("4.0"))));
 

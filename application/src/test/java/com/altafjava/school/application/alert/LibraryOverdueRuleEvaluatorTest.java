@@ -61,7 +61,7 @@ class LibraryOverdueRuleEvaluatorTest {
 		Circulation circulation = overdueCirculation(1L, LocalDate.now().minusDays(5));
 		Student student = studentWithId(1L);
 		when(circulationRepository.findAllByTenantIdAndReturnedAtIsNull(1L)).thenReturn(List.of(circulation));
-		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
+		when(studentRepository.findAllByIdInAndTenantId(List.of(1L), 1L)).thenReturn(List.of(student));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.of(55L));
 
 		List<AlertTrigger> triggers = evaluator.evaluate(ruleWithGraceDays(0));
@@ -94,7 +94,7 @@ class LibraryOverdueRuleEvaluatorTest {
 		Circulation circulation = overdueCirculation(1L, LocalDate.now().minusDays(1));
 		Student student = studentWithId(1L);
 		when(circulationRepository.findAllByTenantIdAndReturnedAtIsNull(1L)).thenReturn(List.of(circulation));
-		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
+		when(studentRepository.findAllByIdInAndTenantId(List.of(1L), 1L)).thenReturn(List.of(student));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.of(55L));
 
 		assertEquals(1, evaluator.evaluate(ruleWithGraceDays(null)).size());

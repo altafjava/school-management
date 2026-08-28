@@ -47,10 +47,14 @@ public class FeePaymentReminderRuleEvaluator implements AlertRuleEvaluator {
 	@Override
 	public List<AlertTrigger> evaluate(AlertRule rule) {
 		Long tenantId = rule.getTenantId();
+		List<Student> activeStudents = studentRepository.findAllByEnrollmentStatusAndTenantId(
+				EnrollmentStatus.ACTIVE, tenantId);
+		Map<Long, List<FeeBalance>> balancesByStudentId = feePaymentService.calculateBalancesForStudents(tenantId,
+				activeStudents);
+
 		List<AlertTrigger> triggers = new ArrayList<>();
-		for (Student student : studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE,
-				tenantId)) {
-			BigDecimal outstanding = totalOutstanding(tenantId, student);
+		for (Student student : activeStudents) {
+			BigDecimal outstanding = totalOutstanding(balancesByStudentId, student);
 			if (outstanding.signum() <= 0) {
 				continue;
 			}
@@ -59,8 +63,8 @@ public class FeePaymentReminderRuleEvaluator implements AlertRuleEvaluator {
 		return triggers;
 	}
 
-	private BigDecimal totalOutstanding(Long tenantId, Student student) {
-		return feePaymentService.calculateBalanceForStudent(tenantId, student).stream()
+	private BigDecimal totalOutstanding(Map<Long, List<FeeBalance>> balancesByStudentId, Student student) {
+		return balancesByStudentId.getOrDefault(student.getId(), List.of()).stream()
 				.map(FeeBalance::outstandingBalance)
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}

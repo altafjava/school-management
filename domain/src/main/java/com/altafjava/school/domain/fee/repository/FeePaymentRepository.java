@@ -21,6 +21,13 @@ public interface FeePaymentRepository extends JpaRepository<FeePayment, Long> {
 	@Query("SELECT fp FROM FeePayment fp WHERE fp.tenantId = :tenantId AND fp.studentId = :studentId")
 	List<FeePayment> findByStudentId(@Param("tenantId") Long tenantId, @Param("studentId") Long studentId);
 
+	/**
+	 * Batched alternative to {@link #findByStudentId} for computing many students' fee balances at
+	 * once instead of one query per student in a loop.
+	 */
+	@Query("SELECT fp FROM FeePayment fp WHERE fp.tenantId = :tenantId AND fp.studentId IN :studentIds")
+	List<FeePayment> findByStudentIdIn(@Param("tenantId") Long tenantId, @Param("studentIds") List<Long> studentIds);
+
 	boolean existsByReceiptNumberAndTenantId(String receiptNumber, Long tenantId);
 
 	Optional<FeePayment> findByGatewayChargeReferenceAndTenantId(String gatewayChargeReference, Long tenantId);

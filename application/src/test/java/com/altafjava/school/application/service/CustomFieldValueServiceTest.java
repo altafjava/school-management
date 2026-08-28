@@ -22,6 +22,7 @@ import com.altafjava.school.application.customfield.CustomFieldValue;
 import com.altafjava.school.domain.customfield.model.CustomFieldDefinition;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
 import com.altafjava.school.domain.customfield.model.CustomFieldType;
+import com.altafjava.school.domain.customfield.model.CustomFieldValidationRule;
 import com.altafjava.school.domain.customfield.repository.CustomFieldDefinitionRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -117,6 +118,91 @@ class CustomFieldValueServiceTest {
 				() -> customFieldValueService.setValue(CustomFieldEntityType.STUDENT, 42L, "emergencyContact", ""));
 	}
 
+	private CustomFieldDefinition definitionWithRule(String fieldKey, CustomFieldType type,
+			CustomFieldValidationRule rule) {
+		CustomFieldDefinition definition = activeDefinition(fieldKey, type, false);
+		definition.updateValidationRule(rule);
+		return definition;
+	}
+
+	@Test
+	void setValue_withNumberBelowMin_throwsBusinessException() {
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder()
+				.minValue(java.math.BigDecimal.TEN).build();
+		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
+				"score")).thenReturn(Optional.of(definitionWithRule("score", CustomFieldType.NUMBER, rule)));
+
+		assertThrows(BusinessException.class,
+				() -> customFieldValueService.setValue(CustomFieldEntityType.STUDENT, 42L, "score", "5"));
+	}
+
+	@Test
+	void setValue_withNumberWithinMinMax_succeeds() {
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder()
+				.minValue(java.math.BigDecimal.ONE).maxValue(java.math.BigDecimal.TEN).build();
+		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
+				"score")).thenReturn(Optional.of(definitionWithRule("score", CustomFieldType.NUMBER, rule)));
+
+		customFieldValueService.setValue(CustomFieldEntityType.STUDENT, 42L, "score", "7");
+
+		verify(entityAttributeService).setAttribute(1L, 42L, "STUDENT", "school-custom-fields", "score", "7");
+	}
+
+	@Test
+	void setValue_withTextNotMatchingRegex_throwsBusinessException() {
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder().regexPattern("^[A-Z]{2}\\d{4}$").build();
+		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
+				"badgeCode")).thenReturn(Optional.of(definitionWithRule("badgeCode", CustomFieldType.TEXT, rule)));
+
+		assertThrows(BusinessException.class,
+				() -> customFieldValueService.setValue(CustomFieldEntityType.STUDENT, 42L, "badgeCode", "abc"));
+	}
+
+	@Test
+	void setValue_withSelectOptionInList_succeeds() {
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder().options("Red,Blue,Green").build();
+		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
+				"houseColor")).thenReturn(Optional.of(definitionWithRule("houseColor", CustomFieldType.SELECT, rule)));
+
+		customFieldValueService.setValue(CustomFieldEntityType.STUDENT, 42L, "houseColor", "Blue");
+
+		verify(entityAttributeService).setAttribute(1L, 42L, "STUDENT", "school-custom-fields", "houseColor", "Blue");
+	}
+
+	@Test
+	void setValue_withSelectOptionNotInList_throwsBusinessException() {
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder().options("Red,Blue").build();
+		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
+				"houseColor")).thenReturn(Optional.of(definitionWithRule("houseColor", CustomFieldType.SELECT, rule)));
+
+		assertThrows(BusinessException.class,
+				() -> customFieldValueService.setValue(CustomFieldEntityType.STUDENT, 42L, "houseColor", "Purple"));
+	}
+
+	@Test
+	void setValue_withMultiSelectAllOptionsInList_succeeds() {
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder().options("Chess,Football,Music").build();
+		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
+				"hobbies"))
+				.thenReturn(Optional.of(definitionWithRule("hobbies", CustomFieldType.MULTI_SELECT, rule)));
+
+		customFieldValueService.setValue(CustomFieldEntityType.STUDENT, 42L, "hobbies", "Chess,Music");
+
+		verify(entityAttributeService).setAttribute(1L, 42L, "STUDENT", "school-custom-fields", "hobbies",
+				"Chess,Music");
+	}
+
+	@Test
+	void setValue_withMultiSelectOneOptionNotInList_throwsBusinessException() {
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder().options("Chess,Football").build();
+		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
+				"hobbies"))
+				.thenReturn(Optional.of(definitionWithRule("hobbies", CustomFieldType.MULTI_SELECT, rule)));
+
+		assertThrows(BusinessException.class, () -> customFieldValueService.setValue(CustomFieldEntityType.STUDENT,
+				42L, "hobbies", "Chess,Dance"));
+	}
+
 	@Test
 	void getValue_withActiveDefinition_delegatesToEntityAttributeService() {
 		when(customFieldDefinitionRepository.findByTenantIdAndEntityTypeAndFieldKey(1L, CustomFieldEntityType.STUDENT,
@@ -133,7 +219,7 @@ class CustomFieldValueServiceTest {
 	void getAllValues_mergesDefinitionsWithStoredValues_soUnsetFieldsStillAppear() {
 		CustomFieldDefinition nickname = activeDefinition("nickname", CustomFieldType.TEXT, false);
 		CustomFieldDefinition bloodGroup = activeDefinition("bloodGroup", CustomFieldType.TEXT, false);
-		when(customFieldDefinitionRepository.findAllByTenantIdAndEntityTypeAndActiveTrue(1L,
+		when(customFieldDefinitionRepository.findAllByTenantIdAndEntityTypeAndActiveTrueOrderByDisplayOrderAsc(1L,
 				CustomFieldEntityType.STUDENT)).thenReturn(List.of(nickname, bloodGroup));
 		when(entityAttributeService.getAttributes(1L, 42L, "STUDENT", "school-custom-fields"))
 				.thenReturn(Map.of("nickname", "Ali"));

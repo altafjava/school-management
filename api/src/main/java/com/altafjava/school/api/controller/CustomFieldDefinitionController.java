@@ -19,6 +19,7 @@ import com.altafjava.school.api.dto.request.CreateCustomFieldDefinitionRequest;
 import com.altafjava.school.api.dto.request.UpdateCustomFieldDefinitionRequest;
 import com.altafjava.school.api.dto.response.CustomFieldDefinitionResponse;
 import com.altafjava.school.api.mapper.CustomFieldDefinitionMapper;
+import com.altafjava.school.api.mapper.CustomFieldValidationRuleMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.CustomFieldDefinitionService;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
@@ -30,13 +31,17 @@ public class CustomFieldDefinitionController {
 
 	private final CustomFieldDefinitionService customFieldDefinitionService;
 	private final CustomFieldDefinitionMapper customFieldDefinitionMapper;
+	private final CustomFieldValidationRuleMapper customFieldValidationRuleMapper;
 
 	private final SpringDataPageableResolver pageableResolver;
 
 	public CustomFieldDefinitionController(CustomFieldDefinitionService customFieldDefinitionService,
-			CustomFieldDefinitionMapper customFieldDefinitionMapper, SpringDataPageableResolver pageableResolver) {
+			CustomFieldDefinitionMapper customFieldDefinitionMapper,
+			CustomFieldValidationRuleMapper customFieldValidationRuleMapper,
+			SpringDataPageableResolver pageableResolver) {
 		this.customFieldDefinitionService = customFieldDefinitionService;
 		this.customFieldDefinitionMapper = customFieldDefinitionMapper;
+		this.customFieldValidationRuleMapper = customFieldValidationRuleMapper;
 		this.pageableResolver = pageableResolver;
 	}
 
@@ -69,7 +74,9 @@ public class CustomFieldDefinitionController {
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public CustomFieldDefinitionResponse create(@Valid @RequestBody CreateCustomFieldDefinitionRequest request) {
 		return customFieldDefinitionMapper.toResponse(customFieldDefinitionService.create(request.entityType(),
-				request.fieldKey(), request.label(), request.fieldType(), request.required()));
+				request.fieldKey(), request.label(), request.fieldType(), request.required(),
+				customFieldValidationRuleMapper.toDomain(request.validationRule()), request.displayOrder(),
+				request.displayGroup()));
 	}
 
 	@PatchMapping("/{publicId}")
@@ -77,7 +84,9 @@ public class CustomFieldDefinitionController {
 	public CustomFieldDefinitionResponse updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateCustomFieldDefinitionRequest request) {
 		return customFieldDefinitionMapper.toResponse(customFieldDefinitionService.updateDetails(publicId,
-				request.label(), request.fieldType(), request.required()));
+				request.label(), request.fieldType(), request.required(),
+				customFieldValidationRuleMapper.toDomain(request.validationRule()), request.displayOrder(),
+				request.displayGroup()));
 	}
 
 	@PatchMapping("/{publicId}/activate")

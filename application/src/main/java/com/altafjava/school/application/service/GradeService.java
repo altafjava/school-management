@@ -15,6 +15,8 @@ import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
+import com.altafjava.school.domain.grade.model.GradeCorrection;
+import com.altafjava.school.domain.grade.repository.GradeCorrectionRepository;
 import com.altafjava.school.domain.grade.repository.GradeRepository;
 import com.altafjava.school.domain.grade.service.GradeCalculator;
 import com.altafjava.school.domain.student.model.Student;
@@ -24,6 +26,7 @@ import com.altafjava.school.domain.student.repository.StudentRepository;
 public class GradeService {
 
 	private final GradeRepository gradeRepository;
+	private final GradeCorrectionRepository gradeCorrectionRepository;
 	private final StudentRepository studentRepository;
 	private final ExamRepository examRepository;
 	private final GradingScaleService gradingScaleService;
@@ -31,11 +34,12 @@ public class GradeService {
 	private final TeacherClassroomScopeResolver teacherClassroomScopeResolver;
 	private final GradeCalculator gradeCalculator = new GradeCalculator();
 
-	public GradeService(GradeRepository gradeRepository, StudentRepository studentRepository,
-			ExamRepository examRepository, GradingScaleService gradingScaleService,
-			StudentDataAccessGuard studentDataAccessGuard,
+	public GradeService(GradeRepository gradeRepository, GradeCorrectionRepository gradeCorrectionRepository,
+			StudentRepository studentRepository, ExamRepository examRepository,
+			GradingScaleService gradingScaleService, StudentDataAccessGuard studentDataAccessGuard,
 			TeacherClassroomScopeResolver teacherClassroomScopeResolver) {
 		this.gradeRepository = gradeRepository;
+		this.gradeCorrectionRepository = gradeCorrectionRepository;
 		this.studentRepository = studentRepository;
 		this.examRepository = examRepository;
 		this.gradingScaleService = gradingScaleService;
@@ -90,5 +94,35 @@ public class GradeService {
 		// match its exam's subject, so there is no legitimate case where they could differ.
 		Grade grade = Grade.create(studentId, exam.getSubjectId(), examId, marks, gradeLetter, gradedBy);
 		return gradeRepository.save(grade);
+	}
+
+	/**
+	 * Corrects an already-recorded grade's marks, recalculating the letter grade against the
+	 * classroom's currently effective grading scale (same resolution {@link #record} uses).
+	 * Records a {@link GradeCorrection} row with the pre-correction values before mutating, so the
+	 * correction is reconstructable from history rather than only visible as an opaque
+	 * {@code updatedAt} bump.
+	 */
+	@Transactional
+	public Grade correct(String publicId, BigDecimal marks) {
+		Grade grade = findByPublicId(publicId);
+		Long tenantId = TenantContext.getCurrentTenantId();
+		Exam exam = examRepository.findByIdAndTenantId(grade.getExamId(), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("Exam not found: " + grade.getExamId()));
+		List<GradingScaleThreshold> thresholds = gradingScaleService.resolveEffectiveThresholds(exam.getClassroomId());
+		String newGradeLetter = gradeCalculator.calculateLetterGrade(marks, exam.getMaxMarks(), thresholds);
+
+		gradeCorrectionRepository.save(GradeCorrection.record(grade.getId(), grade.getMarks(), grade.getGradeLetter(),
+				marks, newGradeLetter));
+
+		grade.correct(marks, newGradeLetter);
+		return gradeRepository.save(grade);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<GradeCorrection> listCorrections(String gradePublicId, Pageable pageable) {
+		Grade grade = findByPublicId(gradePublicId);
+		return gradeCorrectionRepository.findByGradeIdAndTenantId(TenantContext.getCurrentTenantId(), grade.getId(),
+				pageable);
 	}
 }

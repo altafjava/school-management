@@ -6,7 +6,7 @@ import org.mapstruct.ReportingPolicy;
 import com.altafjava.school.api.dto.response.StudentResponse;
 import com.altafjava.school.domain.student.model.Student;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR, uses = AddressMapper.class)
 public interface StudentMapper {
 
 	@Mapping(target = "publicId", expression = "java(student.getPublicId().toString())")

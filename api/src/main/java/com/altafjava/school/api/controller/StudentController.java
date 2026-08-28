@@ -23,7 +23,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateStudentRequest;
+import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
 import com.altafjava.school.api.dto.request.UpdateStudentContactDetailsRequest;
 import com.altafjava.school.api.dto.response.AttendancePercentageResponse;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
@@ -33,6 +35,7 @@ import com.altafjava.school.api.dto.response.GpaResponse;
 import com.altafjava.school.api.dto.response.GradeResponse;
 import com.altafjava.school.api.dto.response.ReportCardResponse;
 import com.altafjava.school.api.dto.response.StudentResponse;
+import com.altafjava.school.api.mapper.AddressMapper;
 import com.altafjava.school.api.mapper.AttendanceMapper;
 import com.altafjava.school.api.mapper.AttendancePercentageMapper;
 import com.altafjava.school.api.mapper.BulkImportMapper;
@@ -61,6 +64,7 @@ public class StudentController {
 
 	private final StudentService studentService;
 	private final StudentMapper studentMapper;
+	private final AddressMapper addressMapper;
 	private final GradeService gradeService;
 	private final GradeMapper gradeMapper;
 	private final AttendanceService attendanceService;
@@ -77,7 +81,8 @@ public class StudentController {
 
 	private final SpringDataPageableResolver pageableResolver;
 
-	public StudentController(StudentService studentService, StudentMapper studentMapper, GradeService gradeService,
+	public StudentController(StudentService studentService, StudentMapper studentMapper, AddressMapper addressMapper,
+			GradeService gradeService,
 			GradeMapper gradeMapper, AttendanceService attendanceService, AttendanceMapper attendanceMapper,
 			AttendancePercentageMapper attendancePercentageMapper, FeePaymentService feePaymentService,
 			FeeBalanceMapper feeBalanceMapper, ReportCardService reportCardService, ReportCardMapper reportCardMapper,
@@ -86,6 +91,7 @@ public class StudentController {
 			SpringDataPageableResolver pageableResolver) {
 		this.studentService = studentService;
 		this.studentMapper = studentMapper;
+		this.addressMapper = addressMapper;
 		this.gradeService = gradeService;
 		this.gradeMapper = gradeMapper;
 		this.attendanceService = attendanceService;
@@ -165,6 +171,19 @@ public class StudentController {
 			@Valid @RequestBody UpdateStudentContactDetailsRequest request) {
 		return studentMapper.toResponse(studentService.updateContactDetails(publicId, request.firstName(),
 				request.lastName(), request.email(), request.dateOfBirth()));
+	}
+
+	@PatchMapping("/{publicId}/phone")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public StudentResponse updatePhone(@PathVariable String publicId,
+			@Valid @RequestBody UpdatePhoneRequest request) {
+		return studentMapper.toResponse(studentService.updatePhone(publicId, request.phone()));
+	}
+
+	@PatchMapping("/{publicId}/address")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public StudentResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
+		return studentMapper.toResponse(studentService.updateAddress(publicId, addressMapper.toDomain(request)));
 	}
 
 	@GetMapping("/{publicId}/grades")

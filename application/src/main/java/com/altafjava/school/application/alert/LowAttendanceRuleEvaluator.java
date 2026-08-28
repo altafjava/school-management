@@ -3,6 +3,7 @@ package com.altafjava.school.application.alert;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import com.altafjava.school.application.scheduler.support.StudentNotificationRec
 import com.altafjava.school.domain.attendance.model.AttendancePercentage;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
+import com.altafjava.school.domain.attendance.repository.AttendanceRepository.StudentAttendanceCount;
 import com.altafjava.school.domain.attendance.service.AttendancePercentageCalculator;
 import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
 import com.altafjava.school.domain.student.model.Student;
@@ -60,29 +62,49 @@ public class LowAttendanceRuleEvaluator implements AlertRuleEvaluator {
 		LocalDate to = LocalDate.now();
 		LocalDate from = to.minusDays(ROLLING_WINDOW_DAYS);
 
+		List<Long> studentIds = studentClassroomLinkRepository.findDistinctStudentIdsByTenantId(tenantId);
+		if (studentIds.isEmpty()) {
+			return List.of();
+		}
+		Map<Long, Long> totalMarkedByStudentId = toCountMap(
+				attendanceRepository.countByStudentIdsAndTenantIdAndAttendanceDateBetween(studentIds, tenantId, from,
+						to));
+		Map<Long, Long> presentByStudentId = toCountMap(attendanceRepository
+				.countByStudentIdsAndTenantIdAndAttendanceDateBetweenAndStatus(studentIds, tenantId, from, to,
+						AttendanceStatus.PRESENT));
+
+		List<Long> belowThresholdStudentIds = new ArrayList<>();
+		Map<Long, AttendancePercentage> percentageByStudentId = new HashMap<>();
+		for (Long studentId : studentIds) {
+			Long totalMarkedDays = totalMarkedByStudentId.get(studentId);
+			if (totalMarkedDays == null || totalMarkedDays == 0) {
+				continue;
+			}
+			long presentDays = presentByStudentId.getOrDefault(studentId, 0L);
+			AttendancePercentage attendancePercentage = attendancePercentageCalculator.calculate(presentDays,
+					totalMarkedDays);
+			if (attendancePercentage.percentage().compareTo(BigDecimal.valueOf(thresholdPercent)) < 0) {
+				belowThresholdStudentIds.add(studentId);
+				percentageByStudentId.put(studentId, attendancePercentage);
+			}
+		}
+		if (belowThresholdStudentIds.isEmpty()) {
+			return List.of();
+		}
+
 		List<AlertTrigger> triggers = new ArrayList<>();
-		for (Long studentId : studentClassroomLinkRepository.findDistinctStudentIdsByTenantId(tenantId)) {
-			triggerIfBelowThreshold(tenantId, studentId, from, to, thresholdPercent).ifPresent(triggers::add);
+		for (Student student : studentRepository.findAllByIdInAndTenantId(belowThresholdStudentIds, tenantId)) {
+			buildTrigger(tenantId, student, percentageByStudentId.get(student.getId())).ifPresent(triggers::add);
 		}
 		return triggers;
 	}
 
-	private Optional<AlertTrigger> triggerIfBelowThreshold(Long tenantId, Long studentId, LocalDate from,
-			LocalDate to, int thresholdPercent) {
-		long totalMarkedDays = attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetween(studentId,
-				tenantId, from, to);
-		if (totalMarkedDays == 0) {
-			return Optional.empty();
+	private Map<Long, Long> toCountMap(List<StudentAttendanceCount> counts) {
+		Map<Long, Long> byStudentId = new HashMap<>();
+		for (StudentAttendanceCount count : counts) {
+			byStudentId.put(count.getStudentId(), count.getTotal());
 		}
-		long presentDays = attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(
-				studentId, tenantId, from, to, AttendanceStatus.PRESENT);
-		AttendancePercentage attendancePercentage = attendancePercentageCalculator.calculate(presentDays,
-				totalMarkedDays);
-		if (attendancePercentage.percentage().compareTo(BigDecimal.valueOf(thresholdPercent)) >= 0) {
-			return Optional.empty();
-		}
-		return studentRepository.findByIdAndTenantId(studentId, tenantId)
-				.flatMap(student -> buildTrigger(tenantId, student, attendancePercentage));
+		return byStudentId;
 	}
 
 	private Optional<AlertTrigger> buildTrigger(Long tenantId, Student student,

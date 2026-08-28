@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: school-saas
+  labels:
+    app: school-saas
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: school-saas
+  template:
+    metadata:
+      labels:
+        app: school-saas
+    spec:
+      # Run as a dedicated non-root user — the Dockerfile already creates and runs as this user.
+      # Never run as root in production.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          # Pin to an immutable image digest or tag via Kustomize / your CD pipeline.
+          # ghcr.io/altafjava/school-saas — pushed by .github/workflows/docker-build.yml on main.
+          image: ghcr.io/altafjava/school-saas:REPLACE_WITH_GIT_SHA
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: school-config
+            - secretRef:
+                name: school-secrets
+          # Writable mounts required when readOnlyRootFilesystem=true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: logs
+              mountPath: /app/logs
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          # startupProbe allows up to 90 s for Spring Boot 4 + Hibernate 7 + Liquibase
+          # to complete initialisation before readiness/liveness checks begin.
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            failureThreshold: 18
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}

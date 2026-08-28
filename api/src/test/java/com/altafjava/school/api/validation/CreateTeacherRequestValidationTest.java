@@ -34,9 +34,17 @@ class CreateTeacherRequestValidationTest {
 	}
 
 	@Test
-	void employeeCode_blank_failsValidation() {
+	void employeeCode_blank_passesValidation() {
+		// employeeCode is an explicit-override path — blank/omitted defers to the tenant's
+		// configured numbering sequence, see TeacherService#hire.
 		var req = new CreateTeacherRequest("", "Bob", "Jones", "bob@school.com", LocalDate.of(2022, 1, 10));
-		assertFalse(violationsFor(req).isEmpty());
+		assertTrue(violationsFor(req).isEmpty());
+	}
+
+	@Test
+	void employeeCode_null_passesValidation() {
+		var req = new CreateTeacherRequest(null, "Bob", "Jones", "bob@school.com", LocalDate.of(2022, 1, 10));
+		assertTrue(violationsFor(req).isEmpty());
 	}
 
 	@Test

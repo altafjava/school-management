@@ -11,9 +11,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.application.event.publisher.EventPublisher;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.security.AuthenticatedUser;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.school.domain.common.model.Address;
+import com.altafjava.school.domain.common.service.PhoneNumberValidator;
 import com.altafjava.school.domain.guardian.event.GuardianLinkedEvent;
 import com.altafjava.school.domain.guardian.model.Guardian;
 import com.altafjava.school.domain.guardian.model.RelationshipType;
@@ -30,6 +33,7 @@ public class GuardianService {
 	private final StudentGuardianLinkRepository studentGuardianLinkRepository;
 	private final StudentRepository studentRepository;
 	private final EventPublisher eventPublisher;
+	private final PhoneNumberValidator phoneNumberValidator = new PhoneNumberValidator();
 
 	public GuardianService(GuardianRepository guardianRepository,
 			StudentGuardianLinkRepository studentGuardianLinkRepository, StudentRepository studentRepository,
@@ -54,7 +58,28 @@ public class GuardianService {
 
 	@Transactional
 	public Guardian create(String firstName, String lastName, String email, String phone, Long userId) {
+		if (!phoneNumberValidator.isValid(phone, null)) {
+			throw new BusinessException("Invalid phone number: " + phone);
+		}
 		Guardian guardian = Guardian.create(firstName, lastName, email, phone, userId);
+		return guardianRepository.save(guardian);
+	}
+
+	@Transactional
+	public Guardian updateAddress(String publicId, Address address) {
+		Guardian guardian = findByPublicId(publicId);
+		guardian.updateAddress(address);
+		return guardianRepository.save(guardian);
+	}
+
+	@Transactional
+	public Guardian updatePhone(String publicId, String phone) {
+		Guardian guardian = findByPublicId(publicId);
+		String defaultRegion = guardian.getAddress() != null ? guardian.getAddress().getCountryCode() : null;
+		if (!phoneNumberValidator.isValid(phone, defaultRegion)) {
+			throw new BusinessException("Invalid phone number: " + phone);
+		}
+		guardian.updatePhone(phone);
 		return guardianRepository.save(guardian);
 	}
 

@@ -97,7 +97,7 @@ class GuardianSelfRegistrationE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void selfRegister_claimingPendingGuardian_returns201() {
 		String email = "pending-" + UUID.randomUUID() + "@school.test";
-		createPendingGuardian(tenant, "Jane", "Doe", email, "555-0100");
+		createPendingGuardian(tenant, "Jane", "Doe", email, "+14155552671");
 		String bearer = authHelper.tokenWithRole(tenantId, "TEACHER");
 
 		given()
@@ -105,7 +105,7 @@ class GuardianSelfRegistrationE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + bearer)
 				.contentType(ContentType.JSON)
 				.body("{\"email\":\"" + email + "\",\"password\":\"Password123!\","
-						+ "\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"phone\":\"555-0100\"}")
+						+ "\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"phone\":\"+14155552671\"}")
 				.when()
 				.post("/api/v1/guardians/self-register")
 				.then()
@@ -144,7 +144,7 @@ class GuardianSelfRegistrationE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + bearer)
 				.contentType(ContentType.JSON)
 				.body("{\"email\":\"" + email + "\",\"password\":\"Password123!\","
-						+ "\"firstName\":\"Alex\",\"lastName\":\"Roe\",\"phone\":\"555-0200\"}")
+						+ "\"firstName\":\"Alex\",\"lastName\":\"Roe\",\"phone\":\"+14155552671\"}")
 				.when()
 				.post("/api/v1/guardians/self-register")
 				.then()
@@ -155,7 +155,7 @@ class GuardianSelfRegistrationE2ETest extends SchoolIntegrationTestBase {
 	@Test
 	void selfRegister_pendingGuardianUnderOtherTenant_isNotClaimedAcrossTenants() {
 		String email = "cross-tenant-" + UUID.randomUUID() + "@school.test";
-		createPendingGuardian(tenant, "Cross", "Tenant", email, "555-0400");
+		createPendingGuardian(tenant, "Cross", "Tenant", email, "+14155552671");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		var otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

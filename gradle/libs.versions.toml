@@ -101,6 +101,9 @@ bucket4j-redis = { module = "com.bucket4j:bucket4j-redis", version = "8.10.1" }
 # OWASP Java Encoder
 owasp-java-encoder = { module = "org.owasp.encoder:encoder", version = "1.2.3" }
 
+# Phone number validation — country-aware (E.164), not a hardcoded per-region regex.
+libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version = "8.13.45" }
+
 # Gatling
 gatling-app = { module = "io.gatling:gatling-app", version.ref = "gatling" }
 gatling-http-java = { module = "io.gatling:gatling-http-java", version.ref = "gatling" }

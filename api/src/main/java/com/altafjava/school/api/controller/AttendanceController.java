@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.school.api.dto.request.MarkAttendanceRequest;
 import com.altafjava.school.api.dto.request.UpdateAttendanceStatusRequest;
+import com.altafjava.school.api.dto.response.AttendanceCorrectionResponse;
 import com.altafjava.school.api.dto.response.AttendanceResponse;
+import com.altafjava.school.api.mapper.AttendanceCorrectionMapper;
 import com.altafjava.school.api.mapper.AttendanceMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.security.SchoolRoles;
@@ -28,13 +30,15 @@ public class AttendanceController {
 
 	private final AttendanceService attendanceService;
 	private final AttendanceMapper attendanceMapper;
+	private final AttendanceCorrectionMapper attendanceCorrectionMapper;
 
 	private final SpringDataPageableResolver pageableResolver;
 
 	public AttendanceController(AttendanceService attendanceService, AttendanceMapper attendanceMapper,
-			SpringDataPageableResolver pageableResolver) {
+			AttendanceCorrectionMapper attendanceCorrectionMapper, SpringDataPageableResolver pageableResolver) {
 		this.attendanceService = attendanceService;
 		this.attendanceMapper = attendanceMapper;
+		this.attendanceCorrectionMapper = attendanceCorrectionMapper;
 		this.pageableResolver = pageableResolver;
 	}
 
@@ -70,6 +74,15 @@ public class AttendanceController {
 	public AttendanceResponse updateStatus(@PathVariable String publicId,
 			@Valid @RequestBody UpdateAttendanceStatusRequest request) {
 		return attendanceMapper.toResponse(attendanceService.updateStatus(publicId, request.status()));
+	}
+
+	@GetMapping("/{publicId}/corrections")
+	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	public Page<AttendanceCorrectionResponse> listCorrections(@PathVariable String publicId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return attendanceService.listCorrections(publicId, pageableResolver.resolve(page, size))
+				.map(attendanceCorrectionMapper::toResponse);
 	}
 
 	@DeleteMapping("/{publicId}")

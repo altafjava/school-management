@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -62,9 +61,8 @@ class AttendanceNotMarkedRuleEvaluatorTest {
 		Classroom classroom = classroomWithTeacher(10L, 20L);
 		Teacher teacher = teacherWithId(20L, 99L);
 		when(classroomRepository.findAllByTenantId(1L)).thenReturn(List.of(classroom));
-		when(attendanceRepository.existsByClassroomIdAndAttendanceDateAndTenantId(10L, LocalDate.now(), 1L))
-				.thenReturn(false);
-		when(teacherRepository.findByIdAndTenantId(20L, 1L)).thenReturn(Optional.of(teacher));
+		when(attendanceRepository.findDistinctClassroomIdsMarkedOnDate(1L, LocalDate.now())).thenReturn(List.of());
+		when(teacherRepository.findAllByIdInAndTenantId(List.of(20L), 1L)).thenReturn(List.of(teacher));
 
 		List<AlertTrigger> triggers = evaluator.evaluate(rule());
 
@@ -77,8 +75,8 @@ class AttendanceNotMarkedRuleEvaluatorTest {
 		newEvaluator();
 		Classroom classroom = classroomWithTeacher(10L, 20L);
 		when(classroomRepository.findAllByTenantId(1L)).thenReturn(List.of(classroom));
-		when(attendanceRepository.existsByClassroomIdAndAttendanceDateAndTenantId(10L, LocalDate.now(), 1L))
-				.thenReturn(true);
+		when(attendanceRepository.findDistinctClassroomIdsMarkedOnDate(1L, LocalDate.now()))
+				.thenReturn(List.of(10L));
 
 		assertTrue(evaluator.evaluate(rule()).isEmpty());
 	}
@@ -98,9 +96,8 @@ class AttendanceNotMarkedRuleEvaluatorTest {
 		Classroom classroom = classroomWithTeacher(10L, 20L);
 		Teacher teacher = teacherWithId(20L, null);
 		when(classroomRepository.findAllByTenantId(1L)).thenReturn(List.of(classroom));
-		when(attendanceRepository.existsByClassroomIdAndAttendanceDateAndTenantId(10L, LocalDate.now(), 1L))
-				.thenReturn(false);
-		when(teacherRepository.findByIdAndTenantId(20L, 1L)).thenReturn(Optional.of(teacher));
+		when(attendanceRepository.findDistinctClassroomIdsMarkedOnDate(1L, LocalDate.now())).thenReturn(List.of());
+		when(teacherRepository.findAllByIdInAndTenantId(List.of(20L), 1L)).thenReturn(List.of(teacher));
 
 		assertTrue(evaluator.evaluate(rule()).isEmpty());
 	}

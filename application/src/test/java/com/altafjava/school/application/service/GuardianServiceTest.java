@@ -1,6 +1,7 @@
 package com.altafjava.school.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,9 +18,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.altafjava.platform.application.event.publisher.EventPublisher;
+import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
+import com.altafjava.school.domain.common.model.Address;
 import com.altafjava.school.domain.guardian.model.Guardian;
 import com.altafjava.school.domain.guardian.model.RelationshipType;
 import com.altafjava.school.domain.guardian.model.StudentGuardianLink;
@@ -55,6 +58,57 @@ class GuardianServiceTest {
 	@AfterEach
 	void clearContext() {
 		TenantContext.ForTesting.clear();
+	}
+
+	@Test
+	void create_withValidPhone_savesGuardian() {
+		when(guardianRepository.save(any(Guardian.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Guardian guardian = guardianService.create("Jane", "Doe", "jane@school.test", "+14155552671", null);
+
+		assertEquals("+14155552671", guardian.getPhone());
+	}
+
+	@Test
+	void create_withInvalidPhone_throwsBusinessException() {
+		assertThrows(BusinessException.class,
+				() -> guardianService.create("Jane", "Doe", "jane@school.test", "not-a-phone", null));
+
+		verify(guardianRepository, never()).save(any());
+	}
+
+	@Test
+	void updatePhone_withValidNumber_savesPhone() {
+		Guardian guardian = guardianOf(10L);
+		when(guardianRepository.findByPublicIdAndTenantId(GUARDIAN_PUBLIC_ID, 1L)).thenReturn(Optional.of(guardian));
+		when(guardianRepository.save(any(Guardian.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Guardian updated = guardianService.updatePhone(GUARDIAN_PUBLIC_ID.toString(), "+14155552671");
+
+		assertEquals("+14155552671", updated.getPhone());
+	}
+
+	@Test
+	void updatePhone_withInvalidNumber_throwsBusinessException() {
+		Guardian guardian = guardianOf(10L);
+		when(guardianRepository.findByPublicIdAndTenantId(GUARDIAN_PUBLIC_ID, 1L)).thenReturn(Optional.of(guardian));
+
+		assertThrows(BusinessException.class,
+				() -> guardianService.updatePhone(GUARDIAN_PUBLIC_ID.toString(), "not-a-phone"));
+	}
+
+	@Test
+	void updateAddress_setsStructuredAddress() {
+		Guardian guardian = guardianOf(10L);
+		when(guardianRepository.findByPublicIdAndTenantId(GUARDIAN_PUBLIC_ID, 1L)).thenReturn(Optional.of(guardian));
+		when(guardianRepository.save(any(Guardian.class))).thenAnswer(inv -> inv.getArgument(0));
+		Address address = Address.builder().line1("42 Wallaby Way").locality("Sydney").postalCode("2000")
+				.countryCode("AU").build();
+
+		Guardian updated = guardianService.updateAddress(GUARDIAN_PUBLIC_ID.toString(), address);
+
+		assertEquals("Sydney", updated.getAddress().getLocality());
+		assertEquals("AU", updated.getAddress().getCountryCode());
 	}
 
 	@Test

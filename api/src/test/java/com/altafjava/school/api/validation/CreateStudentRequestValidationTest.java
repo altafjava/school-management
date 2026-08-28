@@ -34,9 +34,17 @@ class CreateStudentRequestValidationTest {
 	}
 
 	@Test
-	void studentCode_blank_failsValidation() {
+	void studentCode_blank_passesValidation() {
+		// studentCode is an explicit-override path — blank/omitted defers to the tenant's
+		// configured numbering sequence, see StudentService#enroll.
 		var req = new CreateStudentRequest("", "Alice", "Smith", "alice@school.com", LocalDate.of(2010, 5, 15));
-		assertFalse(violationsFor(req).isEmpty());
+		assertTrue(violationsFor(req).isEmpty());
+	}
+
+	@Test
+	void studentCode_null_passesValidation() {
+		var req = new CreateStudentRequest(null, "Alice", "Smith", "alice@school.com", LocalDate.of(2010, 5, 15));
+		assertTrue(violationsFor(req).isEmpty());
 	}
 
 	@Test

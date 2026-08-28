@@ -12,6 +12,7 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.customfield.model.CustomFieldDefinition;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
 import com.altafjava.school.domain.customfield.model.CustomFieldType;
+import com.altafjava.school.domain.customfield.model.CustomFieldValidationRule;
 import com.altafjava.school.domain.customfield.repository.CustomFieldDefinitionRepository;
 
 // Tenant-admin CRUD for the custom-field "schema" — same shape as LeaveTypeService/
@@ -35,7 +36,7 @@ public class CustomFieldDefinitionService {
 
 	@Transactional(readOnly = true)
 	public List<CustomFieldDefinition> listActive(CustomFieldEntityType entityType) {
-		return customFieldDefinitionRepository.findAllByTenantIdAndEntityTypeAndActiveTrue(
+		return customFieldDefinitionRepository.findAllByTenantIdAndEntityTypeAndActiveTrueOrderByDisplayOrderAsc(
 				TenantContext.getCurrentTenantId(), entityType);
 	}
 
@@ -48,23 +49,39 @@ public class CustomFieldDefinitionService {
 
 	@Transactional
 	public CustomFieldDefinition create(CustomFieldEntityType entityType, String fieldKey, String label,
-			CustomFieldType fieldType, boolean required) {
+			CustomFieldType fieldType, boolean required, CustomFieldValidationRule validationRule, int displayOrder,
+			String displayGroup) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (customFieldDefinitionRepository.existsByTenantIdAndEntityTypeAndFieldKey(tenantId, entityType,
 				fieldKey)) {
 			throw new BusinessException(
 					"Custom field already defined for " + entityType + ": " + fieldKey);
 		}
-		return customFieldDefinitionRepository
-				.save(CustomFieldDefinition.create(entityType, fieldKey, label, fieldType, required));
+		requireOptionsForSelectTypes(fieldType, validationRule);
+		CustomFieldDefinition definition = CustomFieldDefinition.create(entityType, fieldKey, label, fieldType,
+				required);
+		definition.updateValidationRule(validationRule);
+		definition.reorder(displayOrder, displayGroup);
+		return customFieldDefinitionRepository.save(definition);
 	}
 
 	@Transactional
 	public CustomFieldDefinition updateDetails(String publicId, String label, CustomFieldType fieldType,
-			boolean required) {
+			boolean required, CustomFieldValidationRule validationRule, int displayOrder, String displayGroup) {
+		requireOptionsForSelectTypes(fieldType, validationRule);
 		CustomFieldDefinition definition = findByPublicId(publicId);
 		definition.updateDetails(label, fieldType, required);
+		definition.updateValidationRule(validationRule);
+		definition.reorder(displayOrder, displayGroup);
 		return customFieldDefinitionRepository.save(definition);
+	}
+
+	private void requireOptionsForSelectTypes(CustomFieldType fieldType, CustomFieldValidationRule validationRule) {
+		boolean needsOptions = fieldType == CustomFieldType.SELECT || fieldType == CustomFieldType.MULTI_SELECT;
+		boolean hasOptions = validationRule != null && !validationRule.optionList().isEmpty();
+		if (needsOptions && !hasOptions) {
+			throw new BusinessException(fieldType + " custom fields require at least one option");
+		}
 	}
 
 	@Transactional

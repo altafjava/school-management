@@ -42,5 +42,8 @@
     <include file="db/domain/changesets/035-counseling.xml"/>
     <include file="db/domain/changesets/036-alumni.xml"/>
     <include file="db/domain/changesets/037-classroom-capacity.xml"/>
+    <include file="db/domain/changesets/038-correction-history.xml"/>
+    <include file="db/domain/changesets/039-address-phone.xml"/>
+    <include file="db/domain/changesets/040-custom-field-validation-rules.xml"/>
 
 </databaseChangeLog>

@@ -4,5 +4,5 @@ package com.altafjava.school.domain.customfield.model;
 // validates every stored value's textual representation against the owning definition's type
 // before it ever reaches platform's EntityAttributeService (which stores plain strings only).
 public enum CustomFieldType {
-	TEXT, NUMBER, DATE, BOOLEAN
+	TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTI_SELECT
 }

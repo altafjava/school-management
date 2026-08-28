@@ -20,6 +20,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
 	List<Student> findAllByEnrollmentStatusAndTenantId(EnrollmentStatus enrollmentStatus, Long tenantId);
 
+	List<Student> findAllByIdInAndTenantId(List<Long> ids, Long tenantId);
+
 	long countByEnrollmentStatusAndTenantId(EnrollmentStatus enrollmentStatus, Long tenantId);
 
 	Optional<Student> findByPublicIdAndTenantId(UUID publicId, Long tenantId);

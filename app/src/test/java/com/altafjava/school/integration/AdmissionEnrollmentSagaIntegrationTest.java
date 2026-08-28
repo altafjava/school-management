@@ -80,7 +80,7 @@ class AdmissionEnrollmentSagaIntegrationTest extends SchoolIntegrationTestBase {
 	void decide_approve_reallyCreatesStudentAndGuardianAndMarksAdmissionEnrolled() {
 		String studentCode = "STU-" + UUID.randomUUID().toString().substring(0, 8);
 		Admission submitted = admissionService.submit("Alice", "Smith", LocalDate.of(2015, 1, 1), "Bob", "Smith",
-				"bob-" + studentCode + "@family.test", "555-1234", "Grade 3");
+				"bob-" + studentCode + "@family.test", "+14155552671", "Grade 3");
 
 		Admission decided = admissionService.decide(submitted.getPublicId().toString(), DecisionOutcome.APPROVED,
 				"admin", "approved", studentCode);
@@ -106,7 +106,7 @@ class AdmissionEnrollmentSagaIntegrationTest extends SchoolIntegrationTestBase {
 				org.springframework.data.domain.PageRequest.of(0, 100)).getTotalElements();
 
 		Admission submitted = admissionService.submit("Carol", "White", LocalDate.of(2014, 6, 1), "Dave", "White",
-				"dave-" + collidingCode + "@family.test", "555-5678", "Grade 4");
+				"dave-" + collidingCode + "@family.test", "+14155552672", "Grade 4");
 
 		assertThrows(RuntimeException.class, () -> admissionService.decide(submitted.getPublicId().toString(),
 				DecisionOutcome.APPROVED, "admin", "approved", collidingCode));

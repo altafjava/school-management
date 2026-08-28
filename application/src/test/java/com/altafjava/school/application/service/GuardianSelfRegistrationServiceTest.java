@@ -116,10 +116,22 @@ class GuardianSelfRegistrationServiceTest {
 		ArgumentCaptor<Guardian> guardianCaptor = ArgumentCaptor.forClass(Guardian.class);
 		when(guardianRepository.save(guardianCaptor.capture())).thenAnswer(inv -> inv.getArgument(0));
 
-		Guardian result = guardianSelfRegistrationService.register(EMAIL, "Password123!", "Jane", "Doe", "555-0100");
+		Guardian result = guardianSelfRegistrationService.register(EMAIL, "Password123!", "Jane", "Doe",
+				"+14155552671");
 
 		assertEquals(200L, result.getUserId());
 		assertEquals(EMAIL, guardianCaptor.getValue().getEmail());
+	}
+
+	@Test
+	void register_noPendingRecordAndOpenModeWithInvalidPhone_throwsBusinessException() {
+		when(guardianRepository.findByEmailAndTenantIdAndUserIdIsNull(EMAIL, 1L)).thenReturn(Optional.empty());
+		when(guardianRegistrationSettingsService.getMode(1L)).thenReturn(GuardianSelfRegistrationMode.OPEN);
+
+		assertThrows(BusinessException.class,
+				() -> guardianSelfRegistrationService.register(EMAIL, "Password123!", "Jane", "Doe", "not-a-phone"));
+
+		verify(guardianRepository, never()).save(any());
 	}
 
 	private User userOf(Long id) {

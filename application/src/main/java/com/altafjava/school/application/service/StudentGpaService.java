@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -107,8 +110,15 @@ public class StudentGpaService {
 	}
 
 	private Stream<GradedExam> examinedGrades(Long tenantId, Long studentId) {
-		return gradeRepository.findByStudentId(tenantId, studentId).stream()
-				.map(grade -> examRepository.findByIdAndTenantId(grade.getExamId(), tenantId)
+		List<Grade> grades = gradeRepository.findByStudentId(tenantId, studentId);
+		List<Long> examIds = grades.stream().map(Grade::getExamId).distinct().toList();
+		if (examIds.isEmpty()) {
+			return Stream.empty();
+		}
+		Map<Long, Exam> examsById = examRepository.findAllByIdInAndTenantId(examIds, tenantId).stream()
+				.collect(Collectors.toMap(Exam::getId, Function.identity()));
+		return grades.stream()
+				.map(grade -> Optional.ofNullable(examsById.get(grade.getExamId()))
 						.map(exam -> new GradedExam(grade, exam)))
 				.flatMap(Optional::stream);
 	}

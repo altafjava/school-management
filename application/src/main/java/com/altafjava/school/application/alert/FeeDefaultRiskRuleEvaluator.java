@@ -8,12 +8,11 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.application.alert.AlertRuleEvaluator;
 import com.altafjava.platform.application.alert.AlertTrigger;
-import com.altafjava.platform.core.model.Pageable;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.platform.domain.alert.model.AlertRule;
 import com.altafjava.platform.domain.notification.model.NotificationPriority;
 import com.altafjava.platform.domain.user.model.User;
-import com.altafjava.platform.domain.user.model.UserSearchCriteria;
+import com.altafjava.platform.domain.user.repository.RoleRepository;
 import com.altafjava.platform.domain.user.repository.UserRepository;
 import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.FeePaymentService;
@@ -43,12 +42,14 @@ public class FeeDefaultRiskRuleEvaluator implements AlertRuleEvaluator {
 	private final StudentRepository studentRepository;
 	private final FeePaymentService feePaymentService;
 	private final UserRepository userRepository;
+	private final RoleRepository roleRepository;
 
 	public FeeDefaultRiskRuleEvaluator(StudentRepository studentRepository, FeePaymentService feePaymentService,
-			UserRepository userRepository) {
+			UserRepository userRepository, RoleRepository roleRepository) {
 		this.studentRepository = studentRepository;
 		this.feePaymentService = feePaymentService;
 		this.userRepository = userRepository;
+		this.roleRepository = roleRepository;
 	}
 
 	@Override
@@ -61,10 +62,14 @@ public class FeeDefaultRiskRuleEvaluator implements AlertRuleEvaluator {
 		Long tenantId = rule.getTenantId();
 		BigDecimal threshold = rule.getThresholdValue() != null ? rule.getThresholdValue() : DEFAULT_THRESHOLD_AMOUNT;
 
+		List<Student> activeStudents = studentRepository.findAllByEnrollmentStatusAndTenantId(
+				EnrollmentStatus.ACTIVE, tenantId);
+		Map<Long, List<FeeBalance>> balancesByStudentId = feePaymentService.calculateBalancesForStudents(tenantId,
+				activeStudents);
+
 		List<Student> atRiskStudents = new ArrayList<>();
-		for (Student student : studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE,
-				tenantId)) {
-			if (totalOutstanding(tenantId, student).compareTo(threshold) > 0) {
+		for (Student student : activeStudents) {
+			if (totalOutstanding(balancesByStudentId, student).compareTo(threshold) > 0) {
 				atRiskStudents.add(student);
 			}
 		}
@@ -75,7 +80,7 @@ public class FeeDefaultRiskRuleEvaluator implements AlertRuleEvaluator {
 		List<Long> staffUserIds = financeAndTenantAdminUserIds();
 		List<AlertTrigger> triggers = new ArrayList<>();
 		for (Student student : atRiskStudents) {
-			BigDecimal outstanding = totalOutstanding(tenantId, student);
+			BigDecimal outstanding = totalOutstanding(balancesByStudentId, student);
 			for (Long staffUserId : staffUserIds) {
 				triggers.add(buildTrigger(student, outstanding, staffUserId));
 			}
@@ -83,8 +88,8 @@ public class FeeDefaultRiskRuleEvaluator implements AlertRuleEvaluator {
 		return triggers;
 	}
 
-	private BigDecimal totalOutstanding(Long tenantId, Student student) {
-		return feePaymentService.calculateBalanceForStudent(tenantId, student).stream()
+	private BigDecimal totalOutstanding(Map<Long, List<FeeBalance>> balancesByStudentId, Student student) {
+		return balancesByStudentId.getOrDefault(student.getId(), List.of()).stream()
 				.map(FeeBalance::outstandingBalance)
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
@@ -96,8 +101,12 @@ public class FeeDefaultRiskRuleEvaluator implements AlertRuleEvaluator {
 		return List.copyOf(byId.keySet());
 	}
 
-	private List<User> usersWithRole(String role) {
-		return userRepository.findAll(new UserSearchCriteria(null, role, null, null), Pageable.of(0, 100)).content();
+	// Unbounded on purpose — a tenant's FINANCE/TENANT_ADMIN role holders number in the tens, not
+	// thousands, so an artificial page cap here would silently drop alert recipients past it.
+	private List<User> usersWithRole(String roleName) {
+		return roleRepository.findByName(roleName)
+				.map(role -> userRepository.findAllByRoleId(role.getId()))
+				.orElseGet(List::of);
 	}
 
 	private AlertTrigger buildTrigger(Student student, BigDecimal outstanding, Long staffUserId) {

@@ -51,6 +51,42 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 	long countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(Long studentId, Long tenantId, LocalDate from,
 			LocalDate to, AttendanceStatus status);
 
+	/**
+	 * One row per {@code studentId} present in {@code studentIds} — batched alternative to calling
+	 * {@link #countByStudentIdAndTenantIdAndAttendanceDateBetween} once per student in a loop.
+	 */
+	@Query("SELECT a.studentId AS studentId, COUNT(a) AS total FROM Attendance a "
+			+ "WHERE a.tenantId = :tenantId AND a.studentId IN :studentIds AND a.attendanceDate BETWEEN :from AND :to "
+			+ "GROUP BY a.studentId")
+	List<StudentAttendanceCount> countByStudentIdsAndTenantIdAndAttendanceDateBetween(
+			@Param("studentIds") List<Long> studentIds, @Param("tenantId") Long tenantId,
+			@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+	/**
+	 * Same as above, additionally filtered by {@code status} — batched alternative to
+	 * {@link #countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus}.
+	 */
+	@Query("SELECT a.studentId AS studentId, COUNT(a) AS total FROM Attendance a "
+			+ "WHERE a.tenantId = :tenantId AND a.studentId IN :studentIds AND a.attendanceDate BETWEEN :from AND :to "
+			+ "AND a.status = :status GROUP BY a.studentId")
+	List<StudentAttendanceCount> countByStudentIdsAndTenantIdAndAttendanceDateBetweenAndStatus(
+			@Param("studentIds") List<Long> studentIds, @Param("tenantId") Long tenantId,
+			@Param("from") LocalDate from, @Param("to") LocalDate to, @Param("status") AttendanceStatus status);
+
+	/**
+	 * Batched alternative to calling {@link #existsByClassroomIdAndAttendanceDateAndTenantId} once
+	 * per classroom in a loop — the classroom ids (out of any candidate set) that already have
+	 * attendance marked on {@code date}.
+	 */
+	@Query("SELECT DISTINCT a.classroomId FROM Attendance a WHERE a.tenantId = :tenantId AND a.attendanceDate = :date")
+	List<Long> findDistinctClassroomIdsMarkedOnDate(@Param("tenantId") Long tenantId, @Param("date") LocalDate date);
+
+	interface StudentAttendanceCount {
+		Long getStudentId();
+
+		long getTotal();
+	}
+
 	// Offline-sync delta pulls — @SQLRestriction("deleted = false") means a soft-deleted row is
 	// invisible here, so a delete never surfaces as a tombstone via this query; acceptable for now
 	// since AttendanceOfflineSyncHandler's own delete() path already reflects the deletion in its

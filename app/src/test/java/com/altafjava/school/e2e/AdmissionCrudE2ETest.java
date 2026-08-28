@@ -59,7 +59,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 		return "{\"applicantFirstName\":\"" + applicantFirstName + "\",\"applicantLastName\":\"Smith\","
 				+ "\"applicantDateOfBirth\":\"2015-01-01\",\"guardianFirstName\":\"Bob\",\"guardianLastName\":"
 				+ "\"Smith\",\"guardianEmail\":\"bob-" + UUID.randomUUID().toString().substring(0, 6)
-				+ "@family.test\",\"guardianPhone\":\"555-1234\",\"appliedGrade\":\"Grade 3\"}";
+				+ "@family.test\",\"guardianPhone\":\"+14155552671\",\"appliedGrade\":\"Grade 3\"}";
 	}
 
 	@Test

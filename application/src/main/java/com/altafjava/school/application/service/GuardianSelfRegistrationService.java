@@ -10,6 +10,7 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.domain.user.model.User;
 import com.altafjava.platform.domain.user.service.UserDomainService;
 import com.altafjava.school.application.security.SchoolRoles;
+import com.altafjava.school.domain.common.service.PhoneNumberValidator;
 import com.altafjava.school.domain.guardian.model.Guardian;
 import com.altafjava.school.domain.guardian.model.GuardianSelfRegistrationMode;
 import com.altafjava.school.domain.guardian.model.StudentGuardianLink;
@@ -29,6 +30,7 @@ public class GuardianSelfRegistrationService {
 	private final StudentGuardianLinkRepository studentGuardianLinkRepository;
 	private final GuardianRegistrationSettingsService guardianRegistrationSettingsService;
 	private final UserDomainService userService;
+	private final PhoneNumberValidator phoneNumberValidator = new PhoneNumberValidator();
 
 	@Transactional
 	public Guardian register(String email, String password, String firstName, String lastName, String phone) {
@@ -74,6 +76,9 @@ public class GuardianSelfRegistrationService {
 		// Zero roles here, matching AuthController.register()'s convention exactly — unlike the
 		// claim path above, there is no pre-existing trusted binding to a student; an admin must
 		// separately link this guardian to a student and grant PARENT access.
+		if (!phoneNumberValidator.isValid(phone, null)) {
+			throw new BusinessException("Invalid phone number: " + phone);
+		}
 		User user = userService.createUser(tenantId, email, password, firstName, lastName, Set.of());
 		Guardian guardian = Guardian.create(firstName, lastName, email, phone, user.getId());
 		return guardianRepository.save(guardian);
