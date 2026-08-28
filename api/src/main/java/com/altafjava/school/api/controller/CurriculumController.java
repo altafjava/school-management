@@ -13,14 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignGradingScaleRequest;
 import com.altafjava.school.api.dto.request.CreateCurriculumRequest;
 import com.altafjava.school.api.dto.request.UpdateCurriculumRequest;
 import com.altafjava.school.api.dto.response.CurriculumResponse;
 import com.altafjava.school.api.mapper.CurriculumMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.CurriculumService;
 
 @RestController
@@ -40,7 +38,7 @@ public class CurriculumController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_READ')")
 	public Page<CurriculumResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -48,21 +46,21 @@ public class CurriculumController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_READ')")
 	public CurriculumResponse get(@PathVariable String publicId) {
 		return curriculumMapper.toResponse(curriculumService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
 	public CurriculumResponse create(@Valid @RequestBody CreateCurriculumRequest request) {
 		return curriculumMapper.toResponse(curriculumService.create(request.boardPublicId(), request.name(),
 				request.code(), request.description()));
 	}
 
 	@PatchMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
 	public CurriculumResponse updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateCurriculumRequest request) {
 		return curriculumMapper.toResponse(
@@ -70,7 +68,7 @@ public class CurriculumController {
 	}
 
 	@PatchMapping("/{publicId}/grading-scale")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
 	public CurriculumResponse assignGradingScale(@PathVariable String publicId,
 			@Valid @RequestBody AssignGradingScaleRequest request) {
 		return curriculumMapper
@@ -78,7 +76,7 @@ public class CurriculumController {
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
 	public CurriculumResponse deactivate(@PathVariable String publicId) {
 		return curriculumMapper.toResponse(curriculumService.deactivate(publicId));
 	}

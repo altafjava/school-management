@@ -10,5 +10,7 @@ public record CustomFieldDefinitionResponse(
 		boolean active,
 		CustomFieldValidationRuleResponse validationRule,
 		int displayOrder,
-		String displayGroup) {
+		String displayGroup,
+		int displayGroupOrder,
+		CustomFieldVisibilityConditionResponse visibilityCondition) {
 }

@@ -21,7 +21,6 @@ import com.altafjava.school.api.dto.response.AttendanceResponse;
 import com.altafjava.school.api.mapper.AttendanceCorrectionMapper;
 import com.altafjava.school.api.mapper.AttendanceMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AttendanceService;
 
 @RestController
@@ -43,7 +42,7 @@ public class AttendanceController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_ATTENDANCE_READ')")
 	public Page<AttendanceResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -52,14 +51,14 @@ public class AttendanceController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_ATTENDANCE_READ')")
 	public AttendanceResponse get(@PathVariable String publicId) {
 		return attendanceMapper.toResponse(attendanceService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_ATTENDANCE_WRITE')")
 	public AttendanceResponse mark(@Valid @RequestBody MarkAttendanceRequest request) {
 		return attendanceMapper.toResponse(attendanceService.mark(
 				request.studentId(),
@@ -70,14 +69,14 @@ public class AttendanceController {
 	}
 
 	@PatchMapping("/{publicId}/status")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_ATTENDANCE_WRITE')")
 	public AttendanceResponse updateStatus(@PathVariable String publicId,
 			@Valid @RequestBody UpdateAttendanceStatusRequest request) {
 		return attendanceMapper.toResponse(attendanceService.updateStatus(publicId, request.status()));
 	}
 
 	@GetMapping("/{publicId}/corrections")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_ATTENDANCE_READ')")
 	public Page<AttendanceCorrectionResponse> listCorrections(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -87,7 +86,7 @@ public class AttendanceController {
 
 	@DeleteMapping("/{publicId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_ATTENDANCE_WRITE')")
 	public void delete(@PathVariable String publicId) {
 		attendanceService.delete(publicId);
 	}

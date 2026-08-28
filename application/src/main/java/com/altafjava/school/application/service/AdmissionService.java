@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import com.altafjava.platform.application.service.EmailService;
+import com.altafjava.platform.application.service.approval.RequiresApproval;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
@@ -73,43 +74,18 @@ public class AdmissionService {
 	}
 
 	/**
-	 * Records the decision and, if approved, synchronously runs the enrollment saga (student
-	 * creation, guardian linking, notification) — see {@link AdmissionEnrollmentSaga}.
-	 * {@code studentCode} is required only for approval; it becomes the new Student's code.
-	 *
-	 * <p>
-	 * Deliberately not {@code @Transactional}: each write below (the decision record, the
-	 * approval status flip, then every step inside the saga) commits on its own via the
-	 * repository/service call it goes through, rather than being held open in one long-lived
-	 * transaction. The saga's compensation logic runs in its own {@code REQUIRES_NEW}
-	 * transaction and can only see writes that have already committed — wrapping this whole
-	 * method in one transaction would make an earlier step's work invisible to compensation for
-	 * a later step's failure, defeating the point of having compensable steps at all.
+	 * Rejecting an application takes effect immediately — unlike approval, it doesn't create new
+	 * platform state (no student enrolled) and doesn't need the same sign-off, so it stays outside
+	 * the approval workflow engine.
 	 */
-	public Admission decide(String publicId, DecisionOutcome outcome, String decidedBy, String notes,
-			String studentCode) {
+	@Transactional
+	public Admission reject(String publicId, String decidedBy, String notes) {
 		Admission admission = findByPublicId(publicId);
-		if (admission.getStatus() != AdmissionStatus.SUBMITTED
-				&& admission.getStatus() != AdmissionStatus.UNDER_REVIEW) {
-			throw new BusinessException(
-					"Admission " + publicId + " already has a final decision, status=" + admission.getStatus());
-		}
-		if (outcome == DecisionOutcome.APPROVED && (studentCode == null || studentCode.isBlank())) {
-			throw new BusinessException("studentCode is required when approving an admission");
-		}
+		requireDecidable(admission, publicId);
 
-		AdmissionDecision decision = AdmissionDecision.record(admission.getId(), outcome, decidedBy, notes);
+		AdmissionDecision decision = AdmissionDecision.record(admission.getId(), DecisionOutcome.REJECTED, decidedBy,
+				notes);
 		admissionDecisionRepository.save(decision);
-
-		if (outcome == DecisionOutcome.APPROVED) {
-			admission.approve();
-			admissionRepository.save(admission);
-			notifyGuardian(admission, "Admission Approved",
-					"Congratulations — the admission application for " + admission.getApplicantFirstName() + " "
-							+ admission.getApplicantLastName() + " has been approved.");
-			admissionEnrollmentSaga.enroll(admission.getId(), studentCode);
-			return findByPublicId(publicId);
-		}
 
 		admission.reject();
 		Admission rejected = admissionRepository.save(admission);
@@ -117,6 +93,58 @@ public class AdmissionService {
 				"The admission application for " + rejected.getApplicantFirstName() + " "
 						+ rejected.getApplicantLastName() + " was not approved at this time.");
 		return rejected;
+	}
+
+	/**
+	 * Submits an approval to enroll {@code studentCode} for this admission — gated by the
+	 * tenant's {@code ADMISSION_DECISION} workflow (see {@code AdmissionApprovalHandler}, the
+	 * deferred action that runs once every configured stage approves). This method's own body
+	 * only ever runs when a tenant genuinely has no active workflow for that operation
+	 * ({@code ApprovalAspect} intercepts the call and throws {@code ApprovalPendingException}
+	 * instead whenever one exists) — it finalizes immediately in that fallback case, identically
+	 * to what the handler does once approved.
+	 * <p>
+	 * Deliberately not {@code @Transactional} in the finalize path: each write (the decision
+	 * record, the approval status flip, then every step inside the saga) commits on its own via
+	 * the repository/service call it goes through, rather than being held open in one long-lived
+	 * transaction — see {@link AdmissionEnrollmentSaga}'s own compensation rationale.
+	 */
+	@RequiresApproval(operationCode = "ADMISSION_DECISION", entityIdExpression = "#publicId", payloadExpression = "{'studentCode': #studentCode, 'decidedBy': #decidedBy, 'notes': #notes}")
+	public Admission requestApproval(String publicId, String decidedBy, String notes, String studentCode) {
+		if (studentCode == null || studentCode.isBlank()) {
+			throw new BusinessException("studentCode is required when approving an admission");
+		}
+		requireDecidable(findByPublicId(publicId), publicId);
+		return finalizeApproval(publicId, decidedBy, notes, studentCode);
+	}
+
+	/**
+	 * Called both by {@link #requestApproval}'s no-workflow fallback and by
+	 * {@code AdmissionApprovalHandler} once the configured workflow's final stage approves.
+	 */
+	public Admission finalizeApproval(String publicId, String decidedBy, String notes, String studentCode) {
+		Admission admission = findByPublicId(publicId);
+		requireDecidable(admission, publicId);
+
+		AdmissionDecision decision = AdmissionDecision.record(admission.getId(), DecisionOutcome.APPROVED, decidedBy,
+				notes);
+		admissionDecisionRepository.save(decision);
+
+		admission.approve();
+		admissionRepository.save(admission);
+		notifyGuardian(admission, "Admission Approved",
+				"Congratulations — the admission application for " + admission.getApplicantFirstName() + " "
+						+ admission.getApplicantLastName() + " has been approved.");
+		admissionEnrollmentSaga.enroll(admission.getId(), studentCode);
+		return findByPublicId(publicId);
+	}
+
+	private void requireDecidable(Admission admission, String publicId) {
+		if (admission.getStatus() != AdmissionStatus.SUBMITTED
+				&& admission.getStatus() != AdmissionStatus.UNDER_REVIEW) {
+			throw new BusinessException(
+					"Admission " + publicId + " already has a final decision, status=" + admission.getStatus());
+		}
 	}
 
 	@Transactional

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AddRouteStopRequest;
 import com.altafjava.school.api.dto.request.CreateRouteRequest;
 import com.altafjava.school.api.dto.request.UpdateRouteRequest;
@@ -23,7 +22,6 @@ import com.altafjava.school.api.dto.response.RouteStopResponse;
 import com.altafjava.school.api.mapper.RouteMapper;
 import com.altafjava.school.api.mapper.RouteStopMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.RouteService;
 
 @RestController
@@ -45,7 +43,7 @@ public class RouteController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_READ')")
 	public Page<RouteResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -53,40 +51,40 @@ public class RouteController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_READ')")
 	public RouteResponse get(@PathVariable String publicId) {
 		return routeMapper.toResponse(routeService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
 	public RouteResponse create(@Valid @RequestBody CreateRouteRequest request) {
 		return routeMapper.toResponse(routeService.create(request.name(), request.code(), request.description()));
 	}
 
 	@PatchMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
 	public RouteResponse updateDetails(@PathVariable String publicId, @Valid @RequestBody UpdateRouteRequest request) {
 		return routeMapper.toResponse(
 				routeService.updateDetails(publicId, request.name(), request.code(), request.description()));
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
 	public RouteResponse deactivate(@PathVariable String publicId) {
 		return routeMapper.toResponse(routeService.deactivate(publicId));
 	}
 
 	@GetMapping("/{publicId}/stops")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_READ')")
 	public List<RouteStopResponse> listStops(@PathVariable String publicId) {
 		return routeService.listStops(publicId).stream().map(routeStopMapper::toResponse).toList();
 	}
 
 	@PostMapping("/{publicId}/stops")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
 	public RouteStopResponse addStop(@PathVariable String publicId, @Valid @RequestBody AddRouteStopRequest request) {
 		return routeStopMapper.toResponse(routeService.addStop(publicId, request.stopName(), request.sequenceOrder(),
 				request.pickupTime(), request.dropTime()));

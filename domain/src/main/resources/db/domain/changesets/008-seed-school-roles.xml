@@ -14,7 +14,7 @@
             <column name="name" value="TEACHER"/>
             <column name="description" value="Class management, student grades, attendance"/>
             <column name="is_system_role" valueBoolean="true"/>
-            <column name="permissions_json" value='["CLASSROOM_READ", "STUDENT_READ", "STUDENT_GRADES_READ", "STUDENT_GRADES_WRITE", "STUDENT_ATTENDANCE_READ", "STUDENT_ATTENDANCE_WRITE"]'/>
+            <column name="permissions_json" value='["ACADEMIC_YEAR_READ", "ASSIGNMENT_READ", "ASSIGNMENT_WRITE", "BOARD_READ", "BOOK_READ", "CLASSROOM_READ", "CURRICULUM_READ", "CUSTOM_FIELD_VALUE_READ", "DISCIPLINE_ACTION", "DISCIPLINE_READ", "DISCIPLINE_WRITE", "EVENT_READ", "EVENT_STAFF_MANAGE", "EXAM_COMPLETE", "GRADING_SCALE_READ", "HOLIDAY_READ", "HOSTEL_READ", "LEAVE_SELF_SERVICE", "LEAVE_TYPE_READ", "LESSON_READ", "LESSON_WRITE", "PERIOD_ATTENDANCE_MANAGE", "PERIOD_READ", "REPORT_CARD_TEMPLATE_READ", "ROOM_ALLOCATION_READ", "ROOM_READ", "STUDENT_ATTENDANCE_READ", "STUDENT_ATTENDANCE_WRITE", "STUDENT_GRADES_READ", "STUDENT_GRADES_WRITE", "STUDENT_READ", "STUDENT_SELF_SERVICE_READ", "SUBJECT_READ", "SUBMISSION_GRADE", "SUBMISSION_READ", "TERM_READ", "TICKET_MANAGE", "TICKET_SELF_SERVICE", "TIMETABLE_READ", "TRANSPORT_ASSIGNMENT_READ", "TRANSPORT_ROUTE_READ", "VEHICLE_READ", "VISITOR_LOG_MANAGE"]'/>
             <column name="created_by" type="VARCHAR(100)"/>
             <column name="created_at" valueDate="NOW()"/>
         </insert>
@@ -23,7 +23,7 @@
             <column name="name" value="STUDENT"/>
             <column name="description" value="View own grades, attendance, timetable"/>
             <column name="is_system_role" valueBoolean="true"/>
-            <column name="permissions_json" value='["STUDENT_GRADES_READ", "STUDENT_ATTENDANCE_READ", "CLASSROOM_READ"]'/>
+            <column name="permissions_json" value='["ASSIGNMENT_READ", "BOOK_READ", "CLASSROOM_READ", "DISCIPLINE_READ", "EVENT_READ", "EVENT_REGISTER", "FEE_PAYMENT_SELF_SERVICE", "LESSON_READ", "STUDENT_ATTENDANCE_READ", "STUDENT_FEE_BALANCE_READ", "STUDENT_GRADES_READ", "STUDENT_SELF_SERVICE_READ", "SUBMISSION_SUBMIT", "TICKET_SELF_SERVICE"]'/>
             <column name="created_by" type="VARCHAR(100)"/>
             <column name="created_at" valueDate="NOW()"/>
         </insert>
@@ -32,7 +32,7 @@
             <column name="name" value="PARENT"/>
             <column name="description" value="View linked children's grades, attendance, fees"/>
             <column name="is_system_role" valueBoolean="true"/>
-            <column name="permissions_json" value='["STUDENT_GRADES_READ", "STUDENT_ATTENDANCE_READ", "STUDENT_FEE_BALANCE_READ"]'/>
+            <column name="permissions_json" value='["ASSIGNMENT_READ", "BOOK_READ", "DISCIPLINE_READ", "EVENT_READ", "EVENT_REGISTER", "FEE_PAYMENT_SELF_SERVICE", "GUARDIAN_CONSENT_MANAGE", "GUARDIAN_SELF_SERVICE", "LESSON_READ", "STUDENT_ATTENDANCE_READ", "STUDENT_FEE_BALANCE_READ", "STUDENT_GRADES_READ", "STUDENT_SELF_SERVICE_READ", "TICKET_SELF_SERVICE"]'/>
             <column name="created_by" type="VARCHAR(100)"/>
             <column name="created_at" valueDate="NOW()"/>
         </insert>

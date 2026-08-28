@@ -6,6 +6,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import com.altafjava.platform.application.security.PermissionAuthorizationService;
 import com.altafjava.platform.application.security.ResourceAccessPolicyEnforcer;
 import com.altafjava.platform.core.security.AuthenticatedUser;
 import com.altafjava.platform.core.security.Roles;
@@ -30,15 +31,17 @@ public class ClassroomVisibilityGuard {
 	private static final int MAX_ROSTER_SCAN = 1000;
 
 	private static final String ROLE_TENANT_ADMIN = "ROLE_" + Roles.TENANT_ADMIN;
-	private static final String ROLE_TEACHER = "ROLE_" + SchoolRoles.TEACHER;
 
 	private final ResourceAccessPolicyEnforcer resourceAccessPolicyEnforcer;
+	private final PermissionAuthorizationService permissionAuthorizationService;
 	private final StudentClassroomLinkRepository studentClassroomLinkRepository;
 	private final StudentRepository studentRepository;
 
 	public ClassroomVisibilityGuard(ResourceAccessPolicyEnforcer resourceAccessPolicyEnforcer,
+			PermissionAuthorizationService permissionAuthorizationService,
 			StudentClassroomLinkRepository studentClassroomLinkRepository, StudentRepository studentRepository) {
 		this.resourceAccessPolicyEnforcer = resourceAccessPolicyEnforcer;
+		this.permissionAuthorizationService = permissionAuthorizationService;
 		this.studentClassroomLinkRepository = studentClassroomLinkRepository;
 		this.studentRepository = studentRepository;
 	}
@@ -49,7 +52,7 @@ public class ClassroomVisibilityGuard {
 			return;
 		}
 		String userId = resolveUserId(authentication);
-		if (hasTeacherRole(authentication)) {
+		if (permissionAuthorizationService.hasPermission("CLASSROOM_READ")) {
 			assertTeacherAssigned(tenantId, classroomPublicId, userId);
 			return;
 		}
@@ -81,11 +84,6 @@ public class ClassroomVisibilityGuard {
 	private boolean hasTenantAdminRole(Authentication authentication) {
 		return authentication != null && authentication.getAuthorities().stream()
 				.anyMatch(authority -> ROLE_TENANT_ADMIN.equals(authority.getAuthority()));
-	}
-
-	private boolean hasTeacherRole(Authentication authentication) {
-		return authentication != null && authentication.getAuthorities().stream()
-				.anyMatch(authority -> ROLE_TEACHER.equals(authority.getAuthority()));
 	}
 
 	private String resolveUserId(Authentication authentication) {

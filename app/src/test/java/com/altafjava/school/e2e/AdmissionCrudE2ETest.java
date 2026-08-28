@@ -14,7 +14,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import com.altafjava.platform.application.dto.RegisterTenantCommand;
 import com.altafjava.platform.application.service.TenantOnboardingService;
+import com.altafjava.platform.core.security.PasswordEncoder;
+import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.platform.domain.tenant.model.Tenant;
+import com.altafjava.platform.domain.user.model.User;
+import com.altafjava.platform.domain.user.model.UserStatus;
+import com.altafjava.platform.domain.user.repository.RoleRepository;
+import com.altafjava.platform.domain.user.repository.UserRepository;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
@@ -38,6 +45,15 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private SchoolAuthenticationHelper authHelper;
+
+	@Autowired
+	private UserRepository userRepository;
+
+	@Autowired
+	private RoleRepository roleRepository;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	private Long tenantId;
 	private String adminEmail;
@@ -130,8 +146,14 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.statusCode(HttpStatus.BAD_REQUEST.value());
 	}
 
+	// Approving no longer enrolls directly — it submits to the tenant's seeded ADMISSION_DECISION
+	// workflow (PRINCIPAL, single stage) and returns 202 with the new approval request's ID; the
+	// admission only reaches ENROLLED once that request is actually approved through the generic
+	// approval-workflow API (AdmissionApprovalHandler runs the same finalize logic this endpoint
+	// used to run directly — see AdmissionEnrollmentSagaIntegrationTest for that mechanism proven
+	// against a real saga, and platform-saas's ApprovalWorkflowE2ETest for the generic engine).
 	@Test
-	void decideApprove_withStudentCode_enrollsStudentAndReturns200() {
+	void decideApprove_withStudentCode_submitsForApprovalAndEnrollsOnceApproved() {
 		String accessToken = login();
 		String publicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -145,7 +167,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.extract().path("publicId");
 		String studentCode = "STU-E2E-" + UUID.randomUUID().toString().substring(0, 6);
 
-		given()
+		String approvalRequestId = given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
@@ -153,8 +175,67 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.when()
 				.patch("/api/v1/admissions/" + publicId + "/decision")
 				.then()
+				.statusCode(HttpStatus.ACCEPTED.value())
+				.extract().path("data");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.when()
+				.get("/api/v1/admissions/" + publicId)
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("status", equalTo("SUBMITTED"));
+
+		Long principalUserId = createUserWithRole("principal-" + UUID.randomUUID().toString().substring(0, 8)
+				+ "@school.test", "PRINCIPAL");
+		String principalToken = authHelper.tokenForUser(tenantId, principalUserId, "principal@school.test",
+				"PRINCIPAL");
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + principalToken)
+				.contentType(ContentType.JSON)
+				.body("{\"remarks\":\"Approved\"}")
+				.when()
+				.post("/api/v1/approval/requests/" + approvalRequestId + "/approve")
+				.then()
+				.statusCode(HttpStatus.OK.value());
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.when()
+				.get("/api/v1/admissions/" + publicId)
+				.then()
 				.statusCode(HttpStatus.OK.value())
 				.body("status", equalTo("ENROLLED"));
+	}
+
+	private Long createUserWithRole(String email, String roleName) {
+		return withTenant(() -> {
+			var role = roleRepository.findAll().stream()
+					.filter(r -> roleName.equals(r.getName()))
+					.findFirst()
+					.orElseThrow(() -> new IllegalStateException("Role not seeded for tenant: " + roleName));
+			User user = User.builder()
+					.email(email)
+					.passwordHash(passwordEncoder.encode("Password123!"))
+					.status(UserStatus.ACTIVE)
+					.emailVerified(true)
+					.build();
+			user.addRole(role);
+			return userRepository.save(user).getId();
+		});
+	}
+
+	private <T> T withTenant(java.util.function.Supplier<T> action) {
+		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null, TenantType.SHARED);
+		try {
+			return action.get();
+		} finally {
+			TenantContext.ForTesting.clear();
+		}
 	}
 
 	private String applyBody(String applicantFirstName, String appliedGrade) {

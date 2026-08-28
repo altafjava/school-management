@@ -8,10 +8,12 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.PlatformConfigurer;
 import com.altafjava.platform.core.privacy.DomainPiiHandler;
+import com.altafjava.platform.core.security.permission.PermissionDefinition;
 import com.altafjava.platform.core.sync.OfflineSyncEntityHandler;
 import com.altafjava.school.application.privacy.StudentGuardianPiiHandler;
 import com.altafjava.school.application.sync.AttendanceOfflineSyncHandler;
 import com.altafjava.school.domain.metrics.SchoolMetricTypes;
+import com.altafjava.school.domain.security.permission.SchoolPermissions;
 
 /**
  * School-specific platform configuration.
@@ -87,5 +89,10 @@ public class SchoolPlatformConfigurer implements PlatformConfigurer {
 	@Override
 	public Set<String> additionalMetricTypes() {
 		return SchoolMetricTypes.ALL;
+	}
+
+	@Override
+	public Set<PermissionDefinition> domainPermissionCatalog() {
+		return SchoolPermissions.CATALOG;
 	}
 }

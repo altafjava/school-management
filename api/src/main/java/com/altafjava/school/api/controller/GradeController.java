@@ -20,7 +20,6 @@ import com.altafjava.school.api.dto.response.GradeResponse;
 import com.altafjava.school.api.mapper.GradeCorrectionMapper;
 import com.altafjava.school.api.mapper.GradeMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.GradeService;
 
 @RestController
@@ -42,7 +41,7 @@ public class GradeController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_READ')")
 	public Page<GradeResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -51,14 +50,14 @@ public class GradeController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_READ')")
 	public GradeResponse get(@PathVariable String publicId) {
 		return gradeMapper.toResponse(gradeService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_WRITE')")
 	public GradeResponse record(@Valid @RequestBody RecordGradeRequest request) {
 		return gradeMapper.toResponse(gradeService.record(
 				request.studentId(),
@@ -68,13 +67,13 @@ public class GradeController {
 	}
 
 	@PatchMapping("/{publicId}/marks")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_WRITE')")
 	public GradeResponse correct(@PathVariable String publicId, @Valid @RequestBody CorrectGradeRequest request) {
 		return gradeMapper.toResponse(gradeService.correct(publicId, request.marks()));
 	}
 
 	@GetMapping("/{publicId}/corrections")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_READ')")
 	public Page<GradeCorrectionResponse> listCorrections(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {

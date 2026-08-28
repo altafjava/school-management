@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateAssetRequest;
 import com.altafjava.school.api.dto.request.UpdateAssetLocationRequest;
 import com.altafjava.school.api.dto.response.AssetResponse;
@@ -38,7 +37,7 @@ public class AssetController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public Page<AssetResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -46,40 +45,40 @@ public class AssetController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetResponse get(@PathVariable String publicId) {
 		return assetMapper.toResponse(assetService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetResponse create(@Valid @RequestBody CreateAssetRequest request) {
 		return assetMapper.toResponse(assetService.create(request.assetCode(), request.name(), request.category(),
 				request.purchaseDate(), request.purchaseCost(), request.location()));
 	}
 
 	@PatchMapping("/{publicId}/location")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetResponse updateLocation(@PathVariable String publicId,
 			@Valid @RequestBody UpdateAssetLocationRequest request) {
 		return assetMapper.toResponse(assetService.updateLocation(publicId, request.location()));
 	}
 
 	@PatchMapping("/{publicId}/maintenance")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetResponse markUnderMaintenance(@PathVariable String publicId) {
 		return assetMapper.toResponse(assetService.markUnderMaintenance(publicId));
 	}
 
 	@PatchMapping("/{publicId}/available")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetResponse markAvailable(@PathVariable String publicId) {
 		return assetMapper.toResponse(assetService.markAvailable(publicId));
 	}
 
 	@PatchMapping("/{publicId}/dispose")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
 	public AssetResponse markDisposed(@PathVariable String publicId) {
 		return assetMapper.toResponse(assetService.markDisposed(publicId));
 	}

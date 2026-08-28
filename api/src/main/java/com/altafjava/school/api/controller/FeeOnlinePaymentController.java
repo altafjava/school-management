@@ -17,7 +17,6 @@ import com.altafjava.school.api.dto.request.CreateFeeChargeRequest;
 import com.altafjava.school.api.dto.response.FeeChargeResponse;
 import com.altafjava.school.api.dto.response.FeePaymentResponse;
 import com.altafjava.school.api.mapper.FeePaymentMapper;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.FeeOnlinePaymentService;
 
 // Parent/student self-service fee payment: create a gateway charge, confirm it synchronously, and
@@ -39,7 +38,7 @@ public class FeeOnlinePaymentController {
 
 	@PostMapping("/charges")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_SELF_SERVICE')")
 	@RequireIdempotencyKey
 	public FeeChargeResponse createCharge(@Valid @RequestBody CreateFeeChargeRequest request) {
 		PaymentChargeResult result = feeOnlinePaymentService.createCharge(request.studentPublicId(),
@@ -48,7 +47,7 @@ public class FeeOnlinePaymentController {
 	}
 
 	@PostMapping("/charges/{gatewayChargeReference}/confirm")
-	@PreAuthorize(SchoolRoles.HAS_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_SELF_SERVICE')")
 	@RequireIdempotencyKey
 	public FeePaymentResponse confirmCharge(@PathVariable String gatewayChargeReference,
 			@Valid @RequestBody ConfirmFeeChargeRequest request) {
@@ -57,7 +56,7 @@ public class FeeOnlinePaymentController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_SELF_SERVICE')")
 	public FeePaymentResponse getReceipt(@PathVariable String publicId) {
 		return feePaymentMapper.toResponse(feeOnlinePaymentService.findReceiptForSelfService(publicId));
 	}

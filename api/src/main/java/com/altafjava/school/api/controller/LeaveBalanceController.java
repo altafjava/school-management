@@ -6,10 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.response.LeaveBalanceResponse;
 import com.altafjava.school.api.mapper.LeaveBalanceMapper;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.LeaveBalanceService;
 
 @RestController
@@ -24,7 +22,7 @@ public class LeaveBalanceController {
 	}
 
 	@GetMapping("/api/v1/teachers/{publicId}/leave-balances")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('LEAVE_BALANCE_MANAGE')")
 	public List<LeaveBalanceResponse> forTeacher(@PathVariable String publicId,
 			@RequestParam String academicYearPublicId) {
 		return leaveBalanceService.listForTeacher(publicId, academicYearPublicId).stream()
@@ -33,7 +31,7 @@ public class LeaveBalanceController {
 	}
 
 	@GetMapping("/api/v1/leave-requests/my/balances")
-	@PreAuthorize(SchoolRoles.HAS_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('LEAVE_SELF_SERVICE')")
 	public List<LeaveBalanceResponse> forCurrentTeacher(@RequestParam String academicYearPublicId) {
 		return leaveBalanceService.listForCurrentTeacher(academicYearPublicId).stream()
 				.map(leaveBalanceMapper::toResponse)

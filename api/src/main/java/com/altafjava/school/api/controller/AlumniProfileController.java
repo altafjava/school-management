@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.CreateAlumniProfileRequest;
 import com.altafjava.school.api.dto.request.UpdateAlumniContactInfoRequest;
 import com.altafjava.school.api.dto.response.AlumniProfileResponse;
@@ -45,7 +44,7 @@ public class AlumniProfileController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ALUMNI_MANAGE')")
 	public Page<AlumniProfileResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -53,14 +52,14 @@ public class AlumniProfileController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ALUMNI_MANAGE')")
 	public AlumniProfileResponse get(@PathVariable String publicId) {
 		return alumniProfileMapper.toResponse(alumniProfileService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ALUMNI_MANAGE')")
 	public AlumniProfileResponse create(@Valid @RequestBody CreateAlumniProfileRequest request) {
 		return alumniProfileMapper.toResponse(alumniProfileService.create(request.studentPublicId(),
 				request.graduationYear(), request.currentOccupation(), request.contactEmail(),
@@ -68,7 +67,7 @@ public class AlumniProfileController {
 	}
 
 	@PatchMapping("/{publicId}/contact-info")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ALUMNI_MANAGE')")
 	public AlumniProfileResponse updateContactInfo(@PathVariable String publicId,
 			@Valid @RequestBody UpdateAlumniContactInfoRequest request) {
 		return alumniProfileMapper.toResponse(alumniProfileService.updateContactInfo(publicId,
@@ -76,13 +75,13 @@ public class AlumniProfileController {
 	}
 
 	@PatchMapping("/{publicId}/activate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ALUMNI_MANAGE')")
 	public AlumniProfileResponse activate(@PathVariable String publicId) {
 		return alumniProfileMapper.toResponse(alumniProfileService.activate(publicId));
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ALUMNI_MANAGE')")
 	public AlumniProfileResponse deactivate(@PathVariable String publicId) {
 		return alumniProfileMapper.toResponse(alumniProfileService.deactivate(publicId));
 	}

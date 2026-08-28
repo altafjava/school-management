@@ -18,7 +18,6 @@ import com.altafjava.school.api.dto.request.SubmitAssignmentRequest;
 import com.altafjava.school.api.dto.response.SubmissionResponse;
 import com.altafjava.school.api.mapper.SubmissionMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.SubmissionService;
 
 @RestController
@@ -39,7 +38,7 @@ public class SubmissionController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBMISSION_SUBMIT')")
 	public SubmissionResponse submit(@PathVariable String assignmentPublicId,
 			@Valid @RequestBody SubmitAssignmentRequest request) {
 		return submissionMapper.toResponse(
@@ -47,7 +46,7 @@ public class SubmissionController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBMISSION_READ')")
 	public Page<SubmissionResponse> list(@PathVariable String assignmentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -56,7 +55,7 @@ public class SubmissionController {
 	}
 
 	@PatchMapping("/{submissionPublicId}/grade")
-	@PreAuthorize(SchoolRoles.HAS_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBMISSION_GRADE')")
 	public SubmissionResponse grade(@PathVariable String assignmentPublicId,
 			@PathVariable String submissionPublicId, @Valid @RequestBody GradeSubmissionRequest request) {
 		return submissionMapper.toResponse(submissionService.grade(assignmentPublicId, submissionPublicId,

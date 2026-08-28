@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.school.api.dto.response.PayslipResponse;
 import com.altafjava.school.api.mapper.PayslipMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.PayslipService;
 import com.altafjava.school.domain.payroll.model.Payslip;
 
@@ -33,7 +32,7 @@ public class PayslipController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_MANAGE')")
 	public Page<PayslipResponse> list(
 			@RequestParam(required = false) String teacherPublicId,
 			@RequestParam(defaultValue = "0") int page,
@@ -46,13 +45,13 @@ public class PayslipController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_MANAGE')")
 	public PayslipResponse get(@PathVariable String publicId) {
 		return payslipMapper.toResponse(payslipService.findByPublicId(publicId));
 	}
 
 	@PatchMapping("/{publicId}/finalize")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_MANAGE')")
 	public PayslipResponse finalizePayslip(@PathVariable String publicId) {
 		return payslipMapper.toResponse(payslipService.finalizePayslip(publicId));
 	}
@@ -60,7 +59,7 @@ public class PayslipController {
 	// Disbursement is the finance action of actually paying out — gated separately from the HR
 	// actions above.
 	@PatchMapping("/{publicId}/disburse")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_FINANCE)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_DISBURSE')")
 	public PayslipResponse disburse(@PathVariable String publicId) {
 		return payslipMapper.toResponse(payslipService.markDisbursed(publicId));
 	}

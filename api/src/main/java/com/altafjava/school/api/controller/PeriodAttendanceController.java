@@ -16,7 +16,6 @@ import com.altafjava.school.api.dto.request.MarkPeriodAttendanceRequest;
 import com.altafjava.school.api.dto.response.PeriodAttendanceResponse;
 import com.altafjava.school.api.mapper.PeriodAttendanceMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.PeriodAttendanceService;
 
 @RestController
@@ -35,7 +34,7 @@ public class PeriodAttendanceController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('PERIOD_ATTENDANCE_MANAGE')")
 	public Page<PeriodAttendanceResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -44,14 +43,14 @@ public class PeriodAttendanceController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('PERIOD_ATTENDANCE_MANAGE')")
 	public PeriodAttendanceResponse get(@PathVariable String publicId) {
 		return periodAttendanceMapper.toResponse(periodAttendanceService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('PERIOD_ATTENDANCE_MANAGE')")
 	public PeriodAttendanceResponse mark(@Valid @RequestBody MarkPeriodAttendanceRequest request) {
 		return periodAttendanceMapper.toResponse(periodAttendanceService.mark(
 				request.studentId(),

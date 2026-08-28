@@ -78,7 +78,7 @@ class ReportCardPdfGeneratorTest {
 		Student student = Student.create("STU-005", "Eve", "Chen", "eve@school.test", LocalDate.of(2010, 5, 5));
 		Term term = Term.create("Term 1", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), 1L);
 		CustomFieldValue competency = new CustomFieldValue("teamwork", "Teamwork", CustomFieldType.TEXT, false,
-				"Excellent", List.of(), 0, "Competencies");
+				"Excellent", List.of(), 0, "Competencies", true);
 		ReportCardExtras extras = new ReportCardExtras(true, true, true, true,
 				new AttendancePercentage(18, 20, BigDecimal.valueOf(90)), 2, List.of(competency), "5", "A",
 				"Great progress this term.", "Keep up the good work.");

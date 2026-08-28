@@ -10,7 +10,8 @@ public record CustomFieldValueResponse(
 		String value,
 		List<String> options,
 		int displayOrder,
-		String displayGroup) {
+		String displayGroup,
+		boolean visible) {
 
 	public CustomFieldValueResponse {
 		options = List.copyOf(options);

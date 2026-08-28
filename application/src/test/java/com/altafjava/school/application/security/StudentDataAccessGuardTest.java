@@ -16,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import com.altafjava.platform.application.security.PermissionAuthorizationService;
 import com.altafjava.platform.application.security.ResourceAccessPolicyEnforcer;
 import com.altafjava.platform.core.security.AuthenticatedUser;
 
@@ -24,12 +25,14 @@ class StudentDataAccessGuardTest {
 
 	@Mock
 	private ResourceAccessPolicyEnforcer resourceAccessPolicyEnforcer;
+	@Mock
+	private PermissionAuthorizationService permissionAuthorizationService;
 
 	private StudentDataAccessGuard guard;
 
 	@BeforeEach
 	void setUp() {
-		guard = new StudentDataAccessGuard(resourceAccessPolicyEnforcer);
+		guard = new StudentDataAccessGuard(resourceAccessPolicyEnforcer, permissionAuthorizationService);
 	}
 
 	@AfterEach
@@ -38,15 +41,9 @@ class StudentDataAccessGuardTest {
 	}
 
 	@Test
-	void assertCanView_asTenantAdmin_bypassesOwnershipCheck() {
+	void assertCanView_holdingStudentReadPermission_bypassesOwnershipCheck() {
 		authenticateAs(1L, "ROLE_TENANT_ADMIN");
-
-		assertDoesNotThrow(() -> guard.assertCanView(1L, "student-public-id"));
-	}
-
-	@Test
-	void assertCanView_asTeacher_bypassesOwnershipCheck() {
-		authenticateAs(1L, "ROLE_TEACHER");
+		when(permissionAuthorizationService.hasPermission("STUDENT_READ")).thenReturn(true);
 
 		assertDoesNotThrow(() -> guard.assertCanView(1L, "student-public-id"));
 	}
@@ -54,6 +51,7 @@ class StudentDataAccessGuardTest {
 	@Test
 	void assertCanView_asParentOfLinkedStudent_allowed() {
 		authenticateAs(5L, "ROLE_PARENT");
+		when(permissionAuthorizationService.hasPermission("STUDENT_READ")).thenReturn(false);
 		when(resourceAccessPolicyEnforcer.isAllowed("5", 1L, "STUDENT", "student-public-id", "READ"))
 				.thenReturn(true);
 
@@ -63,6 +61,7 @@ class StudentDataAccessGuardTest {
 	@Test
 	void assertCanView_asParentOfAnotherStudent_throwsAccessDenied() {
 		authenticateAs(5L, "ROLE_PARENT");
+		when(permissionAuthorizationService.hasPermission("STUDENT_READ")).thenReturn(false);
 		when(resourceAccessPolicyEnforcer.isAllowed(any(), any(), any(), any(), any())).thenReturn(false);
 
 		assertThrows(AccessDeniedException.class, () -> guard.assertCanView(1L, "student-public-id"));

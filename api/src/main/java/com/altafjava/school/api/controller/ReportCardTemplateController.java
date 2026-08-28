@@ -7,11 +7,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.ConfigureReportCardTemplateRequest;
 import com.altafjava.school.api.dto.response.ReportCardTemplateResponse;
 import com.altafjava.school.api.mapper.ReportCardTemplateMapper;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.ReportCardTemplateService;
 
 // One config per tenant — which optional sections ReportCardPdfGenerator renders. Read is broad
@@ -30,13 +28,13 @@ public class ReportCardTemplateController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('REPORT_CARD_TEMPLATE_READ')")
 	public ReportCardTemplateResponse get() {
 		return reportCardTemplateMapper.toResponse(reportCardTemplateService.getForCurrentTenant());
 	}
 
 	@PutMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('REPORT_CARD_TEMPLATE_WRITE')")
 	public ReportCardTemplateResponse configure(@Valid @RequestBody ConfigureReportCardTemplateRequest request) {
 		return reportCardTemplateMapper.toResponse(reportCardTemplateService.configure(
 				request.showAttendanceSummary(), request.showRemarks(), request.showCompetencyGrid(),

@@ -18,7 +18,6 @@ import com.altafjava.school.api.dto.request.RescheduleAssignmentRequest;
 import com.altafjava.school.api.dto.response.AssignmentResponse;
 import com.altafjava.school.api.mapper.AssignmentMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.AssignmentService;
 
 @RestController
@@ -39,7 +38,7 @@ public class AssignmentController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSIGNMENT_WRITE')")
 	public AssignmentResponse create(@Valid @RequestBody CreateAssignmentRequest request) {
 		return assignmentMapper.toResponse(assignmentService.create(
 				request.classroomPublicId(),
@@ -52,7 +51,7 @@ public class AssignmentController {
 	}
 
 	@GetMapping("/classroom/{classroomPublicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSIGNMENT_READ')")
 	public Page<AssignmentResponse> listByClassroom(@PathVariable String classroomPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -61,7 +60,7 @@ public class AssignmentController {
 	}
 
 	@PatchMapping("/{publicId}/reschedule")
-	@PreAuthorize(SchoolRoles.HAS_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSIGNMENT_WRITE')")
 	public AssignmentResponse reschedule(@PathVariable String publicId,
 			@Valid @RequestBody RescheduleAssignmentRequest request) {
 		return assignmentMapper.toResponse(assignmentService.reschedule(publicId, request.dueDate()));

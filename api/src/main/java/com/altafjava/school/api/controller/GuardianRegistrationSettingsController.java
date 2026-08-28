@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.UpdateGuardianRegistrationSettingsRequest;
 import com.altafjava.school.api.dto.response.GuardianRegistrationSettingsResponse;
 import com.altafjava.school.application.service.GuardianRegistrationSettingsService;
@@ -23,13 +22,13 @@ public class GuardianRegistrationSettingsController {
 	private final GuardianRegistrationSettingsService guardianRegistrationSettingsService;
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_REGISTRATION_SETTINGS_MANAGE')")
 	public GuardianRegistrationSettingsResponse get() {
 		return new GuardianRegistrationSettingsResponse(guardianRegistrationSettingsService.getMode());
 	}
 
 	@PutMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_REGISTRATION_SETTINGS_MANAGE')")
 	public GuardianRegistrationSettingsResponse update(
 			@Valid @RequestBody UpdateGuardianRegistrationSettingsRequest request) {
 		guardianRegistrationSettingsService.setMode(request.mode());

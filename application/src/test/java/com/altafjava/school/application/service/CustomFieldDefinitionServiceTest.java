@@ -49,7 +49,7 @@ class CustomFieldDefinitionServiceTest {
 				.thenAnswer(inv -> inv.getArgument(0));
 
 		CustomFieldDefinition definition = customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
-				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false, null, 0, null);
+				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false, null, 0, null, 0, null);
 
 		assertEquals("bloodGroup", definition.getFieldKey());
 	}
@@ -60,7 +60,7 @@ class CustomFieldDefinitionServiceTest {
 				CustomFieldEntityType.STUDENT, "bloodGroup")).thenReturn(true);
 
 		assertThrows(BusinessException.class, () -> customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
-				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false, null, 0, null));
+				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false, null, 0, null, 0, null));
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class CustomFieldDefinitionServiceTest {
 				CustomFieldEntityType.STUDENT, "houseColor")).thenReturn(false);
 
 		assertThrows(BusinessException.class, () -> customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
-				"houseColor", "House Color", CustomFieldType.SELECT, false, null, 0, null));
+				"houseColor", "House Color", CustomFieldType.SELECT, false, null, 0, null, 0, null));
 	}
 
 	@Test
@@ -81,7 +81,7 @@ class CustomFieldDefinitionServiceTest {
 		CustomFieldValidationRule rule = CustomFieldValidationRule.builder().options("Red,Blue,Green").build();
 
 		CustomFieldDefinition definition = customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
-				"houseColor", "House Color", CustomFieldType.SELECT, false, rule, 3, "General");
+				"houseColor", "House Color", CustomFieldType.SELECT, false, rule, 3, "General", 0, null);
 
 		assertEquals(3, definition.getDisplayOrder());
 		assertEquals("General", definition.getDisplayGroup());

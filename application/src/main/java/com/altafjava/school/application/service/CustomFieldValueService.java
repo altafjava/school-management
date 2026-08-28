@@ -4,13 +4,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import com.altafjava.platform.application.extension.EntityAttributeService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.application.customfield.CustomFieldValue;
+import com.altafjava.school.application.customfield.FieldGroup;
 import com.altafjava.school.domain.customfield.model.CustomFieldDefinition;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
 import com.altafjava.school.domain.customfield.model.CustomFieldType;
@@ -73,13 +77,51 @@ public class CustomFieldValueService {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		List<CustomFieldDefinition> definitions = customFieldDefinitionRepository
 				.findAllByTenantIdAndEntityTypeAndActiveTrueOrderByDisplayOrderAsc(tenantId, entityType);
-		var storedValues = entityAttributeService.getAttributes(tenantId, entityId, entityType.name(), DOMAIN);
-		return definitions.stream()
-				.map(definition -> new CustomFieldValue(definition.getFieldKey(), definition.getLabel(),
-						definition.getFieldType(), definition.isRequired(),
-						storedValues.get(definition.getFieldKey()), definition.getValidationRule().optionList(),
-						definition.getDisplayOrder(), definition.getDisplayGroup()))
+		Map<String, String> storedValues = entityAttributeService.getAttributes(tenantId, entityId, entityType.name(),
+				DOMAIN);
+		return definitions.stream().map(definition -> toCustomFieldValue(definition, storedValues)).toList();
+	}
+
+	/**
+	 * Same merge as {@link #getAllValues}, additionally grouped into ordered {@link FieldGroup}s
+	 * (by {@code displayGroup}, ordered by the lowest {@code displayGroupOrder} among its fields —
+	 * fields with no group are collected under {@code ""}) so a caller renders form sections
+	 * exactly as configured instead of re-deriving grouping/ordering itself.
+	 */
+	public List<FieldGroup> getGroupedValues(CustomFieldEntityType entityType, Long entityId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		List<CustomFieldDefinition> definitions = customFieldDefinitionRepository
+				.findAllByTenantIdAndEntityTypeAndActiveTrueOrderByDisplayOrderAsc(tenantId, entityType);
+		Map<String, String> storedValues = entityAttributeService.getAttributes(tenantId, entityId, entityType.name(),
+				DOMAIN);
+
+		Map<String, List<CustomFieldDefinition>> byGroup = new LinkedHashMap<>();
+		for (CustomFieldDefinition definition : definitions) {
+			String groupName = definition.getDisplayGroup() != null ? definition.getDisplayGroup() : "";
+			byGroup.computeIfAbsent(groupName, key -> new java.util.ArrayList<>()).add(definition);
+		}
+
+		return byGroup.entrySet().stream()
+				.map(entry -> new FieldGroup(entry.getKey(), groupOrder(entry.getValue()),
+						entry.getValue().stream().map(definition -> toCustomFieldValue(definition, storedValues))
+								.toList()))
+				.sorted(Comparator.comparingInt(FieldGroup::order))
 				.toList();
+	}
+
+	private int groupOrder(List<CustomFieldDefinition> definitionsInGroup) {
+		return definitionsInGroup.stream().mapToInt(CustomFieldDefinition::getDisplayGroupOrder).min().orElse(0);
+	}
+
+	private CustomFieldValue toCustomFieldValue(CustomFieldDefinition definition, Map<String, String> storedValues) {
+		String value = storedValues.get(definition.getFieldKey());
+		boolean visible = definition.getVisibilityCondition().isPresent()
+				? definition.getVisibilityCondition()
+						.isSatisfiedBy(storedValues.get(definition.getVisibilityCondition().getDependsOnFieldKey()))
+				: true;
+		return new CustomFieldValue(definition.getFieldKey(), definition.getLabel(), definition.getFieldType(),
+				definition.isRequired(), value, definition.getValidationRule().optionList(),
+				definition.getDisplayOrder(), definition.getDisplayGroup(), visible);
 	}
 
 	private CustomFieldDefinition requireActiveDefinition(Long tenantId, CustomFieldEntityType entityType,

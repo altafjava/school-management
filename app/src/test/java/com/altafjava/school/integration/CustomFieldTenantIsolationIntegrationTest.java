@@ -77,14 +77,14 @@ class CustomFieldTenantIsolationIntegrationTest extends SchoolIntegrationTestBas
 		Student studentA = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6), "Alice",
 				"Smith", "alice@cf.test", LocalDate.of(2010, 1, 1));
 		customFieldDefinitionService.create(CustomFieldEntityType.STUDENT, "bloodGroup", "Blood Group",
-				CustomFieldType.TEXT, false, null, 0, null);
+				CustomFieldType.TEXT, false, null, 0, null, 0, null);
 		customFieldValueService.setValue(CustomFieldEntityType.STUDENT, studentA.getId(), "bloodGroup", "O+");
 
 		activateTenant(tenantB);
 		// Tenant B independently defines the same field key — proves this isn't merely "tenant B
 		// never defined the field", but a genuine value-level isolation check.
 		customFieldDefinitionService.create(CustomFieldEntityType.STUDENT, "bloodGroup", "Blood Group",
-				CustomFieldType.TEXT, false, null, 0, null);
+				CustomFieldType.TEXT, false, null, 0, null, 0, null);
 
 		Optional<String> valueUnderTenantB = customFieldValueService.getValue(CustomFieldEntityType.STUDENT,
 				studentA.getId(), "bloodGroup");
@@ -98,12 +98,12 @@ class CustomFieldTenantIsolationIntegrationTest extends SchoolIntegrationTestBas
 		Student studentA = studentService.enroll("STU-" + UUID.randomUUID().toString().substring(0, 6), "Carol",
 				"White", "carol@cf.test", LocalDate.of(2012, 3, 3));
 		customFieldDefinitionService.create(CustomFieldEntityType.STUDENT, "allergy", "Allergy",
-				CustomFieldType.TEXT, false, null, 0, null);
+				CustomFieldType.TEXT, false, null, 0, null, 0, null);
 		customFieldValueService.setValue(CustomFieldEntityType.STUDENT, studentA.getId(), "allergy", "Peanuts");
 
 		activateTenant(tenantB);
 		customFieldDefinitionService.create(CustomFieldEntityType.STUDENT, "allergy", "Allergy",
-				CustomFieldType.TEXT, false, null, 0, null);
+				CustomFieldType.TEXT, false, null, 0, null, 0, null);
 
 		var valuesUnderTenantB = customFieldValueService.getAllValues(CustomFieldEntityType.STUDENT,
 				studentA.getId());

@@ -13,14 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignExamTermRequest;
 import com.altafjava.school.api.dto.request.RescheduleExamRequest;
 import com.altafjava.school.api.dto.request.ScheduleExamRequest;
 import com.altafjava.school.api.dto.response.ExamResponse;
 import com.altafjava.school.api.mapper.ExamMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.ExamService;
 
 @RestController
@@ -39,7 +37,7 @@ public class ExamController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('EXAM_COMPLETE')")
 	public Page<ExamResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -48,14 +46,14 @@ public class ExamController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('EXAM_COMPLETE')")
 	public ExamResponse get(@PathVariable String publicId) {
 		return examMapper.toResponse(examService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('EXAM_WRITE')")
 	public ExamResponse schedule(@Valid @RequestBody ScheduleExamRequest request) {
 		return examMapper.toResponse(examService.schedule(
 				request.title(),
@@ -68,25 +66,25 @@ public class ExamController {
 	}
 
 	@PatchMapping("/{publicId}/schedule")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('EXAM_WRITE')")
 	public ExamResponse reschedule(@PathVariable String publicId, @Valid @RequestBody RescheduleExamRequest request) {
 		return examMapper.toResponse(examService.reschedule(publicId, request.scheduledAt()));
 	}
 
 	@PatchMapping("/{publicId}/term")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('EXAM_WRITE')")
 	public ExamResponse assignTerm(@PathVariable String publicId, @Valid @RequestBody AssignExamTermRequest request) {
 		return examMapper.toResponse(examService.assignTerm(publicId, request.termId()));
 	}
 
 	@PatchMapping("/{publicId}/complete")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('EXAM_COMPLETE')")
 	public ExamResponse complete(@PathVariable String publicId) {
 		return examMapper.toResponse(examService.complete(publicId));
 	}
 
 	@PatchMapping("/{publicId}/cancel")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('EXAM_WRITE')")
 	public ExamResponse cancel(@PathVariable String publicId) {
 		return examMapper.toResponse(examService.cancel(publicId));
 	}

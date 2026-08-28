@@ -103,38 +103,42 @@ class AdmissionServiceTest {
 	}
 
 	@Test
-	void decide_approveWithoutStudentCode_throwsBusinessException() {
+	void requestApproval_withoutStudentCode_throwsBusinessException() {
+		// Checked before any lookup — no admissionRepository stub needed, matching
+		// AdmissionController's own boundary check for the same input.
 		UUID publicId = UUID.randomUUID();
-		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.SUBMITTED);
-		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
 
-		assertThrows(BusinessException.class, () -> admissionService.decide(publicId.toString(),
-				DecisionOutcome.APPROVED, "admin", null, null));
+		assertThrows(BusinessException.class,
+				() -> admissionService.requestApproval(publicId.toString(), "admin", null, null));
 
 		verify(admissionEnrollmentSaga, never()).enroll(anyLong(), anyString());
 	}
 
 	@Test
-	void decide_alreadyEnrolled_throwsBusinessException() {
+	void requestApproval_alreadyEnrolled_throwsBusinessException() {
 		UUID publicId = UUID.randomUUID();
 		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.ENROLLED);
 		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
 
-		assertThrows(BusinessException.class, () -> admissionService.decide(publicId.toString(),
-				DecisionOutcome.APPROVED, "admin", null, "STU-100"));
+		assertThrows(BusinessException.class,
+				() -> admissionService.requestApproval(publicId.toString(), "admin", null, "STU-100"));
 
 		verify(admissionDecisionRepository, never()).save(any());
 	}
 
+	// requestApproval's own body only runs when no ADMISSION_DECISION workflow is configured for
+	// the tenant (ApprovalAspect's fallback) — this unit test constructs AdmissionService directly
+	// with no AOP proxy in play, so it always exercises that fallback path, which finalizes
+	// immediately exactly like AdmissionApprovalHandler does once a configured workflow approves.
 	@Test
-	void decide_approve_recordsDecisionApprovesAndTriggersSaga() {
+	void requestApproval_recordsDecisionApprovesAndTriggersSaga() {
 		UUID publicId = UUID.randomUUID();
 		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.SUBMITTED);
 		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
 		when(admissionRepository.save(any(Admission.class))).thenAnswer(inv -> inv.getArgument(0));
 		when(admissionDecisionRepository.save(any(AdmissionDecision.class))).thenAnswer(inv -> inv.getArgument(0));
 
-		admissionService.decide(publicId.toString(), DecisionOutcome.APPROVED, "admin", "looks good", "STU-100");
+		admissionService.requestApproval(publicId.toString(), "admin", "looks good", "STU-100");
 
 		ArgumentCaptor<AdmissionDecision> decisionCaptor = ArgumentCaptor.forClass(AdmissionDecision.class);
 		verify(admissionDecisionRepository).save(decisionCaptor.capture());
@@ -144,29 +148,28 @@ class AdmissionServiceTest {
 	}
 
 	@Test
-	void decide_reject_recordsDecisionAndDoesNotTriggerSaga() {
+	void reject_recordsDecisionAndDoesNotTriggerSaga() {
 		UUID publicId = UUID.randomUUID();
 		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.SUBMITTED);
 		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
 		when(admissionRepository.save(any(Admission.class))).thenAnswer(inv -> inv.getArgument(0));
 		when(admissionDecisionRepository.save(any(AdmissionDecision.class))).thenAnswer(inv -> inv.getArgument(0));
 
-		Admission result = admissionService.decide(publicId.toString(), DecisionOutcome.REJECTED, "admin",
-				"not a fit", null);
+		Admission result = admissionService.reject(publicId.toString(), "admin", "not a fit");
 
 		assertEquals(AdmissionStatus.REJECTED, result.getStatus());
 		verify(admissionEnrollmentSaga, never()).enroll(anyLong(), anyString());
 	}
 
 	@Test
-	void decide_reject_notifiesGuardianByEmail() {
+	void reject_notifiesGuardianByEmail() {
 		UUID publicId = UUID.randomUUID();
 		Admission admission = admissionWithId(1L, publicId, AdmissionStatus.SUBMITTED);
 		when(admissionRepository.findByPublicIdAndTenantId(publicId, 1L)).thenReturn(Optional.of(admission));
 		when(admissionRepository.save(any(Admission.class))).thenAnswer(inv -> inv.getArgument(0));
 		when(admissionDecisionRepository.save(any(AdmissionDecision.class))).thenAnswer(inv -> inv.getArgument(0));
 
-		admissionService.decide(publicId.toString(), DecisionOutcome.REJECTED, "admin", "not a fit", null);
+		admissionService.reject(publicId.toString(), "admin", "not a fit");
 
 		verify(emailService).sendEmail(eq("bob@family.test"), anyString(), anyString());
 	}

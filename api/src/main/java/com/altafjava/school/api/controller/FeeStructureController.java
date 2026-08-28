@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignFeeStructureRequest;
 import com.altafjava.school.api.dto.request.ConfigureFeeAssignmentDueDateRequest;
 import com.altafjava.school.api.dto.request.ConfigureFeeLateFeePolicyRequest;
@@ -54,7 +53,7 @@ public class FeeStructureController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public Page<FeeStructureResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -63,14 +62,14 @@ public class FeeStructureController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public FeeStructureResponse get(@PathVariable String publicId) {
 		return feeStructureMapper.toResponse(feeStructureService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public FeeStructureResponse create(@Valid @RequestBody CreateFeeStructureRequest request) {
 		return feeStructureMapper.toResponse(feeStructureService.create(
 				request.name(),
@@ -80,14 +79,14 @@ public class FeeStructureController {
 	}
 
 	@PatchMapping("/{publicId}/amount")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public FeeStructureResponse reviseAmount(@PathVariable String publicId,
 			@Valid @RequestBody ReviseFeeAmountRequest request) {
 		return feeStructureMapper.toResponse(feeStructureService.reviseAmount(publicId, request.amount()));
 	}
 
 	@PatchMapping("/{publicId}/late-fee-policy")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public FeeStructureResponse configureLateFeePolicy(@PathVariable String publicId,
 			@Valid @RequestBody ConfigureFeeLateFeePolicyRequest request) {
 		return feeStructureMapper.toResponse(
@@ -95,7 +94,7 @@ public class FeeStructureController {
 	}
 
 	@GetMapping("/{publicId}/revisions")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public Page<FeeStructureRevisionResponse> listRevisions(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -105,7 +104,7 @@ public class FeeStructureController {
 
 	@PostMapping("/{publicId}/assignments")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public FeeAssignmentResponse assign(@PathVariable String publicId,
 			@Valid @RequestBody AssignFeeStructureRequest request) {
 		return feeAssignmentMapper.toResponse(
@@ -113,7 +112,7 @@ public class FeeStructureController {
 	}
 
 	@GetMapping("/{publicId}/assignments")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public Page<FeeAssignmentResponse> listAssignments(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -122,13 +121,13 @@ public class FeeStructureController {
 	}
 
 	@PatchMapping("/{publicId}/assignments/{assignmentPublicId}/revoke")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public void revokeAssignment(@PathVariable String publicId, @PathVariable String assignmentPublicId) {
 		feeAssignmentService.revoke(assignmentPublicId);
 	}
 
 	@PatchMapping("/{publicId}/assignments/{assignmentPublicId}/due-date")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_STRUCTURE_MANAGE')")
 	public FeeAssignmentResponse configureAssignmentDueDate(@PathVariable String publicId,
 			@PathVariable String assignmentPublicId, @Valid @RequestBody ConfigureFeeAssignmentDueDateRequest request) {
 		return feeAssignmentMapper.toResponse(feeAssignmentService.configureDueDate(assignmentPublicId,

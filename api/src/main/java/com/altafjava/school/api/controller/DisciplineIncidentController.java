@@ -13,13 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.RecordDisciplineActionRequest;
 import com.altafjava.school.api.dto.request.RecordDisciplineIncidentRequest;
 import com.altafjava.school.api.dto.response.DisciplineIncidentResponse;
 import com.altafjava.school.api.mapper.DisciplineIncidentMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.DisciplineIncidentService;
 
 @RestController
@@ -39,7 +37,7 @@ public class DisciplineIncidentController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_MANAGE')")
 	public Page<DisciplineIncidentResponse> listAll(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -48,7 +46,7 @@ public class DisciplineIncidentController {
 	}
 
 	@GetMapping("/students/{studentPublicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER_OR_PARENT_OR_STUDENT)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_READ')")
 	public Page<DisciplineIncidentResponse> listForStudent(@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -58,14 +56,14 @@ public class DisciplineIncidentController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_WRITE')")
 	public DisciplineIncidentResponse record(@Valid @RequestBody RecordDisciplineIncidentRequest request) {
 		return disciplineIncidentMapper.toResponse(disciplineIncidentService.record(request.studentPublicId(),
 				request.incidentDate(), request.severity(), request.description()));
 	}
 
 	@PatchMapping("/{publicId}/action")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_ACTION')")
 	public DisciplineIncidentResponse recordAction(@PathVariable String publicId,
 			@Valid @RequestBody RecordDisciplineActionRequest request) {
 		return disciplineIncidentMapper.toResponse(

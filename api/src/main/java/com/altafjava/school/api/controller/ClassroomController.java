@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignClassroomCurriculumRequest;
 import com.altafjava.school.api.dto.request.CreateClassroomRequest;
 import com.altafjava.school.api.dto.request.EnrollStudentInClassroomRequest;
@@ -30,7 +29,6 @@ import com.altafjava.school.api.mapper.StudentClassroomLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
 import com.altafjava.school.api.mapper.TimetableEntryMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.TimetableService;
 
@@ -61,7 +59,7 @@ public class ClassroomController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
 	public Page<ClassroomResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -70,14 +68,14 @@ public class ClassroomController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
 	public ClassroomResponse get(@PathVariable String publicId) {
 		return classroomMapper.toResponse(classroomService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
 	public ClassroomResponse create(@Valid @RequestBody CreateClassroomRequest request) {
 		return classroomMapper.toResponse(classroomService.create(
 				request.classCode(),
@@ -88,14 +86,14 @@ public class ClassroomController {
 	}
 
 	@PatchMapping("/{publicId}/teacher")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
 	public ClassroomResponse reassignTeacher(@PathVariable String publicId,
 			@Valid @RequestBody ReassignClassTeacherRequest request) {
 		return classroomMapper.toResponse(classroomService.reassignTeacher(publicId, request.teacherId()));
 	}
 
 	@PatchMapping("/{publicId}/academic-year")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
 	public ClassroomResponse moveToAcademicYear(@PathVariable String publicId,
 			@Valid @RequestBody MoveClassroomAcademicYearRequest request) {
 		return classroomMapper.toResponse(
@@ -103,28 +101,28 @@ public class ClassroomController {
 	}
 
 	@PatchMapping("/{publicId}/capacity")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
 	public ClassroomResponse updateCapacity(@PathVariable String publicId,
 			@Valid @RequestBody UpdateClassroomCapacityRequest request) {
 		return classroomMapper.toResponse(classroomService.updateCapacity(publicId, request.capacity()));
 	}
 
 	@PatchMapping("/{publicId}/curriculum")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
 	public ClassroomResponse assignCurriculum(@PathVariable String publicId,
 			@Valid @RequestBody AssignClassroomCurriculumRequest request) {
 		return classroomMapper.toResponse(classroomService.assignCurriculum(publicId, request.curriculumPublicId()));
 	}
 
 	@GetMapping("/{publicId}/timetable")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
 	public List<TimetableEntryResponse> timetable(@PathVariable String publicId) {
 		return timetableEntryMapper.toResponseList(timetableService.listForClassroom(publicId));
 	}
 
 	@PostMapping("/{publicId}/students")
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
 	public StudentClassroomLinkResponse enrollStudent(@PathVariable String publicId,
 			@Valid @RequestBody EnrollStudentInClassroomRequest request) {
 		return studentClassroomLinkMapper.toResponse(
@@ -133,7 +131,7 @@ public class ClassroomController {
 	}
 
 	@GetMapping("/{publicId}/students")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
 	public Page<StudentResponse> roster(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -142,7 +140,7 @@ public class ClassroomController {
 	}
 
 	@PatchMapping("/{publicId}/students/{studentPublicId}/withdraw")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
 	public void withdrawStudent(@PathVariable String publicId, @PathVariable String studentPublicId) {
 		classroomService.withdrawStudentFromClassroom(publicId, studentPublicId);
 	}

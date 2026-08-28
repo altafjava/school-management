@@ -19,15 +19,14 @@ import com.altafjava.school.api.dto.request.CheckInVisitorRequest;
 import com.altafjava.school.api.dto.response.VisitorLogResponse;
 import com.altafjava.school.api.mapper.VisitorLogMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
-import com.altafjava.school.application.security.SchoolRoles;
 import com.altafjava.school.application.service.VisitorLogService;
 
 /**
- * Gated to {@code SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER} — the closest existing role to a
- * front-desk/receptionist function in the seeded catalog (no dedicated role exists), kept
- * authenticated rather than {@code permitAll()} since visitor logs are internal building-security
- * data, unlike the certificate-verification or admission-application public endpoints. A dedicated
- * front-desk role is a follow-up.
+ * Gated to the {@code VISITOR_LOG_MANAGE} permission, seeded onto {@code TEACHER} by default —
+ * a tenant admin can grant it to a dedicated front-desk/receptionist role instead if one is
+ * defined. Kept authenticated rather than {@code permitAll()} since visitor logs are internal
+ * building-security data, unlike the certificate-verification or admission-application public
+ * endpoints.
  */
 @RestController
 @RequestMapping("/api/v1/visitor-logs")
@@ -46,7 +45,7 @@ public class VisitorLogController {
 	}
 
 	@GetMapping
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
 	public Page<VisitorLogResponse> list(
 			@RequestParam(required = false) Boolean stillCheckedIn,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
@@ -58,21 +57,21 @@ public class VisitorLogController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
 	public VisitorLogResponse get(@PathVariable String publicId) {
 		return visitorLogMapper.toResponse(visitorLogService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
 	public VisitorLogResponse checkIn(@Valid @RequestBody CheckInVisitorRequest request) {
 		return visitorLogMapper.toResponse(visitorLogService.checkIn(request.visitorName(), request.visitorPhone(),
 				request.purpose(), request.hostTeacherPublicId()));
 	}
 
 	@PatchMapping("/{publicId}/check-out")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_TEACHER)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
 	public VisitorLogResponse checkOut(@PathVariable String publicId) {
 		return visitorLogMapper.toResponse(visitorLogService.checkOut(publicId));
 	}

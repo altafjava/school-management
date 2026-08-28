@@ -13,6 +13,7 @@ import com.altafjava.school.domain.customfield.model.CustomFieldDefinition;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
 import com.altafjava.school.domain.customfield.model.CustomFieldType;
 import com.altafjava.school.domain.customfield.model.CustomFieldValidationRule;
+import com.altafjava.school.domain.customfield.model.CustomFieldVisibilityCondition;
 import com.altafjava.school.domain.customfield.repository.CustomFieldDefinitionRepository;
 
 // Tenant-admin CRUD for the custom-field "schema" — same shape as LeaveTypeService/
@@ -50,7 +51,7 @@ public class CustomFieldDefinitionService {
 	@Transactional
 	public CustomFieldDefinition create(CustomFieldEntityType entityType, String fieldKey, String label,
 			CustomFieldType fieldType, boolean required, CustomFieldValidationRule validationRule, int displayOrder,
-			String displayGroup) {
+			String displayGroup, int displayGroupOrder, CustomFieldVisibilityCondition visibilityCondition) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (customFieldDefinitionRepository.existsByTenantIdAndEntityTypeAndFieldKey(tenantId, entityType,
 				fieldKey)) {
@@ -61,18 +62,21 @@ public class CustomFieldDefinitionService {
 		CustomFieldDefinition definition = CustomFieldDefinition.create(entityType, fieldKey, label, fieldType,
 				required);
 		definition.updateValidationRule(validationRule);
-		definition.reorder(displayOrder, displayGroup);
+		definition.updateVisibilityCondition(visibilityCondition);
+		definition.reorder(displayOrder, displayGroup, displayGroupOrder);
 		return customFieldDefinitionRepository.save(definition);
 	}
 
 	@Transactional
 	public CustomFieldDefinition updateDetails(String publicId, String label, CustomFieldType fieldType,
-			boolean required, CustomFieldValidationRule validationRule, int displayOrder, String displayGroup) {
+			boolean required, CustomFieldValidationRule validationRule, int displayOrder, String displayGroup,
+			int displayGroupOrder, CustomFieldVisibilityCondition visibilityCondition) {
 		requireOptionsForSelectTypes(fieldType, validationRule);
 		CustomFieldDefinition definition = findByPublicId(publicId);
 		definition.updateDetails(label, fieldType, required);
 		definition.updateValidationRule(validationRule);
-		definition.reorder(displayOrder, displayGroup);
+		definition.updateVisibilityCondition(visibilityCondition);
+		definition.reorder(displayOrder, displayGroup, displayGroupOrder);
 		return customFieldDefinitionRepository.save(definition);
 	}
 

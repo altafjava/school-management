@@ -49,5 +49,8 @@
     <include file="db/domain/changesets/042-leave-carry-forward-probation.xml"/>
     <include file="db/domain/changesets/043-fee-late-fee-policy.xml"/>
     <include file="db/domain/changesets/044-report-card-template-remarks.xml"/>
+    <include file="db/domain/changesets/045-tenant-admin-school-permissions.xml"/>
+    <include file="db/domain/changesets/046-backfill-tenant-roles.xml"/>
+    <include file="db/domain/changesets/047-custom-field-grouping-visibility.xml"/>
 
 </databaseChangeLog>

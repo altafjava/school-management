@@ -14,7 +14,6 @@ import com.altafjava.school.application.dashboard.FinanceDashboardDataProvider;
 import com.altafjava.school.application.dashboard.HrDashboardDataProvider;
 import com.altafjava.school.application.dashboard.LeaveUtilizationTrendDataProvider;
 import com.altafjava.school.application.dashboard.PrincipalDashboardDataProvider;
-import com.altafjava.school.application.security.SchoolRoles;
 
 /**
  * Live JSON view of each role-scoped dashboard — calls the same {@code ReportDataProvider} bean
@@ -58,49 +57,49 @@ public class DashboardController {
 	}
 
 	@GetMapping("/principal")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_PRINCIPAL_READ')")
 	public List<Map<String, Object>> principal() {
 		return principalDashboardDataProvider.fetchData(Map.of());
 	}
 
 	@GetMapping("/finance")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_FINANCE)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_FINANCE_READ')")
 	public List<Map<String, Object>> finance() {
 		return financeDashboardDataProvider.fetchData(Map.of());
 	}
 
 	@GetMapping("/hr")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_HR_READ')")
 	public List<Map<String, Object>> hr() {
 		return hrDashboardDataProvider.fetchData(Map.of());
 	}
 
 	@GetMapping("/academic")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_ACADEMIC)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_ACADEMIC_READ')")
 	public List<Map<String, Object>> academic() {
 		return academicDashboardDataProvider.fetchData(Map.of());
 	}
 
 	@GetMapping("/principal/trends")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_PRINCIPAL)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_PRINCIPAL_READ')")
 	public List<Map<String, Object>> principalTrends(@RequestParam(required = false) Integer periods) {
 		return attendanceTrendDataProvider.fetchData(trendParameters(periods));
 	}
 
 	@GetMapping("/academic/trends")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_ACADEMIC)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_ACADEMIC_READ')")
 	public List<Map<String, Object>> academicTrends(@RequestParam(required = false) Integer periods) {
 		return attendanceTrendDataProvider.fetchData(trendParameters(periods));
 	}
 
 	@GetMapping("/finance/trends")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_FINANCE)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_FINANCE_READ')")
 	public List<Map<String, Object>> financeTrends(@RequestParam(required = false) Integer periods) {
 		return feeCollectionTrendDataProvider.fetchData(trendParameters(periods));
 	}
 
 	@GetMapping("/hr/trends")
-	@PreAuthorize(SchoolRoles.HAS_TENANT_ADMIN_OR_HR)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DASHBOARD_HR_READ')")
 	public List<Map<String, Object>> hrTrends(@RequestParam(required = false) Integer periods) {
 		return leaveUtilizationTrendDataProvider.fetchData(trendParameters(periods));
 	}

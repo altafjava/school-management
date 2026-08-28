@@ -15,5 +15,7 @@ public record CreateCustomFieldDefinitionRequest(
 		boolean required,
 		@Valid CustomFieldValidationRuleRequest validationRule,
 		int displayOrder,
-		@Size(max = 100) String displayGroup) {
+		@Size(max = 100) String displayGroup,
+		int displayGroupOrder,
+		@Valid CustomFieldVisibilityConditionRequest visibilityCondition) {
 }

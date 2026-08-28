@@ -196,4 +196,54 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on the 8 new custom-field-value controllers' constructors (Phase 3, item
+      3.3): flags storing the injected per-entity application service (ClassroomService/
+      SubjectService/FeeStructureService/LeaveTypeService/HolidayService/RouteService/
+      VehicleService/BookCatalogService) and CustomFieldValueService references into fields. Same
+      standard constructor-injection pattern as StudentCustomFieldController above (already
+      flagged/excluded for the identical CustomFieldValueService field), investigated 2026-08-29:
+      no mutable state leak, reference never handed back to a caller — consistent detector noise,
+      not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.api.controller.ClassroomCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.SubjectCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.FeeStructureCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.LeaveTypeCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.HolidayCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.RouteCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.VehicleCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.BookCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

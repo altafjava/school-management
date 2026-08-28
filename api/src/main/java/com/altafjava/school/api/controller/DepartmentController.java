@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignHeadTeacherRequest;
 import com.altafjava.school.api.dto.request.CreateDepartmentRequest;
 import com.altafjava.school.api.dto.request.UpdateDepartmentRequest;
@@ -39,7 +38,7 @@ public class DepartmentController {
 	}
 
 	@GetMapping
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
 	public Page<DepartmentResponse> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -47,21 +46,21 @@ public class DepartmentController {
 	}
 
 	@GetMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
 	public DepartmentResponse get(@PathVariable String publicId) {
 		return departmentMapper.toResponse(departmentService.findByPublicId(publicId));
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
 	public DepartmentResponse create(@Valid @RequestBody CreateDepartmentRequest request) {
 		return departmentMapper
 				.toResponse(departmentService.create(request.name(), request.code(), request.description()));
 	}
 
 	@PatchMapping("/{publicId}")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
 	public DepartmentResponse updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateDepartmentRequest request) {
 		return departmentMapper.toResponse(
@@ -69,7 +68,7 @@ public class DepartmentController {
 	}
 
 	@PatchMapping("/{publicId}/head-teacher")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
 	public DepartmentResponse assignHeadTeacher(@PathVariable String publicId,
 			@Valid @RequestBody AssignHeadTeacherRequest request) {
 		return departmentMapper
@@ -77,7 +76,7 @@ public class DepartmentController {
 	}
 
 	@PatchMapping("/{publicId}/deactivate")
-	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
 	public DepartmentResponse deactivate(@PathVariable String publicId) {
 		return departmentMapper.toResponse(departmentService.deactivate(publicId));
 	}
