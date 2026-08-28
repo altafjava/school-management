@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -142,6 +143,34 @@ class FeePaymentServiceTest {
 
 		assertEquals(1, balances.size());
 		assertEquals(BigDecimal.valueOf(600), balances.get(0).outstandingBalance());
+	}
+
+	@Test
+	void calculateBalance_pastDueDateAndGracePeriod_includesLateFeeInOutstanding() {
+		var student = com.altafjava.school.domain.student.model.Student.create(
+				"STU-2", "Carol", "White", "carol@school.test", null);
+		var feeStructure = com.altafjava.school.domain.fee.model.FeeStructure.create(
+				"Tuition", BigDecimal.valueOf(1000), com.altafjava.school.domain.fee.model.FeeFrequency.MONTHLY,
+				"Standard");
+		feeStructure.setId(3L);
+		feeStructure.configureLateFeePolicy(5, BigDecimal.valueOf(10));
+		var assignment = FeeAssignment.forStudent(3L, student.getId());
+		assignment.configureDueDate(LocalDate.now().minusDays(30), null, null);
+
+		when(studentRepository.findByPublicIdAndTenantId(any(), any())).thenReturn(java.util.Optional.of(student));
+		org.mockito.Mockito.doNothing().when(studentDataAccessGuard).assertCanView(any(), any());
+		when(feeAssignmentRepository.findByTenantIdAndStudentId(1L, student.getId()))
+				.thenReturn(java.util.List.of(assignment));
+		when(studentClassroomLinkRepository.findByStudentId(1L, student.getId())).thenReturn(java.util.List.of());
+		when(feeStructureRepository.findAllByIdInAndTenantId(java.util.List.of(3L), 1L))
+				.thenReturn(java.util.List.of(feeStructure));
+		when(feePaymentRepository.findByStudentId(1L, student.getId())).thenReturn(java.util.List.of());
+
+		var balances = feePaymentService.calculateBalance("11111111-1111-1111-1111-111111111111");
+
+		assertEquals(1, balances.size());
+		assertEquals(0, BigDecimal.valueOf(100).compareTo(balances.get(0).lateFeeAmount()));
+		assertEquals(0, BigDecimal.valueOf(1100).compareTo(balances.get(0).outstandingBalance()));
 	}
 
 	@Test

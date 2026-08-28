@@ -65,6 +65,12 @@ public class Teacher extends SoftDeletableEntity {
 	@Embedded
 	private Address address;
 
+	// Nullable — set only when the tenant places this teacher on probation. On/after this date the
+	// teacher is no longer on probation; null means never on probation (or probation already ended
+	// without a tracked date, for records created before this field existed).
+	@Column(name = "probation_end_date")
+	private LocalDate probationEndDate;
+
 	public static Teacher create(String employeeCode, String firstName, String lastName,
 			String email, LocalDate joinDate) {
 		return Teacher.builder()
@@ -96,5 +102,17 @@ public class Teacher extends SoftDeletableEntity {
 
 	public void updateAddress(Address address) {
 		this.address = Address.copyOf(address);
+	}
+
+	public void setProbationPeriod(LocalDate probationEndDate) {
+		this.probationEndDate = probationEndDate;
+	}
+
+	public void endProbation() {
+		this.probationEndDate = null;
+	}
+
+	public boolean isOnProbation(LocalDate asOf) {
+		return probationEndDate != null && asOf.isBefore(probationEndDate);
 	}
 }

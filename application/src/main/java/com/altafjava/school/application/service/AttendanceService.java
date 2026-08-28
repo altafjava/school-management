@@ -1,6 +1,7 @@
 package com.altafjava.school.application.service;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,13 +33,14 @@ public class AttendanceService {
 	private final StudentClassroomLinkRepository studentClassroomLinkRepository;
 	private final StudentDataAccessGuard studentDataAccessGuard;
 	private final TeacherClassroomScopeResolver teacherClassroomScopeResolver;
+	private final HolidayService holidayService;
 	private final AttendancePercentageCalculator attendancePercentageCalculator = new AttendancePercentageCalculator();
 
 	public AttendanceService(AttendanceRepository attendanceRepository,
 			AttendanceCorrectionRepository attendanceCorrectionRepository, StudentRepository studentRepository,
 			ClassroomRepository classroomRepository, StudentClassroomLinkRepository studentClassroomLinkRepository,
 			StudentDataAccessGuard studentDataAccessGuard,
-			TeacherClassroomScopeResolver teacherClassroomScopeResolver) {
+			TeacherClassroomScopeResolver teacherClassroomScopeResolver, HolidayService holidayService) {
 		this.attendanceRepository = attendanceRepository;
 		this.attendanceCorrectionRepository = attendanceCorrectionRepository;
 		this.studentRepository = studentRepository;
@@ -46,6 +48,7 @@ public class AttendanceService {
 		this.studentClassroomLinkRepository = studentClassroomLinkRepository;
 		this.studentDataAccessGuard = studentDataAccessGuard;
 		this.teacherClassroomScopeResolver = teacherClassroomScopeResolver;
+		this.holidayService = holidayService;
 	}
 
 	// TENANT_ADMIN sees every attendance record; TEACHER sees only records for classrooms they
@@ -81,11 +84,19 @@ public class AttendanceService {
 		Student student = studentRepository.findByPublicIdAndTenantId(UUID.fromString(studentPublicId), tenantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Student not found: " + studentPublicId));
 		studentDataAccessGuard.assertCanView(tenantId, studentPublicId);
-		long totalMarkedDays = attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetween(
-				student.getId(), tenantId, from, to);
-		// Denominator is days attendance was actually marked — no working-days/school-calendar concept exists yet.
-		long presentDays = attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(
-				student.getId(), tenantId, from, to, AttendanceStatus.PRESENT);
+		// Denominator is days attendance was actually marked, minus any tenant-defined holiday that
+		// fell in range — a holiday mistakenly marked as attendance must not count either way.
+		Set<LocalDate> holidayDates = holidayService.datesInRange(tenantId, from, to);
+		long totalMarkedDays = holidayDates.isEmpty()
+				? attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetween(student.getId(), tenantId,
+						from, to)
+				: attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenExcludingDates(
+						student.getId(), tenantId, from, to, holidayDates);
+		long presentDays = holidayDates.isEmpty()
+				? attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatus(student.getId(),
+						tenantId, from, to, AttendanceStatus.PRESENT)
+				: attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatusExcludingDates(
+						student.getId(), tenantId, from, to, AttendanceStatus.PRESENT, holidayDates);
 		return attendancePercentageCalculator.calculate(presentDays, totalMarkedDays);
 	}
 

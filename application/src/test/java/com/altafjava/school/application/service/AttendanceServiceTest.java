@@ -46,6 +46,8 @@ class AttendanceServiceTest {
 	private StudentDataAccessGuard studentDataAccessGuard;
 	@Mock
 	private TeacherClassroomScopeResolver teacherClassroomScopeResolver;
+	@Mock
+	private HolidayService holidayService;
 
 	private AttendanceService attendanceService;
 
@@ -53,7 +55,7 @@ class AttendanceServiceTest {
 	void setUp() {
 		attendanceService = new AttendanceService(attendanceRepository, attendanceCorrectionRepository,
 				studentRepository, classroomRepository, studentClassroomLinkRepository, studentDataAccessGuard,
-				teacherClassroomScopeResolver);
+				teacherClassroomScopeResolver, holidayService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -187,6 +189,31 @@ class AttendanceServiceTest {
 		org.junit.jupiter.api.Assertions.assertEquals(20L, result.totalMarkedDays());
 		org.junit.jupiter.api.Assertions.assertEquals(0,
 				java.math.BigDecimal.valueOf(90.00).compareTo(result.percentage()));
+	}
+
+	@Test
+	void calculatePercentage_withHolidaysInRange_excludesThemFromCounts() {
+		var student = com.altafjava.school.domain.student.model.Student.create(
+				"STU-2", "Bob", "Jones", "bob@school.test", null);
+		student.setId(43L);
+		String studentPublicId = "22222222-2222-2222-2222-222222222222";
+		LocalDate from = LocalDate.of(2026, 1, 1);
+		LocalDate to = LocalDate.of(2026, 1, 31);
+		java.util.Set<LocalDate> holidays = java.util.Set.of(LocalDate.of(2026, 1, 26));
+		when(studentRepository.findByPublicIdAndTenantId(any(), any())).thenReturn(Optional.of(student));
+		org.mockito.Mockito.doNothing().when(studentDataAccessGuard).assertCanView(any(), any());
+		when(holidayService.datesInRange(1L, from, to)).thenReturn(holidays);
+		when(attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenExcludingDates(43L, 1L, from, to,
+				holidays)).thenReturn(19L);
+		when(attendanceRepository.countByStudentIdAndTenantIdAndAttendanceDateBetweenAndStatusExcludingDates(43L, 1L,
+				from, to, AttendanceStatus.PRESENT, holidays)).thenReturn(17L);
+
+		var result = attendanceService.calculatePercentage(studentPublicId, from, to);
+
+		org.junit.jupiter.api.Assertions.assertEquals(17L, result.presentDays());
+		org.junit.jupiter.api.Assertions.assertEquals(19L, result.totalMarkedDays());
+		verify(attendanceRepository, never()).countByStudentIdAndTenantIdAndAttendanceDateBetween(any(), any(), any(),
+				any());
 	}
 
 	@Test

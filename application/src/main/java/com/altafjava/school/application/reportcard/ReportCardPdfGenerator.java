@@ -9,6 +9,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.lowagie.text.BadElementException;
@@ -23,13 +24,18 @@ import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import com.altafjava.school.application.customfield.CustomFieldValue;
+import com.altafjava.school.domain.attendance.model.AttendancePercentage;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.term.model.Term;
 
 /**
  * Renders a student's term grades into a branded PDF byte array. Pure formatting — no persistence,
  * no I/O beyond the in-memory buffer (and the caller-supplied logo bytes, already resolved), so it
- * stays independently unit-testable.
+ * stays independently unit-testable. The optional sections ({@code extras}) are entirely gated by
+ * {@code ReportCardExtras}'s {@code showX} flags — a tenant that never configures a report-card
+ * template gets exactly the fixed header/student-info/grades/summary/signature/footer sequence
+ * this always rendered.
  */
 @Component
 public class ReportCardPdfGenerator {
@@ -48,12 +54,19 @@ public class ReportCardPdfGenerator {
 	private static final Font SUMMARY_FONT = new Font(Font.HELVETICA, 11, Font.BOLD, BRAND_NAVY);
 	private static final Font FOOTER_FONT = new Font(Font.HELVETICA, 8, Font.ITALIC, MUTED_TEXT);
 	private static final Font SIGNATURE_FONT = new Font(Font.HELVETICA, 10, Font.NORMAL);
+	private static final Font SECTION_TITLE_FONT = new Font(Font.HELVETICA, 11, Font.BOLD, BRAND_NAVY);
 
 	private static final float LOGO_MAX_HEIGHT = 48f;
 	private static final String GENERATED_AT_PATTERN = "dd MMM yyyy, HH:mm";
 
+	private final MessageSource messageSource;
+
+	public ReportCardPdfGenerator(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
 	public byte[] generate(Student student, Term term, List<ReportCardLine> lines, String tenantName,
-			byte[] logoBytes, Locale locale) {
+			byte[] logoBytes, Locale locale, ReportCardExtras extras) {
 		DateTimeFormatter generatedAtFormat = DateTimeFormatter.ofPattern(GENERATED_AT_PATTERN, locale)
 				.withZone(ZoneOffset.UTC);
 		Document document = new Document(com.lowagie.text.PageSize.A4, 40, 40, 40, 40);
@@ -63,10 +76,22 @@ public class ReportCardPdfGenerator {
 			document.open();
 
 			addHeader(document, tenantName, logoBytes);
-			addStudentInfo(document, student, term, generatedAtFormat);
+			addStudentInfo(document, student, term, generatedAtFormat, extras, locale);
 			addGradesTable(document, lines);
 			addSummary(document, lines);
-			addSignatureBlock(document);
+			if (extras.showAttendanceSummary()) {
+				addAttendanceSummary(document, extras.attendancePercentage(), locale);
+			}
+			if (extras.showRank()) {
+				addRank(document, extras.rank(), locale);
+			}
+			if (extras.showCompetencyGrid()) {
+				addCompetencyGrid(document, extras.competencyValues(), locale);
+			}
+			if (extras.showRemarks()) {
+				addRemarks(document, extras.teacherRemarks(), extras.principalRemarks(), locale);
+			}
+			addSignatureBlock(document, locale);
 			addFooter(document, generatedAtFormat);
 		} catch (DocumentException e) {
 			throw new BusinessException("Failed to generate report card PDF: " + e.getMessage());
@@ -74,6 +99,10 @@ public class ReportCardPdfGenerator {
 			document.close();
 		}
 		return out.toByteArray();
+	}
+
+	private String label(String code, String defaultMessage, Locale locale) {
+		return messageSource.getMessage(code, null, defaultMessage, locale);
 	}
 
 	private void addHeader(Document document, String tenantName, byte[] logoBytes) throws DocumentException {
@@ -107,14 +136,21 @@ public class ReportCardPdfGenerator {
 		document.add(new Paragraph(" "));
 	}
 
-	private void addStudentInfo(Document document, Student student, Term term, DateTimeFormatter generatedAtFormat)
-			throws DocumentException {
+	private void addStudentInfo(Document document, Student student, Term term, DateTimeFormatter generatedAtFormat,
+			ReportCardExtras extras, Locale locale) throws DocumentException {
+		boolean showClassroom = extras.classroomGrade() != null || extras.classroomSection() != null;
 		PdfPTable info = new PdfPTable(2);
 		info.setWidthPercentage(100);
 		info.setWidths(new float[] { 1f, 1f });
 		addInfoCell(info, "Student", student.getFirstName() + " " + student.getLastName());
 		addInfoCell(info, "Student Code", student.getStudentCode());
 		addInfoCell(info, "Term", term.getName());
+		if (showClassroom && extras.classroomGrade() != null) {
+			addInfoCell(info, label("school.reportcard.label.grade", "Grade", locale), extras.classroomGrade());
+		}
+		if (showClassroom && extras.classroomSection() != null) {
+			addInfoCell(info, label("school.reportcard.label.section", "Section", locale), extras.classroomSection());
+		}
 		addInfoCell(info, "Generated", generatedAtFormat.format(java.time.Instant.now()));
 		document.add(info);
 		document.add(new Paragraph(" "));
@@ -199,13 +235,74 @@ public class ReportCardPdfGenerator {
 		document.add(new Paragraph(" "));
 	}
 
-	private void addSignatureBlock(Document document) throws DocumentException {
+	private void addAttendanceSummary(Document document, AttendancePercentage attendancePercentage, Locale locale)
+			throws DocumentException {
+		if (attendancePercentage == null || attendancePercentage.totalMarkedDays() == 0) {
+			return;
+		}
+		addSectionTitle(document, label("school.reportcard.label.attendance", "Attendance", locale));
+		Paragraph body = new Paragraph(
+				attendancePercentage.presentDays() + " / " + attendancePercentage.totalMarkedDays()
+						+ " days (" + attendancePercentage.percentage() + "%)",
+				BODY_FONT);
+		document.add(body);
+		document.add(new Paragraph(" "));
+	}
+
+	private void addRank(Document document, Integer rank, Locale locale) throws DocumentException {
+		if (rank == null) {
+			return;
+		}
+		addSectionTitle(document, label("school.reportcard.label.rank", "Rank", locale));
+		document.add(new Paragraph(String.valueOf(rank), BODY_FONT));
+		document.add(new Paragraph(" "));
+	}
+
+	private void addCompetencyGrid(Document document, List<CustomFieldValue> competencyValues, Locale locale)
+			throws DocumentException {
+		if (competencyValues.isEmpty()) {
+			return;
+		}
+		addSectionTitle(document, label("school.reportcard.label.competencies", "Competencies", locale));
+		PdfPTable table = new PdfPTable(2);
+		table.setWidthPercentage(100);
+		table.setWidths(new float[] { 1.5f, 1f });
+		boolean stripe = false;
+		for (CustomFieldValue value : competencyValues) {
+			Color background = stripe ? ROW_STRIPE : Color.WHITE;
+			addBodyCell(table, value.label(), background);
+			addBodyCell(table, value.value() != null ? value.value() : "", background);
+			stripe = !stripe;
+		}
+		document.add(table);
+		document.add(new Paragraph(" "));
+	}
+
+	private void addRemarks(Document document, String teacherRemarks, String principalRemarks, Locale locale)
+			throws DocumentException {
+		if (teacherRemarks != null && !teacherRemarks.isBlank()) {
+			addSectionTitle(document, label("school.reportcard.label.teacherRemarks", "Teacher's Remarks", locale));
+			document.add(new Paragraph(teacherRemarks, BODY_FONT));
+			document.add(new Paragraph(" "));
+		}
+		if (principalRemarks != null && !principalRemarks.isBlank()) {
+			addSectionTitle(document, label("school.reportcard.label.principalRemarks", "Principal's Remarks", locale));
+			document.add(new Paragraph(principalRemarks, BODY_FONT));
+			document.add(new Paragraph(" "));
+		}
+	}
+
+	private void addSectionTitle(Document document, String title) throws DocumentException {
+		document.add(new Paragraph(title, SECTION_TITLE_FONT));
+	}
+
+	private void addSignatureBlock(Document document, Locale locale) throws DocumentException {
 		document.add(new Paragraph(" "));
 		PdfPTable signatures = new PdfPTable(2);
 		signatures.setWidthPercentage(100);
 		signatures.setWidths(new float[] { 1f, 1f });
-		signatures.addCell(signatureCell("Class Teacher"));
-		signatures.addCell(signatureCell("Principal"));
+		signatures.addCell(signatureCell(label("school.reportcard.label.classTeacher", "Class Teacher", locale)));
+		signatures.addCell(signatureCell(label("school.reportcard.label.principal", "Principal", locale)));
 		document.add(signatures);
 	}
 

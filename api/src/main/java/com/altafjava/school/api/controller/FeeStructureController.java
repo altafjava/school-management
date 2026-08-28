@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
 import com.altafjava.school.api.dto.request.AssignFeeStructureRequest;
+import com.altafjava.school.api.dto.request.ConfigureFeeAssignmentDueDateRequest;
+import com.altafjava.school.api.dto.request.ConfigureFeeLateFeePolicyRequest;
 import com.altafjava.school.api.dto.request.CreateFeeStructureRequest;
 import com.altafjava.school.api.dto.request.ReviseFeeAmountRequest;
 import com.altafjava.school.api.dto.response.FeeAssignmentResponse;
@@ -84,6 +86,14 @@ public class FeeStructureController {
 		return feeStructureMapper.toResponse(feeStructureService.reviseAmount(publicId, request.amount()));
 	}
 
+	@PatchMapping("/{publicId}/late-fee-policy")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public FeeStructureResponse configureLateFeePolicy(@PathVariable String publicId,
+			@Valid @RequestBody ConfigureFeeLateFeePolicyRequest request) {
+		return feeStructureMapper.toResponse(
+				feeStructureService.configureLateFeePolicy(publicId, request.graceDays(), request.lateFeePercentage()));
+	}
+
 	@GetMapping("/{publicId}/revisions")
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public Page<FeeStructureRevisionResponse> listRevisions(@PathVariable String publicId,
@@ -115,5 +125,13 @@ public class FeeStructureController {
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public void revokeAssignment(@PathVariable String publicId, @PathVariable String assignmentPublicId) {
 		feeAssignmentService.revoke(assignmentPublicId);
+	}
+
+	@PatchMapping("/{publicId}/assignments/{assignmentPublicId}/due-date")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public FeeAssignmentResponse configureAssignmentDueDate(@PathVariable String publicId,
+			@PathVariable String assignmentPublicId, @Valid @RequestBody ConfigureFeeAssignmentDueDateRequest request) {
+		return feeAssignmentMapper.toResponse(feeAssignmentService.configureDueDate(assignmentPublicId,
+				request.dueDate(), request.graceDays(), request.lateFeePercentage()));
 	}
 }

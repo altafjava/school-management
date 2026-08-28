@@ -13,7 +13,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -90,14 +89,16 @@ public class FeePaymentService {
 	 */
 	@Transactional(readOnly = true)
 	public List<FeeBalance> calculateBalanceForStudent(Long tenantId, Student student) {
-		List<Long> feeStructureIds = resolveApplicableFeeStructureIds(tenantId, student);
-		List<FeeStructure> feeStructures = feeStructureRepository.findAllByIdInAndTenantId(feeStructureIds,
-				tenantId);
+		Map<Long, FeeAssignment> assignmentsByFeeStructureId = resolveApplicableAssignments(tenantId, student);
+		List<FeeStructure> feeStructures = feeStructureRepository
+				.findAllByIdInAndTenantId(new ArrayList<>(assignmentsByFeeStructureId.keySet()), tenantId);
 		List<FeePayment> payments = feePaymentRepository.findByStudentId(tenantId, student.getId());
+		LocalDate today = LocalDate.now();
 
 		return feeStructures.stream()
 				.map(feeStructure -> feeBalanceCalculator.calculate(feeStructure,
-						totalPaidFor(payments, feeStructure.getId())))
+						assignmentsByFeeStructureId.get(feeStructure.getId()),
+						totalPaidFor(payments, feeStructure.getId()), today))
 				.toList();
 	}
 
@@ -117,27 +118,30 @@ public class FeePaymentService {
 		Map<Long, Long> currentClassroomIdByStudentId = resolveCurrentClassroomIds(tenantId, studentIds);
 		List<Long> classroomIds = currentClassroomIdByStudentId.values().stream().distinct().toList();
 
-		Map<Long, List<Long>> feeStructureIdsByStudentId = new HashMap<>();
+		Map<Long, Map<Long, FeeAssignment>> assignmentsByStudentId = new HashMap<>();
 		for (Long studentId : studentIds) {
-			feeStructureIdsByStudentId.put(studentId, new ArrayList<>());
+			assignmentsByStudentId.put(studentId, new HashMap<>());
 		}
-		for (FeeAssignment assignment : feeAssignmentRepository.findByTenantIdAndStudentIdIn(tenantId, studentIds)) {
-			feeStructureIdsByStudentId.get(assignment.getStudentId()).add(assignment.getFeeStructureId());
-		}
-		Map<Long, List<Long>> feeStructureIdsByClassroomId = classroomIds.isEmpty() ? Map.of()
+		// Classroom-scoped assignments applied first (lower precedence)...
+		Map<Long, List<FeeAssignment>> classroomAssignmentsByClassroomId = classroomIds.isEmpty() ? Map.of()
 				: feeAssignmentRepository.findByTenantIdAndClassroomIdIn(tenantId, classroomIds).stream()
-						.collect(Collectors.groupingBy(FeeAssignment::getClassroomId,
-								Collectors.mapping(FeeAssignment::getFeeStructureId, Collectors.toList())));
+						.collect(Collectors.groupingBy(FeeAssignment::getClassroomId));
 		for (Long studentId : studentIds) {
 			Long classroomId = currentClassroomIdByStudentId.get(studentId);
 			if (classroomId != null) {
-				feeStructureIdsByStudentId.get(studentId)
-						.addAll(feeStructureIdsByClassroomId.getOrDefault(classroomId, List.of()));
+				for (FeeAssignment assignment : classroomAssignmentsByClassroomId.getOrDefault(classroomId,
+						List.of())) {
+					assignmentsByStudentId.get(studentId).put(assignment.getFeeStructureId(), assignment);
+				}
 			}
 		}
+		// ...then student-scoped assignments override (higher precedence) for the same structure.
+		for (FeeAssignment assignment : feeAssignmentRepository.findByTenantIdAndStudentIdIn(tenantId, studentIds)) {
+			assignmentsByStudentId.get(assignment.getStudentId()).put(assignment.getFeeStructureId(), assignment);
+		}
 
-		Set<Long> allFeeStructureIds = feeStructureIdsByStudentId.values().stream()
-				.flatMap(List::stream)
+		Set<Long> allFeeStructureIds = assignmentsByStudentId.values().stream()
+				.flatMap(assignments -> assignments.keySet().stream())
 				.collect(Collectors.toSet());
 		Map<Long, FeeStructure> feeStructuresById = feeStructureRepository
 				.findAllByIdInAndTenantId(allFeeStructureIds, tenantId).stream()
@@ -147,15 +151,18 @@ public class FeePaymentService {
 				.findByStudentIdIn(tenantId, studentIds).stream()
 				.collect(Collectors.groupingBy(FeePayment::getStudentId));
 
+		LocalDate today = LocalDate.now();
 		Map<Long, List<FeeBalance>> result = new HashMap<>();
 		for (Long studentId : studentIds) {
 			List<FeePayment> payments = paymentsByStudentId.getOrDefault(studentId, List.of());
-			List<FeeBalance> balances = feeStructureIdsByStudentId.get(studentId).stream()
-					.distinct()
-					.map(feeStructuresById::get)
+			List<FeeBalance> balances = assignmentsByStudentId.get(studentId).entrySet().stream()
+					.map(entry -> {
+						FeeStructure structure = feeStructuresById.get(entry.getKey());
+						return structure == null ? null
+								: feeBalanceCalculator.calculate(structure, entry.getValue(),
+										totalPaidFor(payments, structure.getId()), today);
+					})
 					.filter(Objects::nonNull)
-					.map(structure -> feeBalanceCalculator.calculate(structure,
-							totalPaidFor(payments, structure.getId())))
 					.toList();
 			result.put(studentId, balances);
 		}
@@ -176,15 +183,18 @@ public class FeePaymentService {
 		return currentClassroomIdByStudentId;
 	}
 
-	private List<Long> resolveApplicableFeeStructureIds(Long tenantId, Student student) {
-		List<Long> direct = feeAssignmentRepository.findByTenantIdAndStudentId(tenantId, student.getId())
-				.stream().map(FeeAssignment::getFeeStructureId).toList();
-		Optional<Long> classroomId = resolveCurrentClassroomId(tenantId, student.getId());
-		List<Long> viaClassroom = classroomId
+	// Keyed by feeStructureId, one assignment per structure — a direct student-scoped assignment
+	// takes precedence over a classroom-scoped one for the same structure (applied second, so it
+	// overwrites), since a student-specific due-date/late-fee override is more specific.
+	private Map<Long, FeeAssignment> resolveApplicableAssignments(Long tenantId, Student student) {
+		Map<Long, FeeAssignment> byFeeStructureId = new HashMap<>();
+		resolveCurrentClassroomId(tenantId, student.getId())
 				.map(id -> feeAssignmentRepository.findByTenantIdAndClassroomId(tenantId, id))
 				.orElseGet(List::of)
-				.stream().map(FeeAssignment::getFeeStructureId).toList();
-		return Stream.concat(direct.stream(), viaClassroom.stream()).distinct().toList();
+				.forEach(assignment -> byFeeStructureId.put(assignment.getFeeStructureId(), assignment));
+		feeAssignmentRepository.findByTenantIdAndStudentId(tenantId, student.getId())
+				.forEach(assignment -> byFeeStructureId.put(assignment.getFeeStructureId(), assignment));
+		return byFeeStructureId;
 	}
 
 	private Optional<Long> resolveCurrentClassroomId(Long tenantId, Long studentId) {

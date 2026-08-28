@@ -69,7 +69,7 @@ class LeaveBalanceAllocationJobTest {
 
 		JobExecutionResult result = job.execute(context());
 
-		verify(leaveBalanceService, never()).allocateIfAbsent(any(), any(), any(), any());
+		verify(leaveBalanceService, never()).allocateWithCarryForward(any(), any(), any());
 		assertEquals(new JobExecutionResult.Success(Map.of("allocated", 0), null), result);
 	}
 
@@ -92,10 +92,10 @@ class LeaveBalanceAllocationJobTest {
 
 		JobExecutionResult result = job.execute(context());
 
-		verify(leaveBalanceService, times(1)).allocateIfAbsent(10L, 20L, 30L, BigDecimal.valueOf(12));
-		verify(leaveBalanceService, times(1)).allocateIfAbsent(11L, 20L, 30L, BigDecimal.valueOf(12));
-		verify(leaveBalanceService, times(1)).allocateIfAbsent(10L, 21L, 30L, BigDecimal.valueOf(6));
-		verify(leaveBalanceService, times(1)).allocateIfAbsent(11L, 21L, 30L, BigDecimal.valueOf(6));
+		verify(leaveBalanceService, times(1)).allocateWithCarryForward(teacherA, sick, academicYear);
+		verify(leaveBalanceService, times(1)).allocateWithCarryForward(teacherB, sick, academicYear);
+		verify(leaveBalanceService, times(1)).allocateWithCarryForward(teacherA, casual, academicYear);
+		verify(leaveBalanceService, times(1)).allocateWithCarryForward(teacherB, casual, academicYear);
 		assertEquals(new JobExecutionResult.Success(Map.of("allocated", 4), null), result);
 	}
 }

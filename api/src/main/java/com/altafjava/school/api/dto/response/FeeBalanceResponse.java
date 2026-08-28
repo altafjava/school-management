@@ -1,6 +1,7 @@
 package com.altafjava.school.api.dto.response;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public record FeeBalanceResponse(
 		Long feeStructureId,
@@ -8,5 +9,7 @@ public record FeeBalanceResponse(
 		BigDecimal amountDue,
 		BigDecimal amountPaid,
 		BigDecimal outstandingBalance,
-		BigDecimal overpaidAmount) {
+		BigDecimal overpaidAmount,
+		BigDecimal lateFeeAmount,
+		LocalDate dueDate) {
 }

@@ -30,6 +30,12 @@ public interface StudentClassroomLinkRepository extends JpaRepository<StudentCla
 	Page<StudentClassroomLink> findByClassroomId(@Param("tenantId") Long tenantId,
 			@Param("classroomId") Long classroomId, Pageable pageable);
 
+	// Unpaged variant for internal batch computations (e.g. ReportCardService's class-rank
+	// calculation) that need every classmate at once, not a page of them.
+	@Query("SELECT l FROM StudentClassroomLink l WHERE l.tenantId = :tenantId AND l.classroomId = :classroomId")
+	List<StudentClassroomLink> findAllByClassroomId(@Param("tenantId") Long tenantId,
+			@Param("classroomId") Long classroomId);
+
 	// Active roster size — @SQLRestriction("deleted = false") on StudentClassroomLink already
 	// excludes withdrawn links, so this is the live headcount for capacity enforcement.
 	@Query("SELECT COUNT(l) FROM StudentClassroomLink l WHERE l.tenantId = :tenantId AND l.classroomId = :classroomId")

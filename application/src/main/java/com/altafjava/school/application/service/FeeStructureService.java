@@ -65,4 +65,11 @@ public class FeeStructureService {
 		return feeStructureRevisionRepository.findByFeeStructureIdAndTenantId(TenantContext.getCurrentTenantId(),
 				feeStructure.getId(), pageable);
 	}
+
+	@Transactional
+	public FeeStructure configureLateFeePolicy(String publicId, Integer graceDays, BigDecimal lateFeePercentage) {
+		FeeStructure feeStructure = findByPublicId(publicId);
+		feeStructure.configureLateFeePolicy(graceDays, lateFeePercentage);
+		return feeStructureRepository.save(feeStructure);
+	}
 }

@@ -1,5 +1,7 @@
 package com.altafjava.school.application.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -83,11 +85,22 @@ public class FeeAssignmentService {
 
 	@Transactional
 	public void revoke(String assignmentPublicId) {
-		Long tenantId = TenantContext.getCurrentTenantId();
-		FeeAssignment assignment = feeAssignmentRepository
-				.findByPublicIdAndTenantId(UUID.fromString(assignmentPublicId), tenantId)
-				.orElseThrow(() -> new ResourceNotFoundException("FeeAssignment not found: " + assignmentPublicId));
+		FeeAssignment assignment = findByPublicId(assignmentPublicId);
 		assignment.softDelete("fee-assignment-revocation");
 		feeAssignmentRepository.save(assignment);
+	}
+
+	@Transactional
+	public FeeAssignment configureDueDate(String assignmentPublicId, LocalDate dueDate, Integer graceDays,
+			BigDecimal lateFeePercentage) {
+		FeeAssignment assignment = findByPublicId(assignmentPublicId);
+		assignment.configureDueDate(dueDate, graceDays, lateFeePercentage);
+		return feeAssignmentRepository.save(assignment);
+	}
+
+	private FeeAssignment findByPublicId(String assignmentPublicId) {
+		Long tenantId = TenantContext.getCurrentTenantId();
+		return feeAssignmentRepository.findByPublicIdAndTenantId(UUID.fromString(assignmentPublicId), tenantId)
+				.orElseThrow(() -> new ResourceNotFoundException("FeeAssignment not found: " + assignmentPublicId));
 	}
 }

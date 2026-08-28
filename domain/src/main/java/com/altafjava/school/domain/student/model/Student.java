@@ -114,4 +114,16 @@ public class Student extends SoftDeletableEntity {
 	public void updateAddress(Address address) {
 		this.address = Address.copyOf(address);
 	}
+
+	// GDPR/DPDP erasure (see DomainPiiHandler) — mirrors the platform's own User tombstone
+	// strategy: firstName/lastName can't go null (NOT NULL columns) so they get an opaque
+	// placeholder, everything else PII-bearing is cleared. studentCode/dateOfBirth are left
+	// intact — operational/academic identifiers, not personal-contact PII.
+	public void erasePii() {
+		this.firstName = "[erased]";
+		this.lastName = "[erased]";
+		this.email = null;
+		this.phone = null;
+		this.address = null;
+	}
 }

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import com.altafjava.school.domain.leave.model.LeaveRequest;
@@ -22,7 +23,8 @@ class PayrollCalculatorTest {
 	}
 
 	private LeaveRequest unpaidLeave(LocalDate start, LocalDate end) {
-		return LeaveRequest.submit(1L, 2L, 3L, start, end, "Personal");
+		long inclusiveDays = ChronoUnit.DAYS.between(start, end) + 1;
+		return LeaveRequest.submit(1L, 2L, 3L, start, end, "Personal", BigDecimal.valueOf(inclusiveDays));
 	}
 
 	@Test

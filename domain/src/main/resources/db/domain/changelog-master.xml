@@ -45,5 +45,9 @@
     <include file="db/domain/changesets/038-correction-history.xml"/>
     <include file="db/domain/changesets/039-address-phone.xml"/>
     <include file="db/domain/changesets/040-custom-field-validation-rules.xml"/>
+    <include file="db/domain/changesets/041-holidays.xml"/>
+    <include file="db/domain/changesets/042-leave-carry-forward-probation.xml"/>
+    <include file="db/domain/changesets/043-fee-late-fee-policy.xml"/>
+    <include file="db/domain/changesets/044-report-card-template-remarks.xml"/>
 
 </databaseChangeLog>

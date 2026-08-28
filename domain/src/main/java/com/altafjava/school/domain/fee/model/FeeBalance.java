@@ -1,6 +1,7 @@
 package com.altafjava.school.domain.fee.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public record FeeBalance(
 		Long feeStructureId,
@@ -8,5 +9,7 @@ public record FeeBalance(
 		BigDecimal amountDue,
 		BigDecimal amountPaid,
 		BigDecimal outstandingBalance,
-		BigDecimal overpaidAmount) {
+		BigDecimal overpaidAmount,
+		BigDecimal lateFeeAmount,
+		LocalDate dueDate) {
 }

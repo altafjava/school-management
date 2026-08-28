@@ -35,6 +35,12 @@ public class ReportCard extends SoftDeletableEntity {
 	@Column(name = "generated_at", nullable = false)
 	private Instant generatedAt;
 
+	@Column(name = "teacher_remarks", length = 1000)
+	private String teacherRemarks;
+
+	@Column(name = "principal_remarks", length = 1000)
+	private String principalRemarks;
+
 	public static ReportCard create(Long studentId, Long termId, String storageKey) {
 		return ReportCard.builder()
 				.studentId(studentId)
@@ -42,5 +48,10 @@ public class ReportCard extends SoftDeletableEntity {
 				.storageKey(storageKey)
 				.generatedAt(Instant.now())
 				.build();
+	}
+
+	public void addRemarks(String teacherRemarks, String principalRemarks) {
+		this.teacherRemarks = teacherRemarks;
+		this.principalRemarks = principalRemarks;
 	}
 }

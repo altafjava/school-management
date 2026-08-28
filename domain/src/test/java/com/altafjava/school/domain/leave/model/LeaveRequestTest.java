@@ -10,14 +10,17 @@ import com.altafjava.platform.core.exception.BusinessException;
 class LeaveRequestTest {
 
 	private LeaveRequest submitted(LocalDate startDate, LocalDate endDate) {
-		return LeaveRequest.submit(1L, 2L, 3L, startDate, endDate, "Family event");
+		return LeaveRequest.submit(1L, 2L, 3L, startDate, endDate, "Family event", BigDecimal.valueOf(3));
 	}
 
 	@Test
-	void submit_computesInclusiveDayCount() {
-		LeaveRequest request = submitted(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 3));
+	void submit_storesProvidedDaysRequested() {
+		LeaveRequest request = LeaveRequest.submit(1L, 2L, 3L, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 3),
+				"Family event", BigDecimal.valueOf(2));
 
-		assertEquals(0, BigDecimal.valueOf(3).compareTo(request.getDaysRequested()));
+		// daysRequested is caller-computed (LeaveDayCalculator, holiday-aware) — this entity just
+		// persists whatever value it's given, it does not recompute from start/end itself.
+		assertEquals(0, BigDecimal.valueOf(2).compareTo(request.getDaysRequested()));
 		assertEquals(LeaveRequestStatus.PENDING, request.getStatus());
 	}
 

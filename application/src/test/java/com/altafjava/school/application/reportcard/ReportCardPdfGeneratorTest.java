@@ -7,12 +7,23 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
+import com.altafjava.school.application.customfield.CustomFieldValue;
+import com.altafjava.school.domain.attendance.model.AttendancePercentage;
+import com.altafjava.school.domain.customfield.model.CustomFieldType;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.term.model.Term;
 
 class ReportCardPdfGeneratorTest {
 
-	private final ReportCardPdfGenerator generator = new ReportCardPdfGenerator();
+	// A real, unconfigured MessageSource — no tenant overrides/classpath bundle entries registered,
+	// so every label lookup falls through to the caller-supplied default message. Avoids mocking a
+	// framework type for what is, in every test here, a pass-through.
+	private final ReportCardPdfGenerator generator = new ReportCardPdfGenerator(new StaticMessageSource());
+
+	private ReportCardExtras defaultExtras() {
+		return new ReportCardExtras(false, false, false, false, null, null, List.of(), null, null, null, null);
+	}
 
 	@Test
 	void generate_withLines_producesNonEmptyValidPdf() {
@@ -21,7 +32,8 @@ class ReportCardPdfGeneratorTest {
 		List<ReportCardLine> lines = List.of(
 				new ReportCardLine("Mathematics", "Midterm", BigDecimal.valueOf(85), BigDecimal.valueOf(100), "A"));
 
-		byte[] pdf = generator.generate(student, term, lines, "Test School", null, java.util.Locale.US);
+		byte[] pdf = generator.generate(student, term, lines, "Test School", null, java.util.Locale.US,
+				defaultExtras());
 
 		assertValidPdf(pdf);
 	}
@@ -31,7 +43,8 @@ class ReportCardPdfGeneratorTest {
 		Student student = Student.create("STU-002", "Bob", "Jones", "bob@school.test", LocalDate.of(2011, 2, 2));
 		Term term = Term.create("Term 1", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), 1L);
 
-		byte[] pdf = generator.generate(student, term, List.of(), "Test School", null, java.util.Locale.US);
+		byte[] pdf = generator.generate(student, term, List.of(), "Test School", null, java.util.Locale.US,
+				defaultExtras());
 
 		assertValidPdf(pdf);
 	}
@@ -43,7 +56,8 @@ class ReportCardPdfGeneratorTest {
 		List<ReportCardLine> lines = List.of(
 				new ReportCardLine("Science", "Final", BigDecimal.valueOf(70), BigDecimal.valueOf(100), "B"));
 
-		byte[] pdf = generator.generate(student, term, lines, "Branded School", onePixelPng(), java.util.Locale.US);
+		byte[] pdf = generator.generate(student, term, lines, "Branded School", onePixelPng(), java.util.Locale.US,
+				defaultExtras());
 
 		assertValidPdf(pdf);
 	}
@@ -54,7 +68,22 @@ class ReportCardPdfGeneratorTest {
 		Term term = Term.create("Term 1", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), 1L);
 
 		byte[] pdf = generator.generate(student, term, List.of(), "Test School", new byte[] { 1, 2, 3 },
-				java.util.Locale.US);
+				java.util.Locale.US, defaultExtras());
+
+		assertValidPdf(pdf);
+	}
+
+	@Test
+	void generate_withEveryOptionalSectionEnabled_stillProducesValidPdf() {
+		Student student = Student.create("STU-005", "Eve", "Chen", "eve@school.test", LocalDate.of(2010, 5, 5));
+		Term term = Term.create("Term 1", LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 31), 1L);
+		CustomFieldValue competency = new CustomFieldValue("teamwork", "Teamwork", CustomFieldType.TEXT, false,
+				"Excellent", List.of(), 0, "Competencies");
+		ReportCardExtras extras = new ReportCardExtras(true, true, true, true,
+				new AttendancePercentage(18, 20, BigDecimal.valueOf(90)), 2, List.of(competency), "5", "A",
+				"Great progress this term.", "Keep up the good work.");
+
+		byte[] pdf = generator.generate(student, term, List.of(), "Test School", null, java.util.Locale.US, extras);
 
 		assertValidPdf(pdf);
 	}

@@ -7,5 +7,9 @@ public record LeaveTypeResponse(
 		String name,
 		BigDecimal defaultAnnualDays,
 		boolean active,
-		boolean paid) {
+		boolean paid,
+		boolean availableDuringProbation,
+		boolean carryForwardEnabled,
+		BigDecimal maxCarryForwardDays,
+		Integer carryForwardExpiryMonths) {
 }

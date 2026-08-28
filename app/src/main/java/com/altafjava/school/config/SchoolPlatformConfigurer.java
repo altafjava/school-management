@@ -3,10 +3,13 @@ package com.altafjava.school.config;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.PlatformConfigurer;
+import com.altafjava.platform.core.privacy.DomainPiiHandler;
 import com.altafjava.platform.core.sync.OfflineSyncEntityHandler;
+import com.altafjava.school.application.privacy.StudentGuardianPiiHandler;
 import com.altafjava.school.application.sync.AttendanceOfflineSyncHandler;
 import com.altafjava.school.domain.metrics.SchoolMetricTypes;
 
@@ -22,14 +25,22 @@ public class SchoolPlatformConfigurer implements PlatformConfigurer {
 	// handler with any in-memory state would lose it between calls if reconstructed each time
 	// (see PlatformConfigurer#offlineSyncEntityHandlers's Javadoc).
 	private final Map<String, OfflineSyncEntityHandler> offlineSyncEntityHandlers;
+	private final StudentGuardianPiiHandler studentGuardianPiiHandler;
 
-	public SchoolPlatformConfigurer(AttendanceOfflineSyncHandler attendanceOfflineSyncHandler) {
+	public SchoolPlatformConfigurer(AttendanceOfflineSyncHandler attendanceOfflineSyncHandler,
+			StudentGuardianPiiHandler studentGuardianPiiHandler) {
 		this.offlineSyncEntityHandlers = Map.of("attendance", attendanceOfflineSyncHandler);
+		this.studentGuardianPiiHandler = studentGuardianPiiHandler;
 	}
 
 	@Override
 	public Map<String, OfflineSyncEntityHandler> offlineSyncEntityHandlers() {
 		return offlineSyncEntityHandlers;
+	}
+
+	@Override
+	public Optional<DomainPiiHandler> domainPiiHandler() {
+		return Optional.of(studentGuardianPiiHandler);
 	}
 
 	@Override

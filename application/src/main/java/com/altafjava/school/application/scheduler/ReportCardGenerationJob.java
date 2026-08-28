@@ -73,7 +73,7 @@ public class ReportCardGenerationJob implements JobExecutionStrategy {
 		int generatedCount = 0;
 		for (Student student : activeStudents) {
 			try {
-				reportCardService.generate(student.getId(), currentTerm.getId());
+				reportCardService.generate(student.getId(), currentTerm.getId(), null, null);
 				generatedCount++;
 			} catch (RuntimeException ex) {
 				log.error("action=report-card-generation-failed studentId={} termId={}", student.getId(),

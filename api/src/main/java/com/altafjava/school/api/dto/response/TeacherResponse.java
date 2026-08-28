@@ -13,5 +13,6 @@ public record TeacherResponse(
 		Long departmentId,
 		String qualification,
 		String employmentType,
-		AddressResponse address) {
+		AddressResponse address,
+		LocalDate probationEndDate) {
 }

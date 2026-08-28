@@ -2,8 +2,8 @@ package com.altafjava.school.application.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +30,7 @@ import com.altafjava.school.domain.leave.model.LeaveType;
 import com.altafjava.school.domain.leave.repository.LeaveBalanceRepository;
 import com.altafjava.school.domain.leave.repository.LeaveRequestRepository;
 import com.altafjava.school.domain.leave.repository.LeaveTypeRepository;
+import com.altafjava.school.domain.leave.service.LeaveDayCalculator;
 import com.altafjava.school.domain.teacher.model.Teacher;
 import com.altafjava.school.domain.teacher.repository.TeacherRepository;
 
@@ -43,11 +44,13 @@ public class LeaveRequestService {
 	private final AcademicYearRepository academicYearRepository;
 	private final TenantAdminNotifier tenantAdminNotifier;
 	private final NotificationService notificationService;
+	private final HolidayService holidayService;
+	private final LeaveDayCalculator leaveDayCalculator = new LeaveDayCalculator();
 
 	public LeaveRequestService(LeaveRequestRepository leaveRequestRepository, LeaveTypeRepository leaveTypeRepository,
 			LeaveBalanceRepository leaveBalanceRepository, TeacherRepository teacherRepository,
 			AcademicYearRepository academicYearRepository, TenantAdminNotifier tenantAdminNotifier,
-			NotificationService notificationService) {
+			NotificationService notificationService, HolidayService holidayService) {
 		this.leaveRequestRepository = leaveRequestRepository;
 		this.leaveTypeRepository = leaveTypeRepository;
 		this.leaveBalanceRepository = leaveBalanceRepository;
@@ -55,6 +58,7 @@ public class LeaveRequestService {
 		this.academicYearRepository = academicYearRepository;
 		this.tenantAdminNotifier = tenantAdminNotifier;
 		this.notificationService = notificationService;
+		this.holidayService = holidayService;
 	}
 
 	@Transactional(readOnly = true)
@@ -76,14 +80,21 @@ public class LeaveRequestService {
 		LeaveType leaveType = findLeaveType(tenantId, leaveTypePublicId);
 		AcademicYear academicYear = academicYearRepository.findByCurrentTrueAndTenantId(tenantId)
 				.orElseThrow(() -> new BusinessException("No current academic year configured for this tenant"));
+		if (teacher.isOnProbation(LocalDate.now()) && !leaveType.isAvailableDuringProbation()) {
+			throw new BusinessException(
+					"Leave type '" + leaveType.getName() + "' is not available during probation");
+		}
+
+		Set<LocalDate> holidayDates = holidayService.datesInRange(tenantId, startDate, endDate);
+		BigDecimal daysRequested = leaveDayCalculator.calculateDays(startDate, endDate, holidayDates);
 
 		leaveBalanceRepository
 				.findByTeacherIdAndLeaveTypeIdAndAcademicYearIdAndTenantId(teacher.getId(), leaveType.getId(),
 						academicYear.getId(), tenantId)
-				.ifPresent(balance -> validateSufficientBalance(balance, startDate, endDate));
+				.ifPresent(balance -> validateSufficientBalance(balance, daysRequested));
 
 		LeaveRequest request = LeaveRequest.submit(teacher.getId(), leaveType.getId(), academicYear.getId(),
-				startDate, endDate, reason);
+				startDate, endDate, reason, daysRequested);
 		LeaveRequest saved = leaveRequestRepository.save(request);
 		notifyAdminsOfRequest(tenantId, teacher, leaveType, saved);
 		return saved;
@@ -138,11 +149,10 @@ public class LeaveRequestService {
 		return leaveRequestRepository.save(request);
 	}
 
-	private void validateSufficientBalance(LeaveBalance balance, LocalDate startDate, LocalDate endDate) {
-		long inclusiveDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
-		if (BigDecimal.valueOf(inclusiveDays).compareTo(balance.remainingDays()) > 0) {
+	private void validateSufficientBalance(LeaveBalance balance, BigDecimal daysRequested) {
+		if (daysRequested.compareTo(balance.remainingDays()) > 0) {
 			throw new BusinessException(
-					"Insufficient leave balance: requested " + inclusiveDays + ", remaining "
+					"Insufficient leave balance: requested " + daysRequested + ", remaining "
 							+ balance.remainingDays());
 		}
 	}

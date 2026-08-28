@@ -254,10 +254,13 @@ public class StudentController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
 	public ReportCardResponse generateReportCard(@PathVariable String publicId,
-			@RequestParam String termPublicId) {
+			@RequestParam String termPublicId,
+			@RequestParam(required = false) String teacherRemarks,
+			@RequestParam(required = false) String principalRemarks) {
 		Student student = studentService.findByPublicId(publicId);
 		var term = termService.findByPublicId(termPublicId);
-		ReportCard reportCard = reportCardService.generate(student.getId(), term.getId());
+		ReportCard reportCard = reportCardService.generate(student.getId(), term.getId(), teacherRemarks,
+				principalRemarks);
 		return reportCardMapper.toResponse(reportCard);
 	}
 

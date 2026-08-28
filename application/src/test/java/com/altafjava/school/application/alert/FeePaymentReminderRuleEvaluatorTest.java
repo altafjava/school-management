@@ -58,7 +58,7 @@ class FeePaymentReminderRuleEvaluatorTest {
 				.thenReturn(List.of(student));
 		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
 				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000),
-						BigDecimal.valueOf(400), BigDecimal.valueOf(600), BigDecimal.ZERO))));
+						BigDecimal.valueOf(400), BigDecimal.valueOf(600), BigDecimal.ZERO, BigDecimal.ZERO, null))));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.of(42L));
 
 		List<AlertTrigger> triggers = evaluator.evaluate(rule());
@@ -78,7 +78,7 @@ class FeePaymentReminderRuleEvaluatorTest {
 				.thenReturn(List.of(student));
 		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
 				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000),
-						BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.ZERO))));
+						BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null))));
 
 		assertTrue(evaluator.evaluate(rule()).isEmpty());
 	}
@@ -91,7 +91,7 @@ class FeePaymentReminderRuleEvaluatorTest {
 				.thenReturn(List.of(student));
 		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
 				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000),
-						BigDecimal.ZERO, BigDecimal.valueOf(1000), BigDecimal.ZERO))));
+						BigDecimal.ZERO, BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.ZERO, null))));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.empty());
 
 		assertTrue(evaluator.evaluate(rule()).isEmpty());
@@ -107,9 +107,9 @@ class FeePaymentReminderRuleEvaluatorTest {
 		when(feePaymentService.calculateBalancesForStudents(1L, List.of(studentA, studentB)))
 				.thenReturn(Map.of(
 						1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(500), BigDecimal.ZERO,
-								BigDecimal.valueOf(500), BigDecimal.ZERO)),
+								BigDecimal.valueOf(500), BigDecimal.ZERO, BigDecimal.ZERO, null)),
 						2L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(500), BigDecimal.ZERO,
-								BigDecimal.valueOf(500), BigDecimal.ZERO))));
+								BigDecimal.valueOf(500), BigDecimal.ZERO, BigDecimal.ZERO, null))));
 		when(recipientResolver.resolve(1L, studentA)).thenReturn(Optional.of(41L));
 		when(recipientResolver.resolve(1L, studentB)).thenReturn(Optional.of(42L));
 

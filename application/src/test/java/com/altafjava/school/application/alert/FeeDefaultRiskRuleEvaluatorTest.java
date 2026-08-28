@@ -84,7 +84,7 @@ class FeeDefaultRiskRuleEvaluatorTest {
 				.thenReturn(List.of(student));
 		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
 				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(2000),
-						BigDecimal.ZERO, BigDecimal.valueOf(1500), BigDecimal.ZERO))));
+						BigDecimal.ZERO, BigDecimal.valueOf(1500), BigDecimal.ZERO, BigDecimal.ZERO, null))));
 		stubStaffUsers(userWithId(90L), userWithId(91L));
 
 		List<AlertTrigger> triggers = evaluator.evaluate(ruleWithThreshold(1000));
@@ -103,7 +103,7 @@ class FeeDefaultRiskRuleEvaluatorTest {
 				.thenReturn(List.of(student));
 		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
 				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(2000),
-						BigDecimal.valueOf(1500), BigDecimal.valueOf(500), BigDecimal.ZERO))));
+						BigDecimal.valueOf(1500), BigDecimal.valueOf(500), BigDecimal.ZERO, BigDecimal.ZERO, null))));
 
 		assertTrue(evaluator.evaluate(ruleWithThreshold(1000)).isEmpty());
 	}

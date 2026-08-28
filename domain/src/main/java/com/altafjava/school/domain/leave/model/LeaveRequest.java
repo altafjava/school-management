@@ -3,7 +3,6 @@ package com.altafjava.school.domain.leave.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -63,19 +62,20 @@ public class LeaveRequest extends SoftDeletableEntity {
 	@Column(name = "rejection_reason", length = 500)
 	private String rejectionReason;
 
+	// daysRequested is precomputed by the caller (LeaveDayCalculator, given the tenant's holiday
+	// calendar) rather than derived here — this entity has no way to reach holiday data itself.
 	public static LeaveRequest submit(Long teacherId, Long leaveTypeId, Long academicYearId, LocalDate startDate,
-			LocalDate endDate, String reason) {
+			LocalDate endDate, String reason, BigDecimal daysRequested) {
 		if (endDate.isBefore(startDate)) {
 			throw new BusinessException("Leave end date cannot be before the start date");
 		}
-		long inclusiveDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
 		return LeaveRequest.builder()
 				.teacherId(teacherId)
 				.leaveTypeId(leaveTypeId)
 				.academicYearId(academicYearId)
 				.startDate(startDate)
 				.endDate(endDate)
-				.daysRequested(BigDecimal.valueOf(inclusiveDays))
+				.daysRequested(daysRequested)
 				.reason(reason)
 				.status(LeaveRequestStatus.PENDING)
 				.build();

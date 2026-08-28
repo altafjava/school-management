@@ -19,6 +19,12 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
 	@Query("SELECT g FROM Grade g WHERE g.tenantId = :tenantId AND g.studentId = :studentId")
 	List<Grade> findByStudentId(@Param("tenantId") Long tenantId, @Param("studentId") Long studentId);
 
+	// Batched alternative to findByStudentId for callers (ReportCardService's class-rank
+	// calculation) that need every classmate's grades in one query instead of one per student.
+	@Query("SELECT g FROM Grade g WHERE g.tenantId = :tenantId AND g.studentId IN :studentIds")
+	List<Grade> findByStudentIdInAndTenantId(@Param("studentIds") List<Long> studentIds,
+			@Param("tenantId") Long tenantId);
+
 	Page<Grade> findByStudentIdAndTenantId(Long studentId, Long tenantId, Pageable pageable);
 
 	boolean existsByStudentIdAndExamIdAndTenantId(Long studentId, Long examId, Long tenantId);
