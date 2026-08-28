@@ -1,12 +1,14 @@
 package com.altafjava.school.domain.guardian.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
 import com.altafjava.platform.core.security.annotation.Pii;
+import com.altafjava.school.domain.common.model.Address;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -41,6 +43,9 @@ public class Guardian extends SoftDeletableEntity {
 	@Column(name = "user_id")
 	private Long userId;
 
+	@Embedded
+	private Address address;
+
 	public static Guardian create(String firstName, String lastName, String email, String phone, Long userId) {
 		return Guardian.builder()
 				.firstName(firstName)
@@ -56,5 +61,13 @@ public class Guardian extends SoftDeletableEntity {
 			throw new BusinessException("Guardian is already linked to a user account");
 		}
 		this.userId = userId;
+	}
+
+	public void updateAddress(Address address) {
+		this.address = Address.copyOf(address);
+	}
+
+	public void updatePhone(String phone) {
+		this.phone = phone;
 	}
 }

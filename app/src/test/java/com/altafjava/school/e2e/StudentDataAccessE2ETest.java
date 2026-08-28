@@ -250,7 +250,7 @@ class StudentDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + adminToken)
 				.contentType(ContentType.JSON)
 				.body("{\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"email\":\"jane-"
-						+ UUID.randomUUID().toString().substring(0, 8) + "@school.test\",\"phone\":\"555-0100\","
+						+ UUID.randomUUID().toString().substring(0, 8) + "@school.test\",\"phone\":\"+14155552671\","
 						+ "\"userId\":" + userId + "}")
 				.when()
 				.post("/api/v1/guardians")

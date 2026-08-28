@@ -312,7 +312,7 @@ Settled decisions — don't reopen without a new, concrete trigger.
 - Don't abstract Hibernate annotations (`@SQLRestriction`, `@Filter`, `@Cache`) behind a platform interface in `domain` — no ORM-swap plan.
 - No `StructuredTaskScope` in production code — still a JDK preview feature (JEP 505).
 - No blanket `@Async` → virtual-thread conversion — must be bound-sized and load-tested per executor.
-- No JVM/GC/CDS tuning in-repo — `Dockerfile` (added Phase 0, 2026-08-17) builds `:app:bootJar` into a minimal, non-root runtime image; `JAVA_OPTS` is environment-overridable and empty by default rather than baked in. CI builds it (`docker-build` job in `ci.yml`) but does not yet push to a registry — no registry has been provisioned.
+- No JVM/GC/CDS tuning in-repo — `Dockerfile` (added Phase 0, 2026-08-17) builds `:app:bootJar` into a minimal, non-root runtime image; `JAVA_OPTS` is environment-overridable and empty by default rather than baked in. CI (`docker-build.yml`) builds and pushes it to `ghcr.io/<org>/school-saas` (tagged `:<sha>` and `:latest`) on every push to `main`; `k8s/base/` holds the corresponding deployment manifests (adapted from platform-saas's template).
 - No second extension mechanism alongside `PlatformConfigurer`.
 
 ---

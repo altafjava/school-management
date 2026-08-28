@@ -66,7 +66,7 @@ class GuardianTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 	@Test
 	void guardianCreatedUnderTenantA_isNotVisibleToTenantB() {
 		activateTenant(tenantA);
-		guardianService.create("Jane", "Doe", "jane@guardian-a.test", "555-0100", null);
+		guardianService.create("Jane", "Doe", "jane@guardian-a.test", "+14155552671", null);
 
 		activateTenant(tenantB);
 		Page<Guardian> tenantBGuardians = guardianService.listGuardians(PageRequest.of(0, 100));
@@ -79,7 +79,7 @@ class GuardianTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 	@Test
 	void guardianPublicId_notAccessibleAcrossTenants() {
 		activateTenant(tenantA);
-		Guardian guardian = guardianService.create("Jane", "Doe", "jane@guardian-a.test", "555-0100", null);
+		Guardian guardian = guardianService.create("Jane", "Doe", "jane@guardian-a.test", "+14155552671", null);
 		String publicId = guardian.getPublicId().toString();
 
 		activateTenant(tenantB);
@@ -95,7 +95,7 @@ class GuardianTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 				LocalDate.of(2010, 1, 1));
 
 		activateTenant(tenantB);
-		Guardian guardianB = guardianService.create("Bob", "Jones", "bob@guardian-b.test", "555-0200", null);
+		Guardian guardianB = guardianService.create("Bob", "Jones", "bob@guardian-b.test", "+14155552672", null);
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> guardianService.linkToStudent(guardianB.getPublicId().toString(),
@@ -108,7 +108,7 @@ class GuardianTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		activateTenant(tenantA);
 		Student studentA = studentService.enroll("STU-GTI-2", "Alice", "Smith", "alice2@guardian-a.test",
 				LocalDate.of(2010, 1, 1));
-		Guardian guardianA = guardianService.create("Jane", "Doe", "jane2@guardian-a.test", "555-0101", null);
+		Guardian guardianA = guardianService.create("Jane", "Doe", "jane2@guardian-a.test", "+14155552673", null);
 		StudentGuardianLink link = guardianService.linkToStudent(guardianA.getPublicId().toString(),
 				studentA.getPublicId().toString(), RelationshipType.MOTHER, true);
 

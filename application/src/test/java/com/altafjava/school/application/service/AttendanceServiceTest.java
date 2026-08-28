@@ -20,7 +20,9 @@ import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
 import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.attendance.model.Attendance;
+import com.altafjava.school.domain.attendance.model.AttendanceCorrection;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
+import com.altafjava.school.domain.attendance.repository.AttendanceCorrectionRepository;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
 import com.altafjava.school.domain.classroom.model.StudentClassroomLink;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
@@ -32,6 +34,8 @@ class AttendanceServiceTest {
 
 	@Mock
 	private AttendanceRepository attendanceRepository;
+	@Mock
+	private AttendanceCorrectionRepository attendanceCorrectionRepository;
 	@Mock
 	private StudentRepository studentRepository;
 	@Mock
@@ -47,8 +51,9 @@ class AttendanceServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		attendanceService = new AttendanceService(attendanceRepository, studentRepository, classroomRepository,
-				studentClassroomLinkRepository, studentDataAccessGuard, teacherClassroomScopeResolver);
+		attendanceService = new AttendanceService(attendanceRepository, attendanceCorrectionRepository,
+				studentRepository, classroomRepository, studentClassroomLinkRepository, studentDataAccessGuard,
+				teacherClassroomScopeResolver);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -193,5 +198,38 @@ class AttendanceServiceTest {
 						LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31)));
 
 		verify(studentDataAccessGuard, never()).assertCanView(any(), any());
+	}
+
+	@Test
+	void updateStatus_statusActuallyChanges_recordsCorrection() {
+		String publicId = "11111111-1111-1111-1111-111111111111";
+		Attendance attendance = Attendance.create(1L, 10L, LocalDate.now(), AttendanceStatus.ABSENT, "teacher");
+		attendance.setId(55L);
+		when(attendanceRepository.findByPublicIdAndTenantId(java.util.UUID.fromString(publicId), 1L))
+				.thenReturn(Optional.of(attendance));
+		when(attendanceRepository.save(any(Attendance.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		attendanceService.updateStatus(publicId, AttendanceStatus.PRESENT);
+
+		org.mockito.ArgumentCaptor<AttendanceCorrection> captor = org.mockito.ArgumentCaptor
+				.forClass(AttendanceCorrection.class);
+		verify(attendanceCorrectionRepository).save(captor.capture());
+		org.junit.jupiter.api.Assertions.assertEquals(55L, captor.getValue().getAttendanceId());
+		org.junit.jupiter.api.Assertions.assertEquals(AttendanceStatus.ABSENT, captor.getValue().getOldStatus());
+		org.junit.jupiter.api.Assertions.assertEquals(AttendanceStatus.PRESENT, captor.getValue().getNewStatus());
+	}
+
+	@Test
+	void updateStatus_statusUnchanged_doesNotRecordCorrection() {
+		String publicId = "11111111-1111-1111-1111-111111111111";
+		Attendance attendance = Attendance.create(1L, 10L, LocalDate.now(), AttendanceStatus.PRESENT, "teacher");
+		attendance.setId(55L);
+		when(attendanceRepository.findByPublicIdAndTenantId(java.util.UUID.fromString(publicId), 1L))
+				.thenReturn(Optional.of(attendance));
+		when(attendanceRepository.save(any(Attendance.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		attendanceService.updateStatus(publicId, AttendanceStatus.PRESENT);
+
+		verify(attendanceCorrectionRepository, never()).save(any());
 	}
 }

@@ -14,11 +14,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateGuardianRequest;
 import com.altafjava.school.api.dto.request.LinkGuardianRequest;
+import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
 import com.altafjava.school.api.dto.response.GuardianResponse;
 import com.altafjava.school.api.dto.response.StudentGuardianLinkResponse;
 import com.altafjava.school.api.dto.response.StudentResponse;
+import com.altafjava.school.api.mapper.AddressMapper;
 import com.altafjava.school.api.mapper.GuardianMapper;
 import com.altafjava.school.api.mapper.StudentGuardianLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
@@ -32,16 +35,18 @@ public class GuardianController {
 
 	private final GuardianService guardianService;
 	private final GuardianMapper guardianMapper;
+	private final AddressMapper addressMapper;
 	private final StudentGuardianLinkMapper studentGuardianLinkMapper;
 	private final StudentMapper studentMapper;
 
 	private final SpringDataPageableResolver pageableResolver;
 
 	public GuardianController(GuardianService guardianService, GuardianMapper guardianMapper,
-			StudentGuardianLinkMapper studentGuardianLinkMapper, StudentMapper studentMapper,
-			SpringDataPageableResolver pageableResolver) {
+			AddressMapper addressMapper, StudentGuardianLinkMapper studentGuardianLinkMapper,
+			StudentMapper studentMapper, SpringDataPageableResolver pageableResolver) {
 		this.guardianService = guardianService;
 		this.guardianMapper = guardianMapper;
+		this.addressMapper = addressMapper;
 		this.studentGuardianLinkMapper = studentGuardianLinkMapper;
 		this.studentMapper = studentMapper;
 		this.pageableResolver = pageableResolver;
@@ -72,6 +77,19 @@ public class GuardianController {
 				request.email(),
 				request.phone(),
 				request.userId()));
+	}
+
+	@PatchMapping("/{publicId}/address")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public GuardianResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
+		return guardianMapper.toResponse(guardianService.updateAddress(publicId, addressMapper.toDomain(request)));
+	}
+
+	@PatchMapping("/{publicId}/phone")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public GuardianResponse updatePhone(@PathVariable String publicId,
+			@Valid @RequestBody UpdatePhoneRequest request) {
+		return guardianMapper.toResponse(guardianService.updatePhone(publicId, request.phone()));
 	}
 
 	@PostMapping("/{publicId}/students")

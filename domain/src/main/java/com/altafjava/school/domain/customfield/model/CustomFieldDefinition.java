@@ -1,6 +1,7 @@
 package com.altafjava.school.domain.customfield.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -50,6 +51,16 @@ public class CustomFieldDefinition extends SoftDeletableEntity {
 	@Column(name = "active", nullable = false)
 	private boolean active;
 
+	@Embedded
+	private CustomFieldValidationRule validationRule;
+
+	// Rendering hints for a frontend form builder — never interpreted by this backend itself.
+	@Column(name = "display_order", nullable = false)
+	private int displayOrder;
+
+	@Column(name = "display_group", length = 100)
+	private String displayGroup;
+
 	public static CustomFieldDefinition create(CustomFieldEntityType entityType, String fieldKey, String label,
 			CustomFieldType fieldType, boolean required) {
 		return CustomFieldDefinition.builder()
@@ -59,6 +70,7 @@ public class CustomFieldDefinition extends SoftDeletableEntity {
 				.fieldType(fieldType)
 				.required(required)
 				.active(true)
+				.validationRule(CustomFieldValidationRule.builder().build())
 				.build();
 	}
 
@@ -66,6 +78,22 @@ public class CustomFieldDefinition extends SoftDeletableEntity {
 		this.label = label;
 		this.fieldType = fieldType;
 		this.required = required;
+	}
+
+	public void updateValidationRule(CustomFieldValidationRule validationRule) {
+		this.validationRule = validationRule != null ? validationRule : CustomFieldValidationRule.builder().build();
+	}
+
+	// Hibernate collapses an @Embedded value back to null on load when every one of its mapped
+	// columns is null (e.g. a definition created before validationRule existed, or one that never
+	// set any rule) — callers must never see that null, only an empty rule.
+	public CustomFieldValidationRule getValidationRule() {
+		return validationRule != null ? validationRule : CustomFieldValidationRule.builder().build();
+	}
+
+	public void reorder(int displayOrder, String displayGroup) {
+		this.displayOrder = displayOrder;
+		this.displayGroup = displayGroup;
 	}
 
 	public void activate() {

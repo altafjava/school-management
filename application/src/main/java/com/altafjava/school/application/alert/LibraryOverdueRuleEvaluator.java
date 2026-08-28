@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.application.alert.AlertRuleEvaluator;
 import com.altafjava.platform.application.alert.AlertTrigger;
@@ -49,23 +51,35 @@ public class LibraryOverdueRuleEvaluator implements AlertRuleEvaluator {
 		int graceDays = rule.getThresholdValue() != null ? rule.getThresholdValue().intValue() : DEFAULT_GRACE_DAYS;
 		LocalDate today = LocalDate.now();
 
+		List<Circulation> overdueCirculations = circulationRepository.findAllByTenantIdAndReturnedAtIsNull(tenantId)
+				.stream()
+				.filter(circulation -> today.isAfter(circulation.getDueDate().plusDays(graceDays)))
+				.toList();
+		if (overdueCirculations.isEmpty()) {
+			return List.of();
+		}
+
+		List<Long> studentIds = overdueCirculations.stream()
+				.map(Circulation::getStudentId)
+				.distinct()
+				.toList();
+		Map<Long, Student> studentsById = studentRepository.findAllByIdInAndTenantId(studentIds, tenantId).stream()
+				.collect(Collectors.toMap(Student::getId, Function.identity()));
+
 		List<AlertTrigger> triggers = new ArrayList<>();
-		for (Circulation circulation : circulationRepository.findAllByTenantIdAndReturnedAtIsNull(tenantId)) {
-			if (today.isAfter(circulation.getDueDate().plusDays(graceDays))) {
-				buildTrigger(tenantId, circulation).ifPresent(triggers::add);
+		for (Circulation circulation : overdueCirculations) {
+			Student student = studentsById.get(circulation.getStudentId());
+			if (student != null) {
+				buildTrigger(tenantId, circulation, student).ifPresent(triggers::add);
 			}
 		}
 		return triggers;
 	}
 
-	private Optional<AlertTrigger> buildTrigger(Long tenantId, Circulation circulation) {
-		Optional<Student> student = studentRepository.findByIdAndTenantId(circulation.getStudentId(), tenantId);
-		if (student.isEmpty()) {
-			return Optional.empty();
-		}
-		return recipientResolver.resolve(tenantId, student.get())
+	private Optional<AlertTrigger> buildTrigger(Long tenantId, Circulation circulation, Student student) {
+		return recipientResolver.resolve(tenantId, student)
 				.map(userId -> {
-					String studentName = student.get().getFirstName() + " " + student.get().getLastName();
+					String studentName = student.getFirstName() + " " + student.getLastName();
 					return new AlertTrigger(userId, "Overdue Library Book",
 							"A library book is overdue since " + circulation.getDueDate(),
 							Map.of(

@@ -71,6 +71,22 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.extract().path("publicId");
 	}
 
+	private String defineSelectField(String accessToken, Long forTenantId, String fieldKey, String options) {
+		return given()
+				.header("X-Tenant-ID", forTenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("""
+						{"entityType":"STUDENT","fieldKey":"%s","label":"%s","fieldType":"SELECT","required":false,
+						"validationRule":{"options":[%s]}}
+						""".formatted(fieldKey, fieldKey, options))
+				.when()
+				.post("/api/v1/custom-field-definitions")
+				.then()
+				.statusCode(HttpStatus.CREATED.value())
+				.extract().path("publicId");
+	}
+
 	private String enrollStudent(String accessToken, Long forTenantId, String studentCode) {
 		return given()
 				.header("X-Tenant-ID", forTenantId)
@@ -290,6 +306,67 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.put("/api/v1/students/" + studentPublicId + "/custom-fields")
 				.then()
 				.statusCode(HttpStatus.NOT_FOUND.value());
+	}
+
+	@Test
+	void defineField_selectTypeWithoutOptions_returns400() {
+		String accessToken = login();
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("""
+						{"entityType":"STUDENT","fieldKey":"houseColor","label":"House Color","fieldType":"SELECT",
+						"required":false}
+						""")
+				.when()
+				.post("/api/v1/custom-field-definitions")
+				.then()
+				.statusCode(HttpStatus.BAD_REQUEST.value());
+	}
+
+	@Test
+	void setThenGetValue_selectTypeWithValidOption_roundTripsSuccessfully() {
+		String accessToken = login();
+		defineSelectField(accessToken, tenantId, "houseColor", "\"Red\",\"Blue\",\"Green\"");
+		String studentPublicId = enrollStudent(accessToken, tenantId, "STU-CF7-" + UUID.randomUUID().toString()
+				.substring(0, 6));
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("""
+						{"values":{"houseColor":"Blue"}}
+						""")
+				.when()
+				.put("/api/v1/students/" + studentPublicId + "/custom-fields")
+				.then()
+				.statusCode(HttpStatus.OK.value())
+				.body("find { it.fieldKey == 'houseColor' }.value", equalTo("Blue"))
+				.body("find { it.fieldKey == 'houseColor' }.options", equalTo(java.util.List.of("Red", "Blue",
+						"Green")));
+	}
+
+	@Test
+	void setValue_selectTypeWithOptionNotInList_returns400() {
+		String accessToken = login();
+		defineSelectField(accessToken, tenantId, "houseColor2", "\"Red\",\"Blue\"");
+		String studentPublicId = enrollStudent(accessToken, tenantId, "STU-CF8-" + UUID.randomUUID().toString()
+				.substring(0, 6));
+
+		given()
+				.header("X-Tenant-ID", tenantId)
+				.header("Authorization", "Bearer " + accessToken)
+				.contentType(ContentType.JSON)
+				.body("""
+						{"values":{"houseColor2":"Purple"}}
+						""")
+				.when()
+				.put("/api/v1/students/" + studentPublicId + "/custom-fields")
+				.then()
+				.statusCode(HttpStatus.BAD_REQUEST.value());
 	}
 
 	private String login() {

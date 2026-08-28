@@ -1,0 +1,101 @@
+---
+# Default-deny: all ingress and egress blocked unless explicitly allowed below.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Allow the school-saas application pods to receive traffic from the ingress controller
+# on port 8080 (HTTP) only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-app
+spec:
+  podSelector:
+    matchLabels:
+      app: school-saas
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# Allow Prometheus to scrape the metrics endpoint (actuator port 8080 /actuator/prometheus).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+spec:
+  podSelector:
+    matchLabels:
+      app: school-saas
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+          podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# Allow the application pods to reach external dependencies (egress).
+# Each rule is scoped to the destination port to minimise blast radius.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-egress
+spec:
+  podSelector:
+    matchLabels:
+      app: school-saas
+  policyTypes:
+    - Egress
+  egress:
+    # MariaDB
+    - ports:
+        - protocol: TCP
+          port: 3306
+    # Redis
+    - ports:
+        - protocol: TCP
+          port: 6379
+    # RabbitMQ AMQP
+    - ports:
+        - protocol: TCP
+          port: 5672
+    # Elasticsearch HTTP
+    - ports:
+        - protocol: TCP
+          port: 9200
+    # MinIO (S3-compatible object storage)
+    - ports:
+        - protocol: TCP
+          port: 9000
+    # DNS (required for service-name resolution inside the cluster)
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

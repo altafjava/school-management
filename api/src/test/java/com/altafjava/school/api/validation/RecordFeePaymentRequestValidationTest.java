@@ -83,10 +83,19 @@ class RecordFeePaymentRequestValidationTest {
 	}
 
 	@Test
-	void receiptNumber_blank_failsValidation() {
+	void receiptNumber_blank_passesValidation() {
+		// receiptNumber is an explicit-override path — blank/omitted defers to the tenant's
+		// configured numbering sequence, see FeePaymentService#record.
 		var req = new RecordFeePaymentRequest(1L, 5L, new BigDecimal("5000.00"),
 				LocalDateTime.of(2024, 9, 1, 10, 0), "");
-		assertFalse(violationsFor(req).isEmpty());
+		assertTrue(violationsFor(req).isEmpty());
+	}
+
+	@Test
+	void receiptNumber_null_passesValidation() {
+		var req = new RecordFeePaymentRequest(1L, 5L, new BigDecimal("5000.00"),
+				LocalDateTime.of(2024, 9, 1, 10, 0), null);
+		assertTrue(violationsFor(req).isEmpty());
 	}
 
 	@Test

@@ -2,22 +2,21 @@ package com.altafjava.school.application.alert;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.altafjava.platform.application.alert.AlertTrigger;
-import com.altafjava.platform.core.model.Page;
-import com.altafjava.platform.core.model.Pageable;
 import com.altafjava.platform.domain.alert.model.AlertRule;
 import com.altafjava.platform.domain.notification.model.NotificationType;
+import com.altafjava.platform.domain.user.model.Role;
 import com.altafjava.platform.domain.user.model.User;
-import com.altafjava.platform.domain.user.model.UserSearchCriteria;
+import com.altafjava.platform.domain.user.repository.RoleRepository;
 import com.altafjava.platform.domain.user.repository.UserRepository;
 import com.altafjava.school.application.service.FeePaymentService;
 import com.altafjava.school.domain.fee.model.FeeBalance;
@@ -34,11 +33,14 @@ class FeeDefaultRiskRuleEvaluatorTest {
 	private FeePaymentService feePaymentService;
 	@Mock
 	private UserRepository userRepository;
+	@Mock
+	private RoleRepository roleRepository;
 
 	private FeeDefaultRiskRuleEvaluator evaluator;
 
 	private void newEvaluator() {
-		evaluator = new FeeDefaultRiskRuleEvaluator(studentRepository, feePaymentService, userRepository);
+		evaluator = new FeeDefaultRiskRuleEvaluator(studentRepository, feePaymentService, userRepository,
+				roleRepository);
 	}
 
 	private AlertRule ruleWithThreshold(Integer thresholdAmount) {
@@ -61,11 +63,17 @@ class FeeDefaultRiskRuleEvaluatorTest {
 		return user;
 	}
 
+	private Role roleWithId(String name, long id) {
+		Role role = Role.builder().name(name).build();
+		role.setId(id);
+		return role;
+	}
+
 	private void stubStaffUsers(User... financeUsers) {
-		when(userRepository.findAll(eq(new UserSearchCriteria(null, "FINANCE", null, null)), any(Pageable.class)))
-				.thenReturn(new Page<>(List.of(financeUsers), 0, 100, financeUsers.length));
-		when(userRepository.findAll(eq(new UserSearchCriteria(null, "TENANT_ADMIN", null, null)), any(Pageable.class)))
-				.thenReturn(new Page<>(List.of(), 0, 100, 0));
+		when(roleRepository.findByName("FINANCE")).thenReturn(Optional.of(roleWithId("FINANCE", 100L)));
+		when(userRepository.findAllByRoleId(100L)).thenReturn(List.of(financeUsers));
+		when(roleRepository.findByName("TENANT_ADMIN")).thenReturn(Optional.of(roleWithId("TENANT_ADMIN", 101L)));
+		when(userRepository.findAllByRoleId(101L)).thenReturn(List.of());
 	}
 
 	@Test
@@ -74,9 +82,9 @@ class FeeDefaultRiskRuleEvaluatorTest {
 		Student student = studentWithId(1L);
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student));
-		when(feePaymentService.calculateBalanceForStudent(1L, student))
-				.thenReturn(List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(2000), BigDecimal.ZERO,
-						BigDecimal.valueOf(1500), BigDecimal.ZERO)));
+		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
+				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(2000),
+						BigDecimal.ZERO, BigDecimal.valueOf(1500), BigDecimal.ZERO))));
 		stubStaffUsers(userWithId(90L), userWithId(91L));
 
 		List<AlertTrigger> triggers = evaluator.evaluate(ruleWithThreshold(1000));
@@ -93,9 +101,9 @@ class FeeDefaultRiskRuleEvaluatorTest {
 		Student student = studentWithId(1L);
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student));
-		when(feePaymentService.calculateBalanceForStudent(1L, student))
-				.thenReturn(List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(2000), BigDecimal.valueOf(1500),
-						BigDecimal.valueOf(500), BigDecimal.ZERO)));
+		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
+				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(2000),
+						BigDecimal.valueOf(1500), BigDecimal.valueOf(500), BigDecimal.ZERO))));
 
 		assertTrue(evaluator.evaluate(ruleWithThreshold(1000)).isEmpty());
 	}
@@ -105,6 +113,7 @@ class FeeDefaultRiskRuleEvaluatorTest {
 		newEvaluator();
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of());
+		when(feePaymentService.calculateBalancesForStudents(1L, List.of())).thenReturn(Map.of());
 
 		assertTrue(evaluator.evaluate(ruleWithThreshold(1000)).isEmpty());
 	}

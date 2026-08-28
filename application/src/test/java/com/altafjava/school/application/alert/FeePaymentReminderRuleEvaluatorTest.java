@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,9 +56,9 @@ class FeePaymentReminderRuleEvaluatorTest {
 		Student student = studentWithId(1L);
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student));
-		when(feePaymentService.calculateBalanceForStudent(1L, student))
-				.thenReturn(List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000), BigDecimal.valueOf(400),
-						BigDecimal.valueOf(600), BigDecimal.ZERO)));
+		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
+				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000),
+						BigDecimal.valueOf(400), BigDecimal.valueOf(600), BigDecimal.ZERO))));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.of(42L));
 
 		List<AlertTrigger> triggers = evaluator.evaluate(rule());
@@ -75,9 +76,9 @@ class FeePaymentReminderRuleEvaluatorTest {
 		Student student = studentWithId(1L);
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student));
-		when(feePaymentService.calculateBalanceForStudent(1L, student))
-				.thenReturn(List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000), BigDecimal.valueOf(1000),
-						BigDecimal.ZERO, BigDecimal.ZERO)));
+		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
+				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000),
+						BigDecimal.valueOf(1000), BigDecimal.ZERO, BigDecimal.ZERO))));
 
 		assertTrue(evaluator.evaluate(rule()).isEmpty());
 	}
@@ -88,9 +89,9 @@ class FeePaymentReminderRuleEvaluatorTest {
 		Student student = studentWithId(1L);
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(student));
-		when(feePaymentService.calculateBalanceForStudent(1L, student))
-				.thenReturn(List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000), BigDecimal.ZERO,
-						BigDecimal.valueOf(1000), BigDecimal.ZERO)));
+		when(feePaymentService.calculateBalancesForStudents(1L, List.of(student)))
+				.thenReturn(Map.of(1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(1000),
+						BigDecimal.ZERO, BigDecimal.valueOf(1000), BigDecimal.ZERO))));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.empty());
 
 		assertTrue(evaluator.evaluate(rule()).isEmpty());
@@ -103,12 +104,12 @@ class FeePaymentReminderRuleEvaluatorTest {
 		Student studentB = studentWithId(2L);
 		when(studentRepository.findAllByEnrollmentStatusAndTenantId(EnrollmentStatus.ACTIVE, 1L))
 				.thenReturn(List.of(studentA, studentB));
-		when(feePaymentService.calculateBalanceForStudent(1L, studentA))
-				.thenReturn(List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(500), BigDecimal.ZERO,
-						BigDecimal.valueOf(500), BigDecimal.ZERO)));
-		when(feePaymentService.calculateBalanceForStudent(1L, studentB))
-				.thenReturn(List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(500), BigDecimal.ZERO,
-						BigDecimal.valueOf(500), BigDecimal.ZERO)));
+		when(feePaymentService.calculateBalancesForStudents(1L, List.of(studentA, studentB)))
+				.thenReturn(Map.of(
+						1L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(500), BigDecimal.ZERO,
+								BigDecimal.valueOf(500), BigDecimal.ZERO)),
+						2L, List.of(new FeeBalance(10L, "Tuition", BigDecimal.valueOf(500), BigDecimal.ZERO,
+								BigDecimal.valueOf(500), BigDecimal.ZERO))));
 		when(recipientResolver.resolve(1L, studentA)).thenReturn(Optional.of(41L));
 		when(recipientResolver.resolve(1L, studentB)).thenReturn(Optional.of(42L));
 

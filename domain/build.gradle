@@ -39,6 +39,9 @@ tasks.named('check') {
 dependencies {
     // Platform core — exposes TenantEntity, BaseEntity, @Pii, TenantContext, etc.
     api 'com.altafjava.platform:core'
+    // Country-aware phone validation (PhoneNumberValidator) — a plain utility library with no
+    // Spring/Jakarta dependency of its own, safe for a pure domain service to depend on directly.
+    implementation libs.libphonenumber
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine
     testRuntimeOnly libs.junit.platform.launcher

@@ -14,10 +14,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateTeacherRequest;
+import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
 import com.altafjava.school.api.dto.request.UpdateTeacherContactDetailsRequest;
 import com.altafjava.school.api.dto.request.UpdateTeacherHrDetailsRequest;
 import com.altafjava.school.api.dto.response.TeacherResponse;
+import com.altafjava.school.api.mapper.AddressMapper;
 import com.altafjava.school.api.mapper.TeacherMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.TeacherService;
@@ -28,13 +31,15 @@ public class TeacherController {
 
 	private final TeacherService teacherService;
 	private final TeacherMapper teacherMapper;
+	private final AddressMapper addressMapper;
 
 	private final SpringDataPageableResolver pageableResolver;
 
-	public TeacherController(TeacherService teacherService, TeacherMapper teacherMapper,
+	public TeacherController(TeacherService teacherService, TeacherMapper teacherMapper, AddressMapper addressMapper,
 			SpringDataPageableResolver pageableResolver) {
 		this.teacherService = teacherService;
 		this.teacherMapper = teacherMapper;
+		this.addressMapper = addressMapper;
 		this.pageableResolver = pageableResolver;
 	}
 
@@ -79,5 +84,18 @@ public class TeacherController {
 			@Valid @RequestBody UpdateTeacherHrDetailsRequest request) {
 		return teacherMapper.toResponse(teacherService.updateHrDetails(publicId, request.departmentPublicId(),
 				request.qualification(), request.employmentType()));
+	}
+
+	@PatchMapping("/{publicId}/phone")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public TeacherResponse updatePhone(@PathVariable String publicId,
+			@Valid @RequestBody UpdatePhoneRequest request) {
+		return teacherMapper.toResponse(teacherService.updatePhone(publicId, request.phone()));
+	}
+
+	@PatchMapping("/{publicId}/address")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public TeacherResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
+		return teacherMapper.toResponse(teacherService.updateAddress(publicId, addressMapper.toDomain(request)));
 	}
 }

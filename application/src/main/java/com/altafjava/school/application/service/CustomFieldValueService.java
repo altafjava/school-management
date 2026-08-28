@@ -3,6 +3,7 @@ package com.altafjava.school.application.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import com.altafjava.school.application.customfield.CustomFieldValue;
 import com.altafjava.school.domain.customfield.model.CustomFieldDefinition;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
 import com.altafjava.school.domain.customfield.model.CustomFieldType;
+import com.altafjava.school.domain.customfield.model.CustomFieldValidationRule;
 import com.altafjava.school.domain.customfield.repository.CustomFieldDefinitionRepository;
 
 /**
@@ -70,12 +72,13 @@ public class CustomFieldValueService {
 	public List<CustomFieldValue> getAllValues(CustomFieldEntityType entityType, Long entityId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		List<CustomFieldDefinition> definitions = customFieldDefinitionRepository
-				.findAllByTenantIdAndEntityTypeAndActiveTrue(tenantId, entityType);
+				.findAllByTenantIdAndEntityTypeAndActiveTrueOrderByDisplayOrderAsc(tenantId, entityType);
 		var storedValues = entityAttributeService.getAttributes(tenantId, entityId, entityType.name(), DOMAIN);
 		return definitions.stream()
 				.map(definition -> new CustomFieldValue(definition.getFieldKey(), definition.getLabel(),
 						definition.getFieldType(), definition.isRequired(),
-						storedValues.get(definition.getFieldKey())))
+						storedValues.get(definition.getFieldKey()), definition.getValidationRule().optionList(),
+						definition.getDisplayOrder(), definition.getDisplayGroup()))
 				.toList();
 	}
 
@@ -93,9 +96,10 @@ public class CustomFieldValueService {
 
 	private void validateValue(CustomFieldDefinition definition, String rawValue) {
 		CustomFieldType fieldType = definition.getFieldType();
+		CustomFieldValidationRule rule = definition.getValidationRule();
 		try {
 			switch (fieldType) {
-				case NUMBER -> new BigDecimal(rawValue);
+				case NUMBER -> validateNumber(definition, rule, rawValue);
 				case DATE -> LocalDate.parse(rawValue);
 				case BOOLEAN -> {
 					if (!"true".equalsIgnoreCase(rawValue) && !"false".equalsIgnoreCase(rawValue)) {
@@ -104,9 +108,12 @@ public class CustomFieldValueService {
 										+ " value, got: " + rawValue);
 					}
 				}
-				case TEXT -> {
-					// Any non-blank string is a valid TEXT value — nothing further to check.
-				}
+				case TEXT -> validateText(definition, rule, rawValue);
+				case SELECT -> validateOption(definition, rule, rawValue);
+				case MULTI_SELECT -> Arrays.stream(rawValue.split(","))
+						.map(String::trim)
+						.filter(value -> !value.isEmpty())
+						.forEach(value -> validateOption(definition, rule, value));
 			}
 		} catch (NumberFormatException e) {
 			throw new BusinessException(
@@ -114,6 +121,32 @@ public class CustomFieldValueService {
 		} catch (DateTimeParseException e) {
 			throw new BusinessException("Custom field '" + definition.getFieldKey()
 					+ "' expects an ISO-8601 DATE value (yyyy-MM-dd), got: " + rawValue);
+		}
+	}
+
+	private void validateNumber(CustomFieldDefinition definition, CustomFieldValidationRule rule, String rawValue) {
+		BigDecimal value = new BigDecimal(rawValue);
+		if (rule.getMinValue() != null && value.compareTo(rule.getMinValue()) < 0) {
+			throw new BusinessException("Custom field '" + definition.getFieldKey() + "' must be at least "
+					+ rule.getMinValue() + ", got: " + rawValue);
+		}
+		if (rule.getMaxValue() != null && value.compareTo(rule.getMaxValue()) > 0) {
+			throw new BusinessException("Custom field '" + definition.getFieldKey() + "' must be at most "
+					+ rule.getMaxValue() + ", got: " + rawValue);
+		}
+	}
+
+	private void validateText(CustomFieldDefinition definition, CustomFieldValidationRule rule, String rawValue) {
+		if (rule.getRegexPattern() != null && !rawValue.matches(rule.getRegexPattern())) {
+			throw new BusinessException("Custom field '" + definition.getFieldKey()
+					+ "' does not match the required pattern: " + rawValue);
+		}
+	}
+
+	private void validateOption(CustomFieldDefinition definition, CustomFieldValidationRule rule, String rawValue) {
+		if (!rule.optionList().contains(rawValue)) {
+			throw new BusinessException("Custom field '" + definition.getFieldKey()
+					+ "' does not allow value '" + rawValue + "' — allowed: " + rule.optionList());
 		}
 	}
 }

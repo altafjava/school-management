@@ -26,6 +26,8 @@ import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
 import com.altafjava.school.domain.grade.model.Grade;
+import com.altafjava.school.domain.grade.model.GradeCorrection;
+import com.altafjava.school.domain.grade.repository.GradeCorrectionRepository;
 import com.altafjava.school.domain.grade.repository.GradeRepository;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 
@@ -34,6 +36,8 @@ class GradeServiceTest {
 
 	@Mock
 	private GradeRepository gradeRepository;
+	@Mock
+	private GradeCorrectionRepository gradeCorrectionRepository;
 	@Mock
 	private StudentRepository studentRepository;
 	@Mock
@@ -49,8 +53,8 @@ class GradeServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		gradeService = new GradeService(gradeRepository, studentRepository, examRepository, gradingScaleService,
-				studentDataAccessGuard, teacherClassroomScopeResolver);
+		gradeService = new GradeService(gradeRepository, gradeCorrectionRepository, studentRepository, examRepository,
+				gradingScaleService, studentDataAccessGuard, teacherClassroomScopeResolver);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -153,5 +157,34 @@ class GradeServiceTest {
 				"11111111-1111-1111-1111-111111111111", org.springframework.data.domain.PageRequest.of(0, 20)));
 
 		verify(studentDataAccessGuard).assertCanView(1L, "11111111-1111-1111-1111-111111111111");
+	}
+
+	@Test
+	void correct_recordsCorrectionWithPreviousValuesThenUpdatesGrade() {
+		Grade grade = Grade.create(1L, 5L, 2L, BigDecimal.valueOf(60), "D", "teacher");
+		grade.setId(100L);
+		grade.setPublicId(java.util.UUID.fromString("11111111-1111-1111-1111-111111111111"));
+		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100), null,
+				com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
+		List<GradingScaleThreshold> thresholds = List.of(
+				GradingScaleThreshold.create(1L, "A", new BigDecimal("90"), new BigDecimal("4.0")),
+				GradingScaleThreshold.create(1L, "F", BigDecimal.ZERO, BigDecimal.ZERO));
+		when(gradeRepository.findByPublicIdAndTenantId(grade.getPublicId(), 1L)).thenReturn(Optional.of(grade));
+		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(exam));
+		when(gradingScaleService.resolveEffectiveThresholds(10L)).thenReturn(thresholds);
+		when(gradeRepository.save(any(Grade.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		Grade corrected = gradeService.correct("11111111-1111-1111-1111-111111111111", BigDecimal.valueOf(95));
+
+		assertEquals("A", corrected.getGradeLetter());
+		assertEquals(BigDecimal.valueOf(95), corrected.getMarks());
+
+		org.mockito.ArgumentCaptor<GradeCorrection> captor = org.mockito.ArgumentCaptor.forClass(GradeCorrection.class);
+		verify(gradeCorrectionRepository).save(captor.capture());
+		GradeCorrection correction = captor.getValue();
+		assertEquals(BigDecimal.valueOf(60), correction.getOldMarks());
+		assertEquals("D", correction.getOldGradeLetter());
+		assertEquals(BigDecimal.valueOf(95), correction.getNewMarks());
+		assertEquals("A", correction.getNewGradeLetter());
 	}
 }

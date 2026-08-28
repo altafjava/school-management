@@ -8,6 +8,8 @@ public record StudentResponse(
 		String firstName,
 		String lastName,
 		String email,
+		String phone,
 		LocalDate dateOfBirth,
-		String enrollmentStatus) {
+		String enrollmentStatus,
+		AddressResponse address) {
 }

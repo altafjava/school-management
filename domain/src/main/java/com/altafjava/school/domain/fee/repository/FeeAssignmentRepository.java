@@ -26,6 +26,19 @@ public interface FeeAssignmentRepository extends JpaRepository<FeeAssignment, Lo
 	List<FeeAssignment> findByTenantIdAndClassroomId(@Param("tenantId") Long tenantId,
 			@Param("classroomId") Long classroomId);
 
+	/**
+	 * Batched alternative to {@link #findByTenantIdAndStudentId} for computing many students' fee
+	 * balances at once instead of one query per student in a loop.
+	 */
+	@Query("SELECT a FROM FeeAssignment a WHERE a.tenantId = :tenantId AND a.studentId IN :studentIds")
+	List<FeeAssignment> findByTenantIdAndStudentIdIn(@Param("tenantId") Long tenantId,
+			@Param("studentIds") List<Long> studentIds);
+
+	/** Batched alternative to {@link #findByTenantIdAndClassroomId}. */
+	@Query("SELECT a FROM FeeAssignment a WHERE a.tenantId = :tenantId AND a.classroomId IN :classroomIds")
+	List<FeeAssignment> findByTenantIdAndClassroomIdIn(@Param("tenantId") Long tenantId,
+			@Param("classroomIds") List<Long> classroomIds);
+
 	@Query("SELECT a FROM FeeAssignment a WHERE a.tenantId = :tenantId AND a.feeStructureId = :feeStructureId")
 	Page<FeeAssignment> findByFeeStructureIdAndTenantId(@Param("tenantId") Long tenantId,
 			@Param("feeStructureId") Long feeStructureId, Pageable pageable);

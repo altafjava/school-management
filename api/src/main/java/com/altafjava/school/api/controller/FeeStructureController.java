@@ -19,8 +19,10 @@ import com.altafjava.school.api.dto.request.CreateFeeStructureRequest;
 import com.altafjava.school.api.dto.request.ReviseFeeAmountRequest;
 import com.altafjava.school.api.dto.response.FeeAssignmentResponse;
 import com.altafjava.school.api.dto.response.FeeStructureResponse;
+import com.altafjava.school.api.dto.response.FeeStructureRevisionResponse;
 import com.altafjava.school.api.mapper.FeeAssignmentMapper;
 import com.altafjava.school.api.mapper.FeeStructureMapper;
+import com.altafjava.school.api.mapper.FeeStructureRevisionMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.FeeAssignmentService;
 import com.altafjava.school.application.service.FeeStructureService;
@@ -32,16 +34,18 @@ public class FeeStructureController {
 
 	private final FeeStructureService feeStructureService;
 	private final FeeStructureMapper feeStructureMapper;
+	private final FeeStructureRevisionMapper feeStructureRevisionMapper;
 	private final FeeAssignmentService feeAssignmentService;
 	private final FeeAssignmentMapper feeAssignmentMapper;
 
 	private final SpringDataPageableResolver pageableResolver;
 
 	public FeeStructureController(FeeStructureService feeStructureService, FeeStructureMapper feeStructureMapper,
-			FeeAssignmentService feeAssignmentService, FeeAssignmentMapper feeAssignmentMapper,
-			SpringDataPageableResolver pageableResolver) {
+			FeeStructureRevisionMapper feeStructureRevisionMapper, FeeAssignmentService feeAssignmentService,
+			FeeAssignmentMapper feeAssignmentMapper, SpringDataPageableResolver pageableResolver) {
 		this.feeStructureService = feeStructureService;
 		this.feeStructureMapper = feeStructureMapper;
+		this.feeStructureRevisionMapper = feeStructureRevisionMapper;
 		this.feeAssignmentService = feeAssignmentService;
 		this.feeAssignmentMapper = feeAssignmentMapper;
 		this.pageableResolver = pageableResolver;
@@ -78,6 +82,15 @@ public class FeeStructureController {
 	public FeeStructureResponse reviseAmount(@PathVariable String publicId,
 			@Valid @RequestBody ReviseFeeAmountRequest request) {
 		return feeStructureMapper.toResponse(feeStructureService.reviseAmount(publicId, request.amount()));
+	}
+
+	@GetMapping("/{publicId}/revisions")
+	@PreAuthorize(Roles.HAS_TENANT_ADMIN)
+	public Page<FeeStructureRevisionResponse> listRevisions(@PathVariable String publicId,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return feeStructureService.listRevisions(publicId, pageableResolver.resolve(page, size))
+				.map(feeStructureRevisionMapper::toResponse);
 	}
 
 	@PostMapping("/{publicId}/assignments")

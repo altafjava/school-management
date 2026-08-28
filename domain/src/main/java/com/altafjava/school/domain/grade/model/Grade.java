@@ -52,4 +52,12 @@ public class Grade extends SoftDeletableEntity {
 				.gradedBy(gradedBy)
 				.build();
 	}
+
+	// Callers must record a GradeCorrection with the pre-correction marks/gradeLetter before
+	// calling this — see GradeService#correct — so the change is reconstructable from history,
+	// not just visible via BaseEntity's updatedBy/updatedAt.
+	public void correct(BigDecimal marks, String gradeLetter) {
+		this.marks = marks;
+		this.gradeLetter = gradeLetter;
+	}
 }

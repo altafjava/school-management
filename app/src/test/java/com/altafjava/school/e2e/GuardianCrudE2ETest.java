@@ -64,7 +64,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"email\":\"jane@school.test\","
-						+ "\"phone\":\"555-0100\"}")
+						+ "\"phone\":\"+14155552671\"}")
 				.when()
 				.post("/api/v1/guardians")
 				.then()
@@ -93,7 +93,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + teacherToken)
 				.contentType(ContentType.JSON)
 				.body("{\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"email\":\"jane2@school.test\","
-						+ "\"phone\":\"555-0100\"}")
+						+ "\"phone\":\"+14155552671\"}")
 				.when()
 				.post("/api/v1/guardians")
 				.then()
@@ -108,7 +108,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"email\":\"jane3@school.test\","
-						+ "\"phone\":\"555-0100\"}")
+						+ "\"phone\":\"+14155552671\"}")
 				.when()
 				.post("/api/v1/guardians")
 				.then()
@@ -183,7 +183,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"firstName\":\"Jane\",\"lastName\":\"Doe\",\"email\":\"" + email + "\","
-						+ "\"phone\":\"555-0100\"}")
+						+ "\"phone\":\"+14155552671\"}")
 				.when()
 				.post("/api/v1/guardians")
 				.then()

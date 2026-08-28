@@ -5,5 +5,6 @@ public record GuardianResponse(
 		String firstName,
 		String lastName,
 		String email,
-		String phone) {
+		String phone,
+		AddressResponse address) {
 }

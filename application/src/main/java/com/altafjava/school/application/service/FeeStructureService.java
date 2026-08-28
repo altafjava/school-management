@@ -10,15 +10,20 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.fee.model.FeeFrequency;
 import com.altafjava.school.domain.fee.model.FeeStructure;
+import com.altafjava.school.domain.fee.model.FeeStructureRevision;
 import com.altafjava.school.domain.fee.repository.FeeStructureRepository;
+import com.altafjava.school.domain.fee.repository.FeeStructureRevisionRepository;
 
 @Service
 public class FeeStructureService {
 
 	private final FeeStructureRepository feeStructureRepository;
+	private final FeeStructureRevisionRepository feeStructureRevisionRepository;
 
-	public FeeStructureService(FeeStructureRepository feeStructureRepository) {
+	public FeeStructureService(FeeStructureRepository feeStructureRepository,
+			FeeStructureRevisionRepository feeStructureRevisionRepository) {
 		this.feeStructureRepository = feeStructureRepository;
+		this.feeStructureRevisionRepository = feeStructureRevisionRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -43,10 +48,21 @@ public class FeeStructureService {
 		return feeStructureRepository.save(feeStructure);
 	}
 
+	// Records a FeeStructureRevision with the pre-revision amount before mutating, so a fee-amount
+	// dispute is answerable from history data rather than only visible as an opaque updatedAt bump.
 	@Transactional
 	public FeeStructure reviseAmount(String publicId, BigDecimal amount) {
 		FeeStructure feeStructure = findByPublicId(publicId);
+		feeStructureRevisionRepository
+				.save(FeeStructureRevision.record(feeStructure.getId(), feeStructure.getAmount(), amount));
 		feeStructure.reviseAmount(amount);
 		return feeStructureRepository.save(feeStructure);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<FeeStructureRevision> listRevisions(String publicId, Pageable pageable) {
+		FeeStructure feeStructure = findByPublicId(publicId);
+		return feeStructureRevisionRepository.findByFeeStructureIdAndTenantId(TenantContext.getCurrentTenantId(),
+				feeStructure.getId(), pageable);
 	}
 }

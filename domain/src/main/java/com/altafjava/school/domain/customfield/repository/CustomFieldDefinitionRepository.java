@@ -16,7 +16,7 @@ public interface CustomFieldDefinitionRepository extends JpaRepository<CustomFie
 	Page<CustomFieldDefinition> findAllByTenantIdAndEntityType(Long tenantId, CustomFieldEntityType entityType,
 			Pageable pageable);
 
-	List<CustomFieldDefinition> findAllByTenantIdAndEntityTypeAndActiveTrue(Long tenantId,
+	List<CustomFieldDefinition> findAllByTenantIdAndEntityTypeAndActiveTrueOrderByDisplayOrderAsc(Long tenantId,
 			CustomFieldEntityType entityType);
 
 	Optional<CustomFieldDefinition> findByPublicIdAndTenantId(UUID publicId, Long tenantId);

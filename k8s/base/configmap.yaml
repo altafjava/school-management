@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: school-config
+data:
+  SPRING_PROFILES_ACTIVE: "prod"
+  # school-saas resolves DB_HOST/DB_PORT/DB_NAME separately (see application-prod.yml),
+  # unlike platform-saas's single SPRING_DATASOURCE_URL — keep these in sync with that contract.
+  DB_HOST: "mariadb-service"
+  DB_PORT: "3306"
+  DB_NAME: "school_saas"
+  SPRING_DATA_REDIS_HOST: "redis-service"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_RABBITMQ_HOST: "rabbitmq-service"
+  SPRING_RABBITMQ_PORT: "5672"
+  SPRING_ELASTICSEARCH_URIS: "http://elasticsearch-service:9200"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,metrics"
+  MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "true"
+  # Micrometer Tracing — Brave/Zipkin bridge
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.1"
+  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: "http://zipkin-service:9411/api/v2/spans"

@@ -15,9 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.altafjava.platform.application.service.NumberSequenceService;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantType;
+import com.altafjava.platform.domain.numbering.model.ResetPeriod;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
 import com.altafjava.school.domain.classroom.repository.StudentClassroomLinkRepository;
 import com.altafjava.school.domain.fee.model.FeeAssignment;
@@ -42,13 +44,16 @@ class FeePaymentServiceTest {
 	private StudentClassroomLinkRepository studentClassroomLinkRepository;
 	@Mock
 	private StudentDataAccessGuard studentDataAccessGuard;
+	@Mock
+	private NumberSequenceService numberSequenceService;
 
 	private FeePaymentService feePaymentService;
 
 	@BeforeEach
 	void setUp() {
 		feePaymentService = new FeePaymentService(feePaymentRepository, studentRepository, feeStructureRepository,
-				feeAssignmentRepository, studentClassroomLinkRepository, studentDataAccessGuard);
+				feeAssignmentRepository, studentClassroomLinkRepository, studentDataAccessGuard,
+				numberSequenceService);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -100,6 +105,20 @@ class FeePaymentServiceTest {
 	}
 
 	@Test
+	void record_withoutReceiptNumber_generatesOneFromTenantSequence() {
+		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
+		when(feeStructureRepository.existsByIdAndTenantId(2L, 1L)).thenReturn(true);
+		when(numberSequenceService.generateNext(1L, "FEE_RECEIPT", "RCPT-", 6, ResetPeriod.YEARLY))
+				.thenReturn("RCPT-2026-000001");
+		when(feePaymentRepository.existsByReceiptNumberAndTenantId("RCPT-2026-000001", 1L)).thenReturn(false);
+		when(feePaymentRepository.save(any(FeePayment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+		FeePayment payment = feePaymentService.record(1L, 2L, BigDecimal.valueOf(500), LocalDateTime.now(), null);
+
+		assertEquals("RCPT-2026-000001", payment.getReceiptNumber());
+	}
+
+	@Test
 	void calculateBalance_withPartialPayment_returnsOutstandingBalance() {
 		var student = com.altafjava.school.domain.student.model.Student.create(
 				"STU-1", "Alice", "Smith", "alice@school.test", null);
@@ -123,5 +142,56 @@ class FeePaymentServiceTest {
 
 		assertEquals(1, balances.size());
 		assertEquals(BigDecimal.valueOf(600), balances.get(0).outstandingBalance());
+	}
+
+	@Test
+	void calculateBalancesForStudents_multipleStudents_usesOneBatchedQueryPerRepository() {
+		var studentA = com.altafjava.school.domain.student.model.Student.create(
+				"STU-A", "Alice", "Smith", "alice@school.test", null);
+		studentA.setId(1L);
+		var studentB = com.altafjava.school.domain.student.model.Student.create(
+				"STU-B", "Bob", "Jones", "bob@school.test", null);
+		studentB.setId(2L);
+
+		var tuition = com.altafjava.school.domain.fee.model.FeeStructure.create(
+				"Tuition", BigDecimal.valueOf(1000), com.altafjava.school.domain.fee.model.FeeFrequency.MONTHLY,
+				"Standard");
+		tuition.setId(10L);
+		var transport = com.altafjava.school.domain.fee.model.FeeStructure.create(
+				"Transport", BigDecimal.valueOf(200), com.altafjava.school.domain.fee.model.FeeFrequency.MONTHLY,
+				"Standard");
+		transport.setId(11L);
+
+		// A is directly assigned tuition; B gets transport via their classroom's assignment.
+		var directAssignment = FeeAssignment.forStudent(10L, 1L);
+		var classroomAssignment = FeeAssignment.forClassroom(11L, 5L);
+		var link = com.altafjava.school.domain.classroom.model.StudentClassroomLink.create(2L, 5L, 1L,
+				java.time.LocalDate.of(2026, 1, 1));
+		var paymentForA = FeePayment.create(1L, 10L, BigDecimal.valueOf(300), LocalDateTime.now(), "RCPT-A");
+
+		when(studentClassroomLinkRepository.findByStudentIdIn(1L, java.util.List.of(1L, 2L)))
+				.thenReturn(java.util.List.of(link));
+		when(feeAssignmentRepository.findByTenantIdAndStudentIdIn(1L, java.util.List.of(1L, 2L)))
+				.thenReturn(java.util.List.of(directAssignment));
+		when(feeAssignmentRepository.findByTenantIdAndClassroomIdIn(1L, java.util.List.of(5L)))
+				.thenReturn(java.util.List.of(classroomAssignment));
+		when(feeStructureRepository.findAllByIdInAndTenantId(
+				org.mockito.ArgumentMatchers.argThat(ids -> ids.containsAll(java.util.List.of(10L, 11L))), any()))
+				.thenReturn(java.util.List.of(tuition, transport));
+		when(feePaymentRepository.findByStudentIdIn(1L, java.util.List.of(1L, 2L)))
+				.thenReturn(java.util.List.of(paymentForA));
+
+		var balancesByStudentId = feePaymentService.calculateBalancesForStudents(1L,
+				java.util.List.of(studentA, studentB));
+
+		assertEquals(1, balancesByStudentId.get(1L).size());
+		assertEquals(BigDecimal.valueOf(700), balancesByStudentId.get(1L).get(0).outstandingBalance());
+		assertEquals(1, balancesByStudentId.get(2L).size());
+		assertEquals(BigDecimal.valueOf(200), balancesByStudentId.get(2L).get(0).outstandingBalance());
+
+		verify(studentClassroomLinkRepository).findByStudentIdIn(any(), any());
+		verify(feeAssignmentRepository).findByTenantIdAndStudentIdIn(any(), any());
+		verify(feeAssignmentRepository).findByTenantIdAndClassroomIdIn(any(), any());
+		verify(feePaymentRepository).findByStudentIdIn(any(), any());
 	}
 }

@@ -2,6 +2,7 @@ package com.altafjava.school.domain.student.model;
 
 import java.time.LocalDate;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,6 +11,7 @@ import org.hibernate.annotations.SQLRestriction;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
 import com.altafjava.platform.core.security.annotation.Pii;
+import com.altafjava.school.domain.common.model.Address;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -49,6 +51,13 @@ public class Student extends SoftDeletableEntity {
 	// FK to platform users.id — nullable, set only once this student has their own login account.
 	@Column(name = "user_id")
 	private Long userId;
+
+	@Pii(type = Pii.PiiType.PHONE)
+	@Column(name = "phone", length = 30)
+	private String phone;
+
+	@Embedded
+	private Address address;
 
 	public static Student create(String studentCode, String firstName, String lastName,
 			String email, LocalDate dateOfBirth) {
@@ -94,5 +103,15 @@ public class Student extends SoftDeletableEntity {
 		this.lastName = lastName;
 		this.email = email;
 		this.dateOfBirth = dateOfBirth;
+	}
+
+	// Caller (StudentService) validates the phone against PhoneNumberValidator first — this
+	// method just persists an already-validated value.
+	public void updatePhone(String phone) {
+		this.phone = phone;
+	}
+
+	public void updateAddress(Address address) {
+		this.address = Address.copyOf(address);
 	}
 }

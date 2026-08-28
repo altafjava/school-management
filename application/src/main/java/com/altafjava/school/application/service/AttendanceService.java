@@ -11,8 +11,10 @@ import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.application.security.StudentDataAccessGuard;
 import com.altafjava.school.application.security.TeacherClassroomScopeResolver;
 import com.altafjava.school.domain.attendance.model.Attendance;
+import com.altafjava.school.domain.attendance.model.AttendanceCorrection;
 import com.altafjava.school.domain.attendance.model.AttendancePercentage;
 import com.altafjava.school.domain.attendance.model.AttendanceStatus;
+import com.altafjava.school.domain.attendance.repository.AttendanceCorrectionRepository;
 import com.altafjava.school.domain.attendance.repository.AttendanceRepository;
 import com.altafjava.school.domain.attendance.service.AttendancePercentageCalculator;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
@@ -24,6 +26,7 @@ import com.altafjava.school.domain.student.repository.StudentRepository;
 public class AttendanceService {
 
 	private final AttendanceRepository attendanceRepository;
+	private final AttendanceCorrectionRepository attendanceCorrectionRepository;
 	private final StudentRepository studentRepository;
 	private final ClassroomRepository classroomRepository;
 	private final StudentClassroomLinkRepository studentClassroomLinkRepository;
@@ -31,11 +34,13 @@ public class AttendanceService {
 	private final TeacherClassroomScopeResolver teacherClassroomScopeResolver;
 	private final AttendancePercentageCalculator attendancePercentageCalculator = new AttendancePercentageCalculator();
 
-	public AttendanceService(AttendanceRepository attendanceRepository, StudentRepository studentRepository,
+	public AttendanceService(AttendanceRepository attendanceRepository,
+			AttendanceCorrectionRepository attendanceCorrectionRepository, StudentRepository studentRepository,
 			ClassroomRepository classroomRepository, StudentClassroomLinkRepository studentClassroomLinkRepository,
 			StudentDataAccessGuard studentDataAccessGuard,
 			TeacherClassroomScopeResolver teacherClassroomScopeResolver) {
 		this.attendanceRepository = attendanceRepository;
+		this.attendanceCorrectionRepository = attendanceCorrectionRepository;
 		this.studentRepository = studentRepository;
 		this.classroomRepository = classroomRepository;
 		this.studentClassroomLinkRepository = studentClassroomLinkRepository;
@@ -108,13 +113,27 @@ public class AttendanceService {
 		return attendanceRepository.save(attendance);
 	}
 
+	// Records an AttendanceCorrection with the pre-correction status before mutating, so a
+	// disputed attendance record is answerable from history data rather than only visible as an
+	// opaque updatedAt bump.
 	@Transactional
 	public Attendance updateStatus(String publicId, AttendanceStatus status) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		Attendance attendance = attendanceRepository.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId)
 				.orElseThrow(() -> new ResourceNotFoundException("Attendance record not found: " + publicId));
+		AttendanceStatus oldStatus = attendance.getStatus();
+		if (oldStatus != status) {
+			attendanceCorrectionRepository.save(AttendanceCorrection.record(attendance.getId(), oldStatus, status));
+		}
 		attendance.updateStatus(status);
 		return attendanceRepository.save(attendance);
+	}
+
+	@Transactional(readOnly = true)
+	public Page<AttendanceCorrection> listCorrections(String publicId, Pageable pageable) {
+		Attendance attendance = findByPublicId(publicId);
+		return attendanceCorrectionRepository.findByAttendanceIdAndTenantId(TenantContext.getCurrentTenantId(),
+				attendance.getId(), pageable);
 	}
 
 	@Transactional

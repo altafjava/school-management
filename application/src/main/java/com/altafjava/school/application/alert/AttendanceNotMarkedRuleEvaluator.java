@@ -2,9 +2,12 @@ package com.altafjava.school.application.alert;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.application.alert.AlertRuleEvaluator;
 import com.altafjava.platform.application.alert.AlertTrigger;
@@ -47,29 +50,37 @@ public class AttendanceNotMarkedRuleEvaluator implements AlertRuleEvaluator {
 		Long tenantId = rule.getTenantId();
 		LocalDate today = LocalDate.now();
 
+		List<Classroom> unmarkedClassroomsWithTeacher = unmarkedClassroomsWithTeacher(tenantId, today);
+		if (unmarkedClassroomsWithTeacher.isEmpty()) {
+			return List.of();
+		}
+
+		List<Long> teacherIds = unmarkedClassroomsWithTeacher.stream()
+				.map(Classroom::getClassTeacherId)
+				.distinct()
+				.toList();
+		Map<Long, Teacher> teachersById = teacherRepository.findAllByIdInAndTenantId(teacherIds, tenantId).stream()
+				.collect(Collectors.toMap(Teacher::getId, Function.identity()));
+
 		List<AlertTrigger> triggers = new ArrayList<>();
-		for (Classroom classroom : classroomRepository.findAllByTenantId(tenantId)) {
-			if (classroom.getClassTeacherId() == null) {
+		for (Classroom classroom : unmarkedClassroomsWithTeacher) {
+			Teacher teacher = teachersById.get(classroom.getClassTeacherId());
+			if (teacher == null || teacher.getUserId() == null) {
 				continue;
 			}
-			boolean alreadyMarked = attendanceRepository.existsByClassroomIdAndAttendanceDateAndTenantId(
-					classroom.getId(), today, tenantId);
-			if (alreadyMarked) {
-				continue;
-			}
-			buildTrigger(tenantId, classroom).ifPresent(triggers::add);
+			triggers.add(new AlertTrigger(teacher.getUserId(), "Attendance Reminder",
+					"Attendance has not yet been marked today for classroom " + classroom.getClassCode() + ".",
+					Map.of(), NotificationPriority.NORMAL));
 		}
 		return triggers;
 	}
 
-	private Optional<AlertTrigger> buildTrigger(Long tenantId, Classroom classroom) {
-		Teacher teacher = teacherRepository.findByIdAndTenantId(classroom.getClassTeacherId(), tenantId)
-				.orElse(null);
-		if (teacher == null || teacher.getUserId() == null) {
-			return Optional.empty();
-		}
-		return Optional.of(new AlertTrigger(teacher.getUserId(), "Attendance Reminder",
-				"Attendance has not yet been marked today for classroom " + classroom.getClassCode() + ".",
-				Map.of(), NotificationPriority.NORMAL));
+	private List<Classroom> unmarkedClassroomsWithTeacher(Long tenantId, LocalDate today) {
+		Set<Long> markedClassroomIds = new HashSet<>(
+				attendanceRepository.findDistinctClassroomIdsMarkedOnDate(tenantId, today));
+		return classroomRepository.findAllByTenantId(tenantId).stream()
+				.filter(classroom -> classroom.getClassTeacherId() != null)
+				.filter(classroom -> !markedClassroomIds.contains(classroom.getId()))
+				.toList();
 	}
 }

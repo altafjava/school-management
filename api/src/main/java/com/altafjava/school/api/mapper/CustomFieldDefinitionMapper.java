@@ -6,7 +6,7 @@ import org.mapstruct.ReportingPolicy;
 import com.altafjava.school.api.dto.response.CustomFieldDefinitionResponse;
 import com.altafjava.school.domain.customfield.model.CustomFieldDefinition;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR, uses = CustomFieldValidationRuleMapper.class)
 public interface CustomFieldDefinitionMapper {
 
 	@Mapping(target = "publicId", expression = "java(customFieldDefinition.getPublicId().toString())")

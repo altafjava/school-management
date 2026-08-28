@@ -6,9 +6,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.altafjava.platform.application.service.NumberSequenceService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
+import com.altafjava.platform.domain.numbering.model.ResetPeriod;
+import com.altafjava.school.domain.common.model.Address;
+import com.altafjava.school.domain.common.service.PhoneNumberValidator;
 import com.altafjava.school.domain.student.model.EnrollmentStatus;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
@@ -16,10 +20,15 @@ import com.altafjava.school.domain.student.repository.StudentRepository;
 @Service
 public class StudentService {
 
-	private final StudentRepository studentRepository;
+	private static final String STUDENT_CODE_SEQUENCE = "STUDENT_CODE";
 
-	public StudentService(StudentRepository studentRepository) {
+	private final StudentRepository studentRepository;
+	private final NumberSequenceService numberSequenceService;
+	private final PhoneNumberValidator phoneNumberValidator = new PhoneNumberValidator();
+
+	public StudentService(StudentRepository studentRepository, NumberSequenceService numberSequenceService) {
 		this.studentRepository = studentRepository;
+		this.numberSequenceService = numberSequenceService;
 	}
 
 	@Transactional(readOnly = true)
@@ -47,11 +56,21 @@ public class StudentService {
 	public Student enroll(String studentCode, String firstName, String lastName,
 			String email, LocalDate dateOfBirth) {
 		Long tenantId = TenantContext.getCurrentTenantId();
-		if (studentRepository.existsByStudentCodeAndTenantId(studentCode, tenantId)) {
-			throw new BusinessException("Student code already exists: " + studentCode);
+		String resolvedCode = resolveStudentCode(tenantId, studentCode);
+		if (studentRepository.existsByStudentCodeAndTenantId(resolvedCode, tenantId)) {
+			throw new BusinessException("Student code already exists: " + resolvedCode);
 		}
-		Student student = Student.create(studentCode, firstName, lastName, email, dateOfBirth);
+		Student student = Student.create(resolvedCode, firstName, lastName, email, dateOfBirth);
 		return studentRepository.save(student);
+	}
+
+	// A caller-supplied studentCode is an explicit override; omitting it defers to the tenant's
+	// configured numbering sequence (prefix/width/reset period), defaulting to "STU-0001" style.
+	private String resolveStudentCode(Long tenantId, String studentCode) {
+		if (studentCode != null && !studentCode.isBlank()) {
+			return studentCode;
+		}
+		return numberSequenceService.generateNext(tenantId, STUDENT_CODE_SEQUENCE, "STU-", 4, ResetPeriod.NEVER);
 	}
 
 	@Transactional
@@ -80,6 +99,24 @@ public class StudentService {
 			LocalDate dateOfBirth) {
 		Student student = findByPublicId(publicId);
 		student.updateContactDetails(firstName, lastName, email, dateOfBirth);
+		return studentRepository.save(student);
+	}
+
+	@Transactional
+	public Student updatePhone(String publicId, String phone) {
+		Student student = findByPublicId(publicId);
+		String defaultRegion = student.getAddress() != null ? student.getAddress().getCountryCode() : null;
+		if (!phoneNumberValidator.isValid(phone, defaultRegion)) {
+			throw new BusinessException("Invalid phone number: " + phone);
+		}
+		student.updatePhone(phone);
+		return studentRepository.save(student);
+	}
+
+	@Transactional
+	public Student updateAddress(String publicId, Address address) {
+		Student student = findByPublicId(publicId);
+		student.updateAddress(address);
 		return studentRepository.save(student);
 	}
 }

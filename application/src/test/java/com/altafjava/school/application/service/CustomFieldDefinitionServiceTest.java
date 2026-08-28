@@ -19,6 +19,7 @@ import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.domain.customfield.model.CustomFieldDefinition;
 import com.altafjava.school.domain.customfield.model.CustomFieldEntityType;
 import com.altafjava.school.domain.customfield.model.CustomFieldType;
+import com.altafjava.school.domain.customfield.model.CustomFieldValidationRule;
 import com.altafjava.school.domain.customfield.repository.CustomFieldDefinitionRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,7 +49,7 @@ class CustomFieldDefinitionServiceTest {
 				.thenAnswer(inv -> inv.getArgument(0));
 
 		CustomFieldDefinition definition = customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
-				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false);
+				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false, null, 0, null);
 
 		assertEquals("bloodGroup", definition.getFieldKey());
 	}
@@ -59,7 +60,32 @@ class CustomFieldDefinitionServiceTest {
 				CustomFieldEntityType.STUDENT, "bloodGroup")).thenReturn(true);
 
 		assertThrows(BusinessException.class, () -> customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
-				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false));
+				"bloodGroup", "Blood Group", CustomFieldType.TEXT, false, null, 0, null));
+	}
+
+	@Test
+	void create_selectTypeWithoutOptions_throwsBusinessException() {
+		when(customFieldDefinitionRepository.existsByTenantIdAndEntityTypeAndFieldKey(1L,
+				CustomFieldEntityType.STUDENT, "houseColor")).thenReturn(false);
+
+		assertThrows(BusinessException.class, () -> customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
+				"houseColor", "House Color", CustomFieldType.SELECT, false, null, 0, null));
+	}
+
+	@Test
+	void create_selectTypeWithOptions_succeeds() {
+		when(customFieldDefinitionRepository.existsByTenantIdAndEntityTypeAndFieldKey(1L,
+				CustomFieldEntityType.STUDENT, "houseColor")).thenReturn(false);
+		when(customFieldDefinitionRepository.save(any(CustomFieldDefinition.class)))
+				.thenAnswer(inv -> inv.getArgument(0));
+		CustomFieldValidationRule rule = CustomFieldValidationRule.builder().options("Red,Blue,Green").build();
+
+		CustomFieldDefinition definition = customFieldDefinitionService.create(CustomFieldEntityType.STUDENT,
+				"houseColor", "House Color", CustomFieldType.SELECT, false, rule, 3, "General");
+
+		assertEquals(3, definition.getDisplayOrder());
+		assertEquals("General", definition.getDisplayGroup());
+		assertEquals(3, definition.getValidationRule().optionList().size());
 	}
 
 	@Test

@@ -78,9 +78,10 @@ class GuardianSelfRegistrationIntegrationTest extends SchoolIntegrationTestBase 
 	@Test
 	void register_withPendingGuardianRecord_claimsRegardlessOfMode() {
 		String email = "pending-" + UUID.randomUUID() + "@school.test";
-		Guardian pending = guardianService.create("Jane", "Doe", email, "555-0100", null);
+		Guardian pending = guardianService.create("Jane", "Doe", email, "+14155552671", null);
 
-		Guardian claimed = guardianSelfRegistrationService.register(email, "Password123!", "Jane", "Doe", "555-0100");
+		Guardian claimed = guardianSelfRegistrationService.register(email, "Password123!", "Jane", "Doe",
+				"+14155552671");
 
 		assertEquals(pending.getPublicId(), claimed.getPublicId());
 		assertNotNull(claimed.getUserId());
@@ -90,13 +91,13 @@ class GuardianSelfRegistrationIntegrationTest extends SchoolIntegrationTestBase 
 	void register_withPendingGuardianAlreadyLinkedToStudent_stampsConsentOnLink() {
 		String suffix = UUID.randomUUID().toString().substring(0, 6);
 		String email = "pending-" + suffix + "@school.test";
-		Guardian pending = guardianService.create("Jane", "Doe", email, "555-0100", null);
+		Guardian pending = guardianService.create("Jane", "Doe", email, "+14155552671", null);
 		Student student = studentService.enroll("STU-" + suffix, "Alice", "Smith", "alice-" + suffix + "@school.test",
 				null);
 		guardianService.linkToStudent(pending.getPublicId().toString(), student.getPublicId().toString(),
 				RelationshipType.MOTHER, true);
 
-		guardianSelfRegistrationService.register(email, "Password123!", "Jane", "Doe", "555-0100");
+		guardianSelfRegistrationService.register(email, "Password123!", "Jane", "Doe", "+14155552671");
 
 		List<com.altafjava.school.domain.guardian.model.StudentGuardianLink> links = studentGuardianLinkRepository
 				.findAllByGuardianIdAndTenantId(pending.getId(), tenant.getId());
@@ -109,7 +110,7 @@ class GuardianSelfRegistrationIntegrationTest extends SchoolIntegrationTestBase 
 		String email = "unmatched-" + UUID.randomUUID() + "@school.test";
 
 		assertThrows(BusinessException.class,
-				() -> guardianSelfRegistrationService.register(email, "Password123!", "Alex", "Roe", "555-0200"));
+				() -> guardianSelfRegistrationService.register(email, "Password123!", "Alex", "Roe", "+14155552672"));
 	}
 
 	@Test
@@ -118,7 +119,7 @@ class GuardianSelfRegistrationIntegrationTest extends SchoolIntegrationTestBase 
 		String email = "open-" + UUID.randomUUID() + "@school.test";
 
 		Guardian created = guardianSelfRegistrationService.register(email, "Password123!", "Alex", "Roe",
-				"555-0200");
+				"+14155552672");
 
 		assertNotNull(created.getUserId());
 		assertEquals(email, created.getEmail());
@@ -129,11 +130,12 @@ class GuardianSelfRegistrationIntegrationTest extends SchoolIntegrationTestBase 
 		String email = "toggle-" + UUID.randomUUID() + "@school.test";
 
 		assertThrows(BusinessException.class,
-				() -> guardianSelfRegistrationService.register(email, "Password123!", "Sam", "Lee", "555-0300"));
+				() -> guardianSelfRegistrationService.register(email, "Password123!", "Sam", "Lee", "+14155552673"));
 
 		guardianRegistrationSettingsService.setMode(GuardianSelfRegistrationMode.OPEN);
 
-		Guardian created = guardianSelfRegistrationService.register(email, "Password123!", "Sam", "Lee", "555-0300");
+		Guardian created = guardianSelfRegistrationService.register(email, "Password123!", "Sam", "Lee",
+				"+14155552673");
 		assertNotNull(created.getUserId());
 	}
 }

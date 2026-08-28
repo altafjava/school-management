@@ -7,5 +7,8 @@ public record CustomFieldDefinitionResponse(
 		String label,
 		String fieldType,
 		boolean required,
-		boolean active) {
+		boolean active,
+		CustomFieldValidationRuleResponse validationRule,
+		int displayOrder,
+		String displayGroup) {
 }
