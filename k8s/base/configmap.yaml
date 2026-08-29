@@ -18,4 +18,6 @@ data:
   MANAGEMENT_PROMETHEUS_METRICS_EXPORT_ENABLED: "true"
   # Micrometer Tracing — Brave/Zipkin bridge
   MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.1"
-  MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: "http://zipkin-service:9411/api/v2/spans"
+  # Tracing stack is OTel (inherited from platform-saas's spring-boot-starter), not Zipkin/Brave —
+  # endpoint matches the OTLP HTTP exporter's default port.
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://otel-collector:4318/v1/traces"

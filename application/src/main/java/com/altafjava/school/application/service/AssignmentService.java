@@ -109,9 +109,8 @@ public class AssignmentService {
 				.getContent().stream()
 				.map(StudentClassroomLink::getStudentId)
 				.toList();
-		for (Long studentId : studentIds) {
-			studentRepository.findByIdAndTenantId(studentId, tenantId)
-					.ifPresent(student -> notifyRecipient(tenantId, student, assignment));
+		for (Student student : studentRepository.findAllByIdInAndTenantId(studentIds, tenantId)) {
+			notifyRecipient(tenantId, student, assignment);
 		}
 	}
 
