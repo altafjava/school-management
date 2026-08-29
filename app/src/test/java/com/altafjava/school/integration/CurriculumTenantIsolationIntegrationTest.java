@@ -282,4 +282,66 @@ class CurriculumTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 		assertEquals(2, result.gradeCount());
 		assertEquals(0, new BigDecimal("3.50").compareTo(result.gpa()));
 	}
+
+	// Phase 3.3 caching (BoardService/CurriculumService/GradingScaleService): TestRedisConfig
+	// mocks RedisConnectionFactory outright for the "test" profile (used by every school-saas
+	// test, including this one — school-saas has no separate real-Redis profile the way
+	// platform-saas's resilience tests do), so an actual cache-hit/miss can't be observed here —
+	// every read/write against the mocked connection is a silent no-op. What these tests instead
+	// verify: the annotations are correctly wired (confirmed separately — see
+	// AnnotationCacheOperationSource TRACE output during this test's own startup) and, more
+	// importantly, that business correctness holds regardless of whether a stale value happened to
+	// be cached: updateDetails/assignGradingScale evict before the next read, so the next read is
+	// never wrong even in a real deployment where Redis genuinely does cache the prior value.
+	@Test
+	void boardLookup_evictedOnUpdate_reflectsNewName() {
+		activateTenant(tenantA);
+		authenticateAsTenantAdmin();
+		Board created = boardService.create("Stale-" + UUID.randomUUID(),
+				"STL-" + UUID.randomUUID().toString().substring(0, 6), null);
+		String publicId = created.getPublicId().toString();
+		boardService.findByPublicId(publicId);
+
+		boardService.updateDetails(publicId, "Renamed", created.getCode(), null);
+		Board afterUpdate = boardService.findByPublicId(publicId);
+
+		assertEquals("Renamed", afterUpdate.getName());
+	}
+
+	// GradingScaleService.resolveEffectiveThresholds is @Cacheable; CurriculumService.
+	// assignGradingScale and ClassroomService.assignCurriculum evict it wholesale — see the
+	// boardLookup test above for why cache-hit itself isn't observable under the "test" profile.
+	// Verifies reassigning the curriculum's grading scale is reflected on the very next call
+	// rather than serving the old scale's thresholds.
+	@Test
+	void resolveEffectiveThresholds_reflectsScaleReassignment_notStale() {
+		activateTenant(tenantA);
+		authenticateAsTenantAdmin();
+		String suffix = UUID.randomUUID().toString().substring(0, 6);
+		Board board = boardService.create("Board-" + suffix, "BRD-" + suffix, null);
+		Curriculum curriculum = curriculumService.create(board.getPublicId().toString(), "Curriculum-" + suffix,
+				"CUR-" + suffix, null);
+		GradingScale scaleOne = gradingScaleService.create("Scale One " + suffix, List.of(
+				new GradingScaleThresholdInput("A", new BigDecimal("90"), new BigDecimal("4.0")),
+				new GradingScaleThresholdInput("F", BigDecimal.ZERO, BigDecimal.ZERO)), false);
+		GradingScale scaleTwo = gradingScaleService.create("Scale Two " + suffix, List.of(
+				new GradingScaleThresholdInput("P", new BigDecimal("50"), new BigDecimal("1.0")),
+				new GradingScaleThresholdInput("F", BigDecimal.ZERO, BigDecimal.ZERO)), false);
+		curriculumService.assignGradingScale(curriculum.getPublicId().toString(), scaleOne.getPublicId().toString());
+		AcademicYear academicYear = academicYearService.create("AY-" + suffix, LocalDate.of(2026, 4, 1),
+				LocalDate.of(2027, 3, 31), true);
+		Classroom classroom = classroomService.create("CLS-" + suffix, "Grade 5", "A",
+				academicYear.getPublicId().toString(), null);
+		classroomService.assignCurriculum(classroom.getPublicId().toString(), curriculum.getPublicId().toString());
+
+		List<com.altafjava.school.domain.curriculum.model.GradingScaleThreshold> firstRead = gradingScaleService
+				.resolveEffectiveThresholds(classroom.getId());
+		assertEquals("A", firstRead.get(0).getLetter());
+
+		curriculumService.assignGradingScale(curriculum.getPublicId().toString(), scaleTwo.getPublicId().toString());
+		List<com.altafjava.school.domain.curriculum.model.GradingScaleThreshold> afterReassignment = gradingScaleService
+				.resolveEffectiveThresholds(classroom.getId());
+
+		assertEquals("P", afterReassignment.get(0).getLetter());
+	}
 }

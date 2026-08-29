@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,18 @@ import com.altafjava.school.domain.curriculum.repository.GradingScaleThresholdRe
  */
 @Service
 public class GradingScaleService {
+
+	/**
+	 * {@link #resolveEffectiveThresholds} is on the grade-entry/GPA-computation/report-card hot
+	 * path — cached to avoid the classroom→curriculum→grading-scale chain lookup on every call.
+	 * Evicted wholesale (not by classroom ID) on any write that could change what a classroom
+	 * resolves to: a scale's own thresholds/default status here, or a curriculum's assigned scale
+	 * in {@code CurriculumService.assignGradingScale} — the writing side doesn't know which
+	 * classroom IDs are affected, so a full-region evict trades a few extra cache misses for
+	 * correctness, matching platform's own {@code PushProviderConfigService} precedent for the
+	 * same "invalidator doesn't know the downstream keys" shape.
+	 */
+	public static final String CACHE_GRADING_SCALE_THRESHOLDS = "gradingScaleThresholds";
 
 	private final GradingScaleRepository gradingScaleRepository;
 	private final GradingScaleThresholdRepository gradingScaleThresholdRepository;
@@ -65,6 +79,7 @@ public class GradingScaleService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = CACHE_GRADING_SCALE_THRESHOLDS, allEntries = true)
 	public GradingScale create(String name, List<GradingScaleThresholdInput> thresholds, boolean isDefault) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (gradingScaleRepository.existsByNameAndTenantId(name, tenantId)) {
@@ -80,6 +95,7 @@ public class GradingScaleService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = CACHE_GRADING_SCALE_THRESHOLDS, allEntries = true)
 	public GradingScale updateThresholds(String publicId, List<GradingScaleThresholdInput> thresholds) {
 		validateCoverage(thresholds);
 		GradingScale scale = findByPublicId(publicId);
@@ -91,6 +107,7 @@ public class GradingScaleService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = CACHE_GRADING_SCALE_THRESHOLDS, allEntries = true)
 	public GradingScale markAsDefault(String publicId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		unmarkExistingDefault(tenantId);
@@ -100,6 +117,7 @@ public class GradingScaleService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = CACHE_GRADING_SCALE_THRESHOLDS, allEntries = true)
 	public GradingScale deactivate(String publicId) {
 		GradingScale scale = findByPublicId(publicId);
 		if (scale.isDefault()) {
@@ -110,6 +128,7 @@ public class GradingScaleService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(cacheNames = CACHE_GRADING_SCALE_THRESHOLDS, keyGenerator = "tenantAwareCacheKeyGenerator")
 	public List<GradingScaleThreshold> resolveEffectiveThresholds(Long classroomId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		Long gradingScaleId = resolveGradingScaleId(tenantId, classroomId);
