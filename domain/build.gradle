@@ -42,6 +42,9 @@ dependencies {
     // Country-aware phone validation (PhoneNumberValidator) — a plain utility library with no
     // Spring/Jakarta dependency of its own, safe for a pure domain service to depend on directly.
     implementation libs.libphonenumber
+    // Plain data-marshalling library (no Spring/JPA/HTTP coupling) backing
+    // PayComponentAmountListConverter's JSON column conversion.
+    implementation libs.jackson.databind
     testImplementation libs.junit.jupiter.api
     testRuntimeOnly libs.junit.jupiter.engine
     testRuntimeOnly libs.junit.platform.launcher

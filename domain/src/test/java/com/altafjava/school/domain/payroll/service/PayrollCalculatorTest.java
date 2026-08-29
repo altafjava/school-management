@@ -9,6 +9,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import com.altafjava.school.domain.leave.model.LeaveRequest;
+import com.altafjava.school.domain.payroll.model.PayComponentAmount;
+import com.altafjava.school.domain.payroll.model.PayComponentType;
 import com.altafjava.school.domain.payroll.model.PayrollComputation;
 import com.altafjava.school.domain.payroll.model.SalarySnapshot;
 
@@ -18,8 +20,16 @@ class PayrollCalculatorTest {
 
 	// basic 50000 + hra 10000 + transport 2000 + other allowances 500 = gross 62500; deductions 1000.
 	private SalarySnapshot snapshot() {
-		return new SalarySnapshot(BigDecimal.valueOf(50000), BigDecimal.valueOf(10000), BigDecimal.valueOf(2000),
-				BigDecimal.valueOf(500), BigDecimal.valueOf(1000));
+		return new SalarySnapshot(List.of(
+				new PayComponentAmount("BASIC", "Basic Pay", PayComponentType.EARNING, BigDecimal.valueOf(50000)),
+				new PayComponentAmount("HRA", "House Rent Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(10000)),
+				new PayComponentAmount("TRANSPORT", "Transport Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(2000)),
+				new PayComponentAmount("OTHER_ALLOWANCE", "Other Allowances", PayComponentType.EARNING,
+						BigDecimal.valueOf(500)),
+				new PayComponentAmount("OTHER_DEDUCTION", "Other Deductions", PayComponentType.DEDUCTION,
+						BigDecimal.valueOf(1000))));
 	}
 
 	private LeaveRequest unpaidLeave(LocalDate start, LocalDate end) {

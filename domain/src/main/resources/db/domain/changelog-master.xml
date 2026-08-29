@@ -52,5 +52,7 @@
     <include file="db/domain/changesets/045-tenant-admin-school-permissions.xml"/>
     <include file="db/domain/changesets/046-backfill-tenant-roles.xml"/>
     <include file="db/domain/changesets/047-custom-field-grouping-visibility.xml"/>
+    <include file="db/domain/changesets/048-pay-component-definitions.xml"/>
+    <include file="db/domain/changesets/049-exam-type-definitions.xml"/>
 
 </databaseChangeLog>

@@ -25,6 +25,7 @@ import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
+import com.altafjava.school.domain.exam.repository.ExamTypeDefinitionRepository;
 import com.altafjava.school.domain.student.repository.StudentRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.domain.teacher.repository.TeacherRepository;
@@ -77,6 +78,9 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private AcademicYearService academicYearService;
+
+	@Autowired
+	private ExamTypeDefinitionRepository examTypeDefinitionRepository;
 
 	private Long tenantId;
 	private String adminToken;
@@ -257,12 +261,15 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 	}
 
 	private String createExam(String title, Long subjectId, Long classroomId) {
+		Long examTypeId = withTenant(
+				() -> examTypeDefinitionRepository.findByCodeAndTenantId("MIDTERM", tenantId).orElseThrow().getId());
 		return given()
 				.header("X-Tenant-ID", tenantId)
 				.header("Authorization", "Bearer " + adminToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"" + title + "\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100,\"examType\":\"MIDTERM\"}")
+						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100,\"examTypeId\":" + examTypeId
+						+ "}")
 				.when()
 				.post("/api/v1/exams")
 				.then()

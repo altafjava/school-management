@@ -37,6 +37,11 @@ import com.altafjava.school.domain.curriculum.model.GradingScale;
 import com.altafjava.school.domain.curriculum.model.GradingScaleThreshold;
 import com.altafjava.school.domain.curriculum.repository.GradingScaleRepository;
 import com.altafjava.school.domain.curriculum.repository.GradingScaleThresholdRepository;
+import com.altafjava.school.domain.exam.model.ExamTypeDefinition;
+import com.altafjava.school.domain.exam.repository.ExamTypeDefinitionRepository;
+import com.altafjava.school.domain.payroll.model.PayComponentDefinition;
+import com.altafjava.school.domain.payroll.model.PayComponentType;
+import com.altafjava.school.domain.payroll.repository.PayComponentDefinitionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import tools.jackson.core.JacksonException;
@@ -132,6 +137,26 @@ public class SchoolTenantProvisioningListener {
 			new AlertRuleSeed(LibraryOverdueRuleEvaluator.RULE_TYPE, "Library book overdue",
 					BigDecimal.ZERO, NotificationType.BOOK_OVERDUE));
 
+	// Preserves the pre-Phase-1 fixed Basic/HRA/Transport/Other shape as each tenant's own
+	// editable starting point — a non-Indian tenant can freely rename, deactivate, or add
+	// components afterward via PayComponentDefinitionController, no code change needed.
+	private static final List<PayComponentSeed> PAY_COMPONENT_SEEDS = List.of(
+			new PayComponentSeed("BASIC", "Basic Pay", PayComponentType.EARNING, 1),
+			new PayComponentSeed("HRA", "House Rent Allowance", PayComponentType.EARNING, 2),
+			new PayComponentSeed("TRANSPORT", "Transport Allowance", PayComponentType.EARNING, 3),
+			new PayComponentSeed("OTHER_ALLOWANCE", "Other Allowances", PayComponentType.EARNING, 4),
+			new PayComponentSeed("OTHER_DEDUCTION", "Other Deductions", PayComponentType.DEDUCTION, 5));
+
+	// Preserves the pre-Phase-1 fixed ExamType enum values (UNIT_TEST/MIDTERM/FINAL/QUIZ) as each
+	// tenant's own editable starting point — a board with a different exam categorization scheme
+	// (e.g. Formative/Summative) can rename, deactivate, or add types afterward via
+	// ExamTypeDefinitionController, no code change needed.
+	private static final List<ExamTypeSeed> EXAM_TYPE_SEEDS = List.of(
+			new ExamTypeSeed("UNIT_TEST", "Unit Test", 1),
+			new ExamTypeSeed("MIDTERM", "Midterm", 2),
+			new ExamTypeSeed("FINAL", "Final", 3),
+			new ExamTypeSeed("QUIZ", "Quiz", 4));
+
 	private final AcademicYearRepository academicYearRepository;
 	private final NotificationTemplateRepository notificationTemplateRepository;
 	private final GradingScaleRepository gradingScaleRepository;
@@ -140,6 +165,8 @@ public class SchoolTenantProvisioningListener {
 	private final AlertRuleService alertRuleService;
 	private final ApprovalWorkflowDefinitionService approvalWorkflowDefinitionService;
 	private final ApprovalWorkflowDefinitionRepository approvalWorkflowDefinitionRepository;
+	private final PayComponentDefinitionRepository payComponentDefinitionRepository;
+	private final ExamTypeDefinitionRepository examTypeDefinitionRepository;
 	private final ObjectMapper objectMapper;
 
 	@Async("platformTaskExecutor")
@@ -156,6 +183,8 @@ public class SchoolTenantProvisioningListener {
 			seedDashboardReportDefinitions(event.tenantId());
 			seedDefaultAlertRules(event.tenantId());
 			seedDefaultApprovalWorkflows();
+			seedDefaultPayComponents(event.tenantId());
+			seedDefaultExamTypes(event.tenantId());
 		});
 		log.info("action=school-tenant-provisioning-complete tenantId={}", event.tenantId());
 	}
@@ -284,6 +313,35 @@ public class SchoolTenantProvisioningListener {
 		log.info("action=seed-alert-rule-created tenantId={} ruleType={}", tenantId, seed.ruleType());
 	}
 
+	private void seedDefaultPayComponents(Long tenantId) {
+		PAY_COMPONENT_SEEDS.forEach(seed -> seedPayComponent(tenantId, seed));
+	}
+
+	private void seedPayComponent(Long tenantId, PayComponentSeed seed) {
+		if (payComponentDefinitionRepository.existsByCodeAndTenantId(seed.code(), tenantId)) {
+			log.info("action=seed-pay-component-skipped tenantId={} code={} reason=already-exists", tenantId,
+					seed.code());
+			return;
+		}
+		payComponentDefinitionRepository
+				.save(PayComponentDefinition.create(seed.code(), seed.name(), seed.type(), seed.displayOrder()));
+		log.info("action=seed-pay-component-created tenantId={} code={}", tenantId, seed.code());
+	}
+
+	private void seedDefaultExamTypes(Long tenantId) {
+		EXAM_TYPE_SEEDS.forEach(seed -> seedExamType(tenantId, seed));
+	}
+
+	private void seedExamType(Long tenantId, ExamTypeSeed seed) {
+		if (examTypeDefinitionRepository.existsByCodeAndTenantId(seed.code(), tenantId)) {
+			log.info("action=seed-exam-type-skipped tenantId={} code={} reason=already-exists", tenantId,
+					seed.code());
+			return;
+		}
+		examTypeDefinitionRepository.save(ExamTypeDefinition.create(seed.code(), seed.name(), seed.displayOrder()));
+		log.info("action=seed-exam-type-created tenantId={} code={}", tenantId, seed.code());
+	}
+
 	private String serializeVariableNames(List<String> variableNames) {
 		try {
 			return objectMapper.writeValueAsString(variableNames);
@@ -303,5 +361,11 @@ public class SchoolTenantProvisioningListener {
 
 	private record AlertRuleSeed(String ruleType, String name, BigDecimal thresholdValue,
 			NotificationType notificationType) {
+	}
+
+	private record PayComponentSeed(String code, String name, PayComponentType type, int displayOrder) {
+	}
+
+	private record ExamTypeSeed(String code, String name, int displayOrder) {
 	}
 }

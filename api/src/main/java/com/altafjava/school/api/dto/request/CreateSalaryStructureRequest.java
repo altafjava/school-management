@@ -1,17 +1,18 @@
 package com.altafjava.school.api.dto.request;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import jakarta.validation.constraints.DecimalMin;
+import java.util.List;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 public record CreateSalaryStructureRequest(
 		@NotBlank String teacherPublicId,
-		@NotNull @DecimalMin(value = "0.0", inclusive = false) BigDecimal basicPay,
-		@NotNull @DecimalMin(value = "0.0") BigDecimal houseRentAllowance,
-		@NotNull @DecimalMin(value = "0.0") BigDecimal transportAllowance,
-		@NotNull @DecimalMin(value = "0.0") BigDecimal otherAllowances,
-		@NotNull @DecimalMin(value = "0.0") BigDecimal otherDeductions,
+		@NotEmpty @Valid List<PayComponentAmountRequest> components,
 		@NotNull LocalDate effectiveFrom) {
+
+	public CreateSalaryStructureRequest {
+		components = components == null ? null : List.copyOf(components);
+	}
 }

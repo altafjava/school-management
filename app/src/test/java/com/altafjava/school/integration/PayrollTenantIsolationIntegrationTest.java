@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import com.altafjava.school.application.service.TeacherService;
 import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
+import com.altafjava.school.domain.payroll.model.PayComponentAmount;
 import com.altafjava.school.domain.payroll.model.Payslip;
 import com.altafjava.school.domain.payroll.model.SalaryStructure;
 import com.altafjava.school.domain.teacher.model.Teacher;
@@ -79,8 +81,19 @@ class PayrollTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 	}
 
 	private SalaryStructure createStructure(String teacherPublicId) {
-		return salaryStructureService.create(teacherPublicId, BigDecimal.valueOf(50000), BigDecimal.valueOf(10000),
-				BigDecimal.valueOf(2000), BigDecimal.valueOf(500), BigDecimal.valueOf(1000), LocalDate.of(2026, 1, 1));
+		return salaryStructureService.create(teacherPublicId,
+				Map.of("BASIC", BigDecimal.valueOf(50000), "HRA", BigDecimal.valueOf(10000), "TRANSPORT",
+						BigDecimal.valueOf(2000), "OTHER_ALLOWANCE", BigDecimal.valueOf(500), "OTHER_DEDUCTION",
+						BigDecimal.valueOf(1000)),
+				LocalDate.of(2026, 1, 1));
+	}
+
+	private BigDecimal amountFor(Payslip payslip, String code) {
+		return payslip.getComponents().stream()
+				.filter(component -> component.code().equals(code))
+				.findFirst()
+				.map(PayComponentAmount::amount)
+				.orElseThrow();
 	}
 
 	@Test
@@ -115,8 +128,7 @@ class PayrollTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		SalaryStructure first = createStructure(teacher.getPublicId().toString());
 
 		SalaryStructure second = salaryStructureService.create(teacher.getPublicId().toString(),
-				BigDecimal.valueOf(60000), BigDecimal.valueOf(10000), BigDecimal.valueOf(2000), BigDecimal.valueOf(500),
-				BigDecimal.valueOf(1000), LocalDate.of(2026, 6, 1));
+				Map.of("BASIC", BigDecimal.valueOf(60000)), LocalDate.of(2026, 6, 1));
 
 		SalaryStructure reloadedFirst = salaryStructureService.findByPublicId(first.getPublicId().toString());
 		assertFalse(reloadedFirst.isActive(), "Previous salary structure must be deactivated on supersession");
@@ -141,11 +153,11 @@ class PayrollTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		createStructure(teacher.getPublicId().toString());
 		Payslip payslip = payslipService.generate(teacher.getId(), YearMonth.of(2026, 5));
 
-		salaryStructureService.create(teacher.getPublicId().toString(), BigDecimal.valueOf(90000), BigDecimal.ZERO,
-				BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, LocalDate.of(2026, 6, 1));
+		salaryStructureService.create(teacher.getPublicId().toString(), Map.of("BASIC", BigDecimal.valueOf(90000)),
+				LocalDate.of(2026, 6, 1));
 
 		Payslip reloaded = payslipService.findByPublicId(payslip.getPublicId().toString());
-		assertEquals(0, BigDecimal.valueOf(50000).compareTo(reloaded.getBasicPay()),
+		assertEquals(0, BigDecimal.valueOf(50000).compareTo(amountFor(reloaded, "BASIC")),
 				"Payslip must keep its generation-time snapshot, unaffected by the later revision");
 	}
 }

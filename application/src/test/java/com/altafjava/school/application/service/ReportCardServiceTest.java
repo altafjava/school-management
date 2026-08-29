@@ -144,7 +144,7 @@ class ReportCardServiceTest {
 
 	private Exam examAt(long id, LocalDateTime scheduledAt) {
 		Exam exam = Exam.create("Midterm", 5L, 2L, scheduledAt, BigDecimal.valueOf(100), null,
-				com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
+				1L);
 		exam.setId(id);
 		return exam;
 	}

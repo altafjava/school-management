@@ -100,11 +100,13 @@ class PayslipCrudE2ETest extends SchoolIntegrationTestBase {
 				.body("""
 						{
 						  "teacherPublicId": "%s",
-						  "basicPay": 50000.00,
-						  "houseRentAllowance": 10000.00,
-						  "transportAllowance": 2000.00,
-						  "otherAllowances": 500.00,
-						  "otherDeductions": 1000.00,
+						  "components": [
+						    {"code": "BASIC", "amount": 50000.00},
+						    {"code": "HRA", "amount": 10000.00},
+						    {"code": "TRANSPORT", "amount": 2000.00},
+						    {"code": "OTHER_ALLOWANCE", "amount": 500.00},
+						    {"code": "OTHER_DEDUCTION", "amount": 1000.00}
+						  ],
 						  "effectiveFrom": "2026-01-01"
 						}
 						""".formatted(teacherPublicId))

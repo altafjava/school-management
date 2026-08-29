@@ -2,7 +2,9 @@ package com.altafjava.school.domain.payroll.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,13 +12,14 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
+import com.altafjava.school.domain.payroll.converter.PayComponentAmountListConverter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 /**
- * One per teacher per calendar month. The allowance/deduction fields are a snapshot copied from the
+ * One per teacher per calendar month. The pay-component breakdown is a snapshot copied from the
  * teacher's {@link SalaryStructure} at generation time (see {@link SalarySnapshot}) — a later
  * revision to that structure must never change an already-generated payslip.
  */
@@ -38,20 +41,9 @@ public class Payslip extends SoftDeletableEntity {
 	@Column(name = "pay_month", nullable = false)
 	private int payMonth;
 
-	@Column(name = "basic_pay", nullable = false, precision = 12, scale = 2)
-	private BigDecimal basicPay;
-
-	@Column(name = "house_rent_allowance", nullable = false, precision = 12, scale = 2)
-	private BigDecimal houseRentAllowance;
-
-	@Column(name = "transport_allowance", nullable = false, precision = 12, scale = 2)
-	private BigDecimal transportAllowance;
-
-	@Column(name = "other_allowances", nullable = false, precision = 12, scale = 2)
-	private BigDecimal otherAllowances;
-
-	@Column(name = "other_deductions", nullable = false, precision = 12, scale = 2)
-	private BigDecimal otherDeductions;
+	@Convert(converter = PayComponentAmountListConverter.class)
+	@Column(name = "components_json", nullable = false)
+	private List<PayComponentAmount> components;
 
 	@Column(name = "gross_pay", nullable = false, precision = 12, scale = 2)
 	private BigDecimal grossPay;
@@ -81,11 +73,7 @@ public class Payslip extends SoftDeletableEntity {
 				.teacherId(teacherId)
 				.payYear(payYear)
 				.payMonth(payMonth)
-				.basicPay(snapshot.basicPay())
-				.houseRentAllowance(snapshot.houseRentAllowance())
-				.transportAllowance(snapshot.transportAllowance())
-				.otherAllowances(snapshot.otherAllowances())
-				.otherDeductions(snapshot.otherDeductions())
+				.components(snapshot.components())
 				.grossPay(computation.grossPay())
 				.lossOfPayDays(computation.lossOfPayDays())
 				.lossOfPayAmount(computation.lossOfPayAmount())

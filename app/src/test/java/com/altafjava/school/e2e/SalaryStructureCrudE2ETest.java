@@ -87,11 +87,12 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.body("""
 						{
 						  "teacherPublicId": "%s",
-						  "basicPay": 50000.00,
-						  "houseRentAllowance": 10000.00,
-						  "transportAllowance": 2000.00,
-						  "otherAllowances": 500.00,
-						  "otherDeductions": 1000.00,
+						  "components": [
+						    {"code": "BASIC", "amount": 50000.00},
+						    {"code": "HRA", "amount": 10000.00},
+						    {"code": "TRANSPORT", "amount": 2000.00},
+						    {"code": "OTHER_ALLOWANCE", "amount": 500.00}
+						  ],
 						  "effectiveFrom": "2026-01-01"
 						}
 						""".formatted(teacherPublicId))
@@ -101,7 +102,7 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.statusCode(HttpStatus.CREATED.value())
 				.body("publicId", notNullValue())
 				.body("active", equalTo(true))
-				.body("basicPay", equalTo(50000.00f));
+				.body("grossPay", equalTo(62500.00f));
 	}
 
 	@Test
@@ -115,11 +116,9 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.body("""
 						{
 						  "teacherPublicId": "%s",
-						  "basicPay": 40000.00,
-						  "houseRentAllowance": 0,
-						  "transportAllowance": 0,
-						  "otherAllowances": 0,
-						  "otherDeductions": 0,
+						  "components": [
+						    {"code": "BASIC", "amount": 40000.00}
+						  ],
 						  "effectiveFrom": "2025-01-01"
 						}
 						""".formatted(teacherPublicId))
@@ -135,11 +134,11 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.contentType(ContentType.JSON)
 				.body("""
 						{
-						  "basicPay": 60000.00,
-						  "houseRentAllowance": 10000.00,
-						  "transportAllowance": 2000.00,
-						  "otherAllowances": 0,
-						  "otherDeductions": 0,
+						  "components": [
+						    {"code": "BASIC", "amount": 60000.00},
+						    {"code": "HRA", "amount": 10000.00},
+						    {"code": "TRANSPORT", "amount": 2000.00}
+						  ],
 						  "effectiveFrom": "2026-01-01"
 						}
 						""")
@@ -148,7 +147,7 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.then()
 				.statusCode(HttpStatus.OK.value())
 				.body("active", equalTo(true))
-				.body("basicPay", equalTo(60000.00f));
+				.body("grossPay", equalTo(72000.00f));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -183,11 +182,9 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.body("""
 						{
 						  "teacherPublicId": "%s",
-						  "basicPay": 50000.00,
-						  "houseRentAllowance": 0,
-						  "transportAllowance": 0,
-						  "otherAllowances": 0,
-						  "otherDeductions": 0,
+						  "components": [
+						    {"code": "BASIC", "amount": 50000.00}
+						  ],
 						  "effectiveFrom": "2026-01-01"
 						}
 						""".formatted(UUID.randomUUID()))
@@ -208,11 +205,9 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.body("""
 						{
 						  "teacherPublicId": "%s",
-						  "basicPay": 45000.00,
-						  "houseRentAllowance": 0,
-						  "transportAllowance": 0,
-						  "otherAllowances": 0,
-						  "otherDeductions": 0,
+						  "components": [
+						    {"code": "BASIC", "amount": 45000.00}
+						  ],
 						  "effectiveFrom": "2026-01-01"
 						}
 						""".formatted(teacherPublicId))

@@ -6,15 +6,27 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import com.altafjava.platform.core.exception.BusinessException;
 
 class SalaryStructureTest {
 
+	private List<PayComponentAmount> components() {
+		return List.of(
+				new PayComponentAmount("BASIC", "Basic Pay", PayComponentType.EARNING, BigDecimal.valueOf(50000)),
+				new PayComponentAmount("HRA", "House Rent Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(10000)),
+				new PayComponentAmount("TRANSPORT", "Transport Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(2000)),
+				new PayComponentAmount("OTHER_ALLOWANCE", "Other Allowances", PayComponentType.EARNING,
+						BigDecimal.valueOf(500)),
+				new PayComponentAmount("OTHER_DEDUCTION", "Other Deductions", PayComponentType.DEDUCTION,
+						BigDecimal.valueOf(1000)));
+	}
+
 	private SalaryStructure structure() {
-		return SalaryStructure.create(1L, BigDecimal.valueOf(50000), BigDecimal.valueOf(10000),
-				BigDecimal.valueOf(2000), BigDecimal.valueOf(500), BigDecimal.valueOf(1000),
-				LocalDate.of(2026, 1, 1));
+		return SalaryStructure.create(1L, components(), LocalDate.of(2026, 1, 1));
 	}
 
 	@Test
@@ -26,15 +38,27 @@ class SalaryStructureTest {
 	}
 
 	@Test
-	void create_withZeroBasicPay_throwsBusinessException() {
-		assertThrows(BusinessException.class, () -> SalaryStructure.create(1L, BigDecimal.ZERO,
-				BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, LocalDate.of(2026, 1, 1)));
+	void create_withEmptyComponents_throwsBusinessException() {
+		assertThrows(BusinessException.class, () -> SalaryStructure.create(1L, List.of(), LocalDate.of(2026, 1, 1)));
 	}
 
 	@Test
-	void create_withNegativeBasicPay_throwsBusinessException() {
-		assertThrows(BusinessException.class, () -> SalaryStructure.create(1L, BigDecimal.valueOf(-100),
-				BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, LocalDate.of(2026, 1, 1)));
+	void create_withZeroGrossPay_throwsBusinessException() {
+		List<PayComponentAmount> zeroEarning = List.of(
+				new PayComponentAmount("BASIC", "Basic Pay", PayComponentType.EARNING, BigDecimal.ZERO));
+
+		assertThrows(BusinessException.class,
+				() -> SalaryStructure.create(1L, zeroEarning, LocalDate.of(2026, 1, 1)));
+	}
+
+	@Test
+	void create_withOnlyDeductionComponents_throwsBusinessException() {
+		List<PayComponentAmount> onlyDeduction = List.of(
+				new PayComponentAmount("OTHER_DEDUCTION", "Other Deductions", PayComponentType.DEDUCTION,
+						BigDecimal.valueOf(1000)));
+
+		assertThrows(BusinessException.class,
+				() -> SalaryStructure.create(1L, onlyDeduction, LocalDate.of(2026, 1, 1)));
 	}
 
 	@Test
@@ -47,7 +71,7 @@ class SalaryStructureTest {
 	}
 
 	@Test
-	void grossPay_sumsBasicAndAllowances() {
+	void grossPay_sumsEarningComponentsOnly() {
 		SalaryStructure structure = structure();
 
 		BigDecimal grossPay = structure.grossPay();
@@ -61,10 +85,8 @@ class SalaryStructureTest {
 
 		SalarySnapshot snapshot = structure.toSnapshot();
 
-		assertEquals(0, structure.getBasicPay().compareTo(snapshot.basicPay()));
-		assertEquals(0, structure.getHouseRentAllowance().compareTo(snapshot.houseRentAllowance()));
-		assertEquals(0, structure.getTransportAllowance().compareTo(snapshot.transportAllowance()));
-		assertEquals(0, structure.getOtherAllowances().compareTo(snapshot.otherAllowances()));
-		assertEquals(0, structure.getOtherDeductions().compareTo(snapshot.otherDeductions()));
+		assertEquals(components().size(), snapshot.components().size());
+		assertEquals(0, BigDecimal.valueOf(62500).compareTo(snapshot.grossPay()));
+		assertEquals(0, BigDecimal.valueOf(1000).compareTo(snapshot.totalDeductions()));
 	}
 }

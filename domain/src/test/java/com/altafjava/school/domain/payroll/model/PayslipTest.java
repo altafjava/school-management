@@ -4,14 +4,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import com.altafjava.platform.core.exception.BusinessException;
 
 class PayslipTest {
 
 	private SalarySnapshot snapshot() {
-		return new SalarySnapshot(BigDecimal.valueOf(50000), BigDecimal.valueOf(10000), BigDecimal.valueOf(2000),
-				BigDecimal.valueOf(500), BigDecimal.valueOf(1000));
+		return new SalarySnapshot(List.of(
+				new PayComponentAmount("BASIC", "Basic Pay", PayComponentType.EARNING, BigDecimal.valueOf(50000)),
+				new PayComponentAmount("HRA", "House Rent Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(10000)),
+				new PayComponentAmount("TRANSPORT", "Transport Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(2000)),
+				new PayComponentAmount("OTHER_ALLOWANCE", "Other Allowances", PayComponentType.EARNING,
+						BigDecimal.valueOf(500)),
+				new PayComponentAmount("OTHER_DEDUCTION", "Other Deductions", PayComponentType.DEDUCTION,
+						BigDecimal.valueOf(1000))));
 	}
 
 	private PayrollComputation computation() {
@@ -31,6 +40,7 @@ class PayslipTest {
 		assertEquals(2026, payslip.getPayYear());
 		assertEquals(6, payslip.getPayMonth());
 		assertEquals(0, BigDecimal.valueOf(61500).compareTo(payslip.getNetPay()));
+		assertEquals(5, payslip.getComponents().size());
 	}
 
 	@Test
