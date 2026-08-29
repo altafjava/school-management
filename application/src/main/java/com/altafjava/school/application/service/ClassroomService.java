@@ -3,6 +3,7 @@ package com.altafjava.school.application.service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -104,7 +105,10 @@ public class ClassroomService {
 		return classroomRepository.save(classroom);
 	}
 
+	// Changes which grading scale this classroom resolves to (via the new curriculum) — see
+	// GradingScaleService.CACHE_GRADING_SCALE_THRESHOLDS for why this can only evict wholesale.
 	@Transactional
+	@CacheEvict(cacheNames = GradingScaleService.CACHE_GRADING_SCALE_THRESHOLDS, allEntries = true)
 	public Classroom assignCurriculum(String publicId, String curriculumPublicId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		Classroom classroom = findByPublicId(publicId);

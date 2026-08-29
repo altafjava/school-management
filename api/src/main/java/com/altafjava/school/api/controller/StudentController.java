@@ -43,6 +43,7 @@ import com.altafjava.school.api.mapper.FeeBalanceMapper;
 import com.altafjava.school.api.mapper.GradeMapper;
 import com.altafjava.school.api.mapper.ReportCardMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
+import com.altafjava.school.api.ratelimit.RateLimited;
 import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.AttendanceService;
@@ -130,6 +131,7 @@ public class StudentController implements StudentApi {
 	@Override
 	@PostMapping("/bulk-import")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
+	@RateLimited(key = "student-bulk-import", capacity = 5, periodMinutes = 60)
 	public ApiResponse<BulkImportResponse> bulkImport(@RequestParam("file") MultipartFile file) {
 		try (var inputStream = file.getInputStream()) {
 			return ApiResponse.success(bulkImportMapper.toResponse(studentBulkImportService.importCsv(inputStream)));
@@ -283,6 +285,7 @@ public class StudentController implements StudentApi {
 	@PostMapping("/{publicId}/report-cards")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
+	@RateLimited(key = "report-card-generate", capacity = 60, periodMinutes = 60)
 	public ApiResponse<ReportCardResponse> generateReportCard(@PathVariable String publicId,
 			@RequestParam String termPublicId,
 			@RequestParam(required = false) String teacherRemarks,

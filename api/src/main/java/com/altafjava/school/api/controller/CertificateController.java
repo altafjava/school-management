@@ -19,6 +19,7 @@ import com.altafjava.platform.core.security.AuthenticatedUser;
 import com.altafjava.school.api.controller.api.CertificateApi;
 import com.altafjava.school.api.dto.response.CertificateIssuanceResponse;
 import com.altafjava.school.api.mapper.CertificateIssuanceMapper;
+import com.altafjava.school.api.ratelimit.RateLimited;
 import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.CertificateService;
@@ -59,6 +60,7 @@ public class CertificateController implements CertificateApi {
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_MANAGE')")
+	@RateLimited(key = "certificate-issue", capacity = 60, periodMinutes = 60)
 	public ApiResponse<CertificateIssuanceResponse> issue(@PathVariable String studentPublicId,
 			@RequestParam String certificateTemplatePublicId,
 			@AuthenticationPrincipal AuthenticatedUser user) {
