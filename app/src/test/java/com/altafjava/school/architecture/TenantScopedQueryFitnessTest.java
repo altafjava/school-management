@@ -11,17 +11,9 @@ import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
 /**
- * Every hand-written {@code @Query} (JPQL or native) on a repository must reference the tenant —
- * isolation here is 100% application-layer (Hibernate {@code @Filter} + {@code tenant_id} +
- * {@code TenantContext}, no DB-level Row-Level Security), so a custom query that forgets the
- * tenant predicate is a direct cross-tenant data leak with no second layer of defense to catch it.
- * Starts green (all 47 existing {@code @Query} methods already reference it) — this is a fitness
- * test against regression, not a currently-failing gate.
- * <p>
- * Deliberately narrow: {@code findAll}/{@code findById}/derived-query-method leaks are still
- * possible and unchecked here (Hibernate's {@code @Filter} covers those at the session level
- * instead) — this rule only targets the one place a hand-written query can bypass that filter
- * outright.
+ * Every hand-written {@code @Query} on a repository must reference the tenant — isolation here is
+ * 100% application-layer (no DB-level Row-Level Security), so a forgotten tenant predicate is a
+ * direct cross-tenant leak with no second layer of defense.
  */
 @AnalyzeClasses(packages = "com.altafjava.school.domain")
 class TenantScopedQueryFitnessTest {

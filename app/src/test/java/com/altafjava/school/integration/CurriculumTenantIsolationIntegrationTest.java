@@ -283,16 +283,8 @@ class CurriculumTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 		assertEquals(0, new BigDecimal("3.50").compareTo(result.gpa()));
 	}
 
-	// Phase 3.3 caching (BoardService/CurriculumService/GradingScaleService): TestRedisConfig
-	// mocks RedisConnectionFactory outright for the "test" profile (used by every school-saas
-	// test, including this one — school-saas has no separate real-Redis profile the way
-	// platform-saas's resilience tests do), so an actual cache-hit/miss can't be observed here —
-	// every read/write against the mocked connection is a silent no-op. What these tests instead
-	// verify: the annotations are correctly wired (confirmed separately — see
-	// AnnotationCacheOperationSource TRACE output during this test's own startup) and, more
-	// importantly, that business correctness holds regardless of whether a stale value happened to
-	// be cached: updateDetails/assignGradingScale evict before the next read, so the next read is
-	// never wrong even in a real deployment where Redis genuinely does cache the prior value.
+	// TestRedisConfig mocks Redis entirely for the "test" profile, so a cache hit itself isn't
+	// observable here — this verifies eviction still prevents a stale read.
 	@Test
 	void boardLookup_evictedOnUpdate_reflectsNewName() {
 		activateTenant(tenantA);
@@ -308,11 +300,8 @@ class CurriculumTenantIsolationIntegrationTest extends SchoolIntegrationTestBase
 		assertEquals("Renamed", afterUpdate.getName());
 	}
 
-	// GradingScaleService.resolveEffectiveThresholds is @Cacheable; CurriculumService.
-	// assignGradingScale and ClassroomService.assignCurriculum evict it wholesale — see the
-	// boardLookup test above for why cache-hit itself isn't observable under the "test" profile.
-	// Verifies reassigning the curriculum's grading scale is reflected on the very next call
-	// rather than serving the old scale's thresholds.
+	// assignGradingScale evicts the cached thresholds wholesale — verifies reassignment is
+	// reflected immediately, not stale.
 	@Test
 	void resolveEffectiveThresholds_reflectsScaleReassignment_notStale() {
 		activateTenant(tenantA);

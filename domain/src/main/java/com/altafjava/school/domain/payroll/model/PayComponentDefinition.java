@@ -13,10 +13,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Tenant-defined salary pay component (e.g. Basic Pay, Housing Allowance, Income Tax Withholding) —
- * schools vary widely in compensation structure by region, so this is a runtime catalog rather than
- * a fixed set of columns, mirroring {@code LeaveType}. {@code code} is the stable per-tenant key a
- * {@link SalaryStructure}/{@link Payslip}'s {@link PayComponentAmount} entries reference.
+ * Tenant-defined salary pay component — a runtime catalog rather than fixed columns, mirroring
+ * {@code LeaveType}, since compensation structure varies widely by region.
  */
 @Entity
 @Table(name = "pay_component_definitions")

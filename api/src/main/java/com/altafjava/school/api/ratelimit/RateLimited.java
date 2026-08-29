@@ -6,11 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a controller method as expensive enough to need its own, stricter, per-tenant limit on
- * top of platform's flat per-tenant/per-user request-count limit ({@code RateLimitInterceptor}) —
- * for endpoints where a single call (a CSV import, a PDF generation) costs far more CPU/DB time
- * than a typical request, so a tenant staying well under the general hourly quota can still
- * degrade latency for every other tenant on the same instance by hammering just this one.
+ * Marks a controller method (e.g. a CSV import or PDF generation) as expensive enough to need its
+ * own stricter per-tenant limit on top of platform's flat request-count limit.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

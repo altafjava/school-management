@@ -146,12 +146,8 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.statusCode(HttpStatus.BAD_REQUEST.value());
 	}
 
-	// Approving submits to the tenant's seeded ADMISSION_DECISION workflow (PRINCIPAL, single
-	// stage) and returns 202 with the new approval request's ID; the admission reaches ENROLLED
-	// only once that request is approved through the generic approval-workflow API
-	// (AdmissionApprovalHandler runs the finalize logic) — see AdmissionEnrollmentSagaIntegrationTest
-	// for that mechanism against a real saga, and platform-saas's ApprovalWorkflowE2ETest for the
-	// generic engine.
+	// Approving submits to the seeded ADMISSION_DECISION workflow and returns 202 — ENROLLED only
+	// once that request is separately approved.
 	@Test
 	void decideApprove_withStudentCode_submitsForApprovalAndEnrollsOnceApproved() {
 		String accessToken = login();

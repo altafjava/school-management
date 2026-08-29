@@ -11,9 +11,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Tenant-defined exam category (e.g. Unit Test, Midterm, Final, or a board-specific scheme like
- * "Formative"/"Summative") — schools and boards vary widely here, so this is a runtime catalog
- * rather than a fixed enum, mirroring {@code LeaveType}/{@code PayComponentDefinition}.
+ * Tenant-defined exam category — a runtime catalog rather than a fixed enum, mirroring
+ * {@code LeaveType}, since boards vary widely in exam categorization.
  */
 @Entity
 @Table(name = "exam_type_definitions")

@@ -34,14 +34,9 @@ import com.altafjava.school.domain.curriculum.repository.GradingScaleThresholdRe
 public class GradingScaleService {
 
 	/**
-	 * {@link #resolveEffectiveThresholds} is on the grade-entry/GPA-computation/report-card hot
-	 * path — cached to avoid the classroom→curriculum→grading-scale chain lookup on every call.
-	 * Evicted wholesale (not by classroom ID) on any write that could change what a classroom
-	 * resolves to: a scale's own thresholds/default status here, or a curriculum's assigned scale
-	 * in {@code CurriculumService.assignGradingScale} — the writing side doesn't know which
-	 * classroom IDs are affected, so a full-region evict trades a few extra cache misses for
-	 * correctness, matching platform's own {@code PushProviderConfigService} precedent for the
-	 * same "invalidator doesn't know the downstream keys" shape.
+	 * {@link #resolveEffectiveThresholds} is on the grade-entry/GPA hot path — cached, and evicted
+	 * wholesale (not by classroom ID) since a scale/curriculum write doesn't know which classroom
+	 * IDs are affected.
 	 */
 	public static final String CACHE_GRADING_SCALE_THRESHOLDS = "gradingScaleThresholds";
 

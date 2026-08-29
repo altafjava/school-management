@@ -50,9 +50,8 @@ public class SalaryStructureService {
 
 	/**
 	 * @param componentAmountsByCode
-	 *                                   amount per {@code PayComponentDefinition.code}; name/type are
-	 *                                   resolved from the tenant's current catalog, never trusted from
-	 *                                   the caller.
+	 *                                   amount per {@code PayComponentDefinition.code}; name/type
+	 *                                   are resolved from the tenant's catalog, never the caller.
 	 */
 	@Transactional
 	public SalaryStructure create(String teacherPublicId, Map<String, BigDecimal> componentAmountsByCode,

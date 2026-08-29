@@ -34,9 +34,6 @@ public interface AdmissionApi {
 	/**
 	 * Public, unauthenticated intake for a prospective guardian applying before any account
 	 * exists — no {@code @PreAuthorize}, mirroring platform's {@code AuthController.register()}.
-	 * Tenant is resolved the normal way (subdomain/header), never accepted from the request body.
-	 * Reachable without a JWT via a literal {@code /api/v1/admissions/apply} entry in platform-saas's
-	 * {@code SecurityConfig} permitAll allowlist.
 	 */
 	@Operation(summary = "Apply", operationId = "admission_apply")
 	public ApiResponse<AdmissionResponse> apply(@Valid @RequestBody PublicAdmissionApplicationRequest request);
@@ -45,16 +42,11 @@ public interface AdmissionApi {
 	public ApiResponse<AdmissionResponse> markUnderReview(@PathVariable String publicId);
 
 	/**
-	 * A REJECTED outcome takes effect immediately; an APPROVED outcome submits for the tenant's
-	 * {@code ADMISSION_DECISION} approval workflow instead of enrolling directly — see
-	 * {@code AdmissionService#requestApproval}. When gated, this returns 202 with the new approval
-	 * request's ID (via {@code GlobalExceptionHandler}'s {@code ApprovalPendingException} handling)
-	 * rather than the 200 {@link AdmissionResponse} below.
-	 * <p>
-	 * The studentCode-required-for-approval check happens here, not inside
-	 * {@code requestApproval}: once a workflow is configured, {@code ApprovalAspect} intercepts
-	 * that call and never runs its body at all, so any validation inside it would be silently
-	 * skipped for every gated request.
+	 * A REJECTED outcome takes effect immediately; an APPROVED outcome submits to the tenant's
+	 * {@code ADMISSION_DECISION} workflow instead, returning 202 with the approval request's ID
+	 * rather than the 200 {@link AdmissionResponse} below. The studentCode check happens here, not
+	 * in {@code requestApproval}, since {@code ApprovalAspect} intercepts that call before its body
+	 * ever runs once a workflow is configured.
 	 */
 	@Operation(summary = "Decide", operationId = "admission_decide")
 	public ApiResponse<AdmissionResponse> decide(@PathVariable String publicId,

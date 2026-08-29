@@ -15,18 +15,10 @@ import io.github.bucket4j.distributed.proxy.ProxyManager;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Enforces {@link RateLimited} on top of platform's {@code RateLimitInterceptor} (a flat
- * per-tenant/per-user request-COUNT limit applied to every endpoint uniformly) — this is a
- * per-operation limit for the handful of endpoints where a single call is disproportionately
- * expensive. Reuses platform's own Redis-backed {@code ProxyManager<String>} bean, so limits are
- * enforced consistently across every app instance, not just the one that happened to serve a
- * given request.
- * <p>
- * Rejects with {@link BusinessException} (400) rather than a dedicated 429: this codebase's
- * shared {@code GlobalExceptionHandler} lives in platform-saas and has no generic
- * "too many requests" mapping, and adding a school-saas-local {@code @ControllerAdvice} just for
- * this would need careful ordering against platform's own catch-all handler for no real gain over
- * an already-clear rejection message.
+ * Enforces {@link RateLimited} — a stricter per-operation limit layered on platform's flat
+ * per-tenant {@code RateLimitInterceptor}, reusing its Redis-backed {@code ProxyManager<String>}.
+ * Rejects with {@link BusinessException} (400): platform's shared exception handler has no
+ * generic 429 mapping to hook into.
  */
 @Aspect
 @Component

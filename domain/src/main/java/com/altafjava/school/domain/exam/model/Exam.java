@@ -50,10 +50,8 @@ public class Exam extends SoftDeletableEntity {
 	@Column(name = "status", nullable = false, length = 20)
 	private ExamStatus status;
 
-	// FK to exam_type_definitions.id — tenant-defined catalog, not a fixed enum (boards vary
-	// widely in exam categorization), mirroring how subjectId/classroomId/termId are plain FKs.
-	// Nullable at the DB level only (see 049-exam-type-definitions.xml); create()/ExamService
-	// both require and validate a real value, so it is never actually null in practice.
+	// FK to exam_type_definitions.id — nullable only at the DB level; create()/ExamService
+	// require and validate a real value.
 	@Column(name = "exam_type_id")
 	private Long examTypeId;
 
