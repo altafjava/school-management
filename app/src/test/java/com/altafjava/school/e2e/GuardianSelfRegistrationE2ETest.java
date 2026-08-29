@@ -110,8 +110,8 @@ class GuardianSelfRegistrationE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/guardians/self-register")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("email", equalTo(email));
+				.body("data.publicId", notNullValue())
+				.body("data.email", equalTo(email));
 	}
 
 	@Test
@@ -149,7 +149,7 @@ class GuardianSelfRegistrationE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/guardians/self-register")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("email", equalTo(email));
+				.body("data.email", equalTo(email));
 	}
 
 	@Test

@@ -70,7 +70,7 @@ class FeePaymentWebhookE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createFeeStructure(String name) {
@@ -84,7 +84,7 @@ class FeePaymentWebhookE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void assignFeeStructure(String feeStructurePublicId, String studentPublicId) {

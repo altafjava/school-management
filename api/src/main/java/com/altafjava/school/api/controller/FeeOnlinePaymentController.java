@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
 import com.altafjava.platform.core.idempotency.RequireIdempotencyKey;
 import com.altafjava.platform.domain.paymentgateway.service.PaymentChargeResult;
+import com.altafjava.school.api.controller.api.FeeOnlinePaymentApi;
 import com.altafjava.school.api.dto.request.ConfirmFeeChargeRequest;
 import com.altafjava.school.api.dto.request.CreateFeeChargeRequest;
 import com.altafjava.school.api.dto.response.FeeChargeResponse;
@@ -25,7 +27,7 @@ import com.altafjava.school.application.service.FeeOnlinePaymentService;
 // authorization model, and this controller never accepts a caller-supplied paidAmount/receiptNumber.
 @RestController
 @RequestMapping("/api/v1/fee-payments/self-service")
-public class FeeOnlinePaymentController {
+public class FeeOnlinePaymentController implements FeeOnlinePaymentApi {
 
 	private final FeeOnlinePaymentService feeOnlinePaymentService;
 	private final FeePaymentMapper feePaymentMapper;
@@ -36,28 +38,34 @@ public class FeeOnlinePaymentController {
 		this.feePaymentMapper = feePaymentMapper;
 	}
 
+	@Override
 	@PostMapping("/charges")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_SELF_SERVICE')")
 	@RequireIdempotencyKey
-	public FeeChargeResponse createCharge(@Valid @RequestBody CreateFeeChargeRequest request) {
+	public ApiResponse<FeeChargeResponse> createCharge(@Valid @RequestBody CreateFeeChargeRequest request) {
 		PaymentChargeResult result = feeOnlinePaymentService.createCharge(request.studentPublicId(),
 				request.feeStructurePublicId());
-		return new FeeChargeResponse(result.gatewayChargeReference(), result.status(), result.clientSecret());
+		return ApiResponse.success(
+				new FeeChargeResponse(result.gatewayChargeReference(), result.status(), result.clientSecret()));
 	}
 
+	@Override
 	@PostMapping("/charges/{gatewayChargeReference}/confirm")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_SELF_SERVICE')")
 	@RequireIdempotencyKey
-	public FeePaymentResponse confirmCharge(@PathVariable String gatewayChargeReference,
+	public ApiResponse<FeePaymentResponse> confirmCharge(@PathVariable String gatewayChargeReference,
 			@Valid @RequestBody ConfirmFeeChargeRequest request) {
-		return feePaymentMapper.toResponse(feeOnlinePaymentService.confirmCharge(request.studentPublicId(),
-				request.feeStructurePublicId(), gatewayChargeReference));
+		return ApiResponse
+				.success(feePaymentMapper.toResponse(feeOnlinePaymentService.confirmCharge(request.studentPublicId(),
+						request.feeStructurePublicId(), gatewayChargeReference)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_SELF_SERVICE')")
-	public FeePaymentResponse getReceipt(@PathVariable String publicId) {
-		return feePaymentMapper.toResponse(feeOnlinePaymentService.findReceiptForSelfService(publicId));
+	public ApiResponse<FeePaymentResponse> getReceipt(@PathVariable String publicId) {
+		return ApiResponse
+				.success(feePaymentMapper.toResponse(feeOnlinePaymentService.findReceiptForSelfService(publicId)));
 	}
 }

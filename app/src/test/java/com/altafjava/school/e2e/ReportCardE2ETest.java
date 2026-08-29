@@ -76,7 +76,7 @@ class ReportCardE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createTerm(String accessToken, String suffix) {
@@ -90,7 +90,7 @@ class ReportCardE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/academic-years")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null, TenantType.SHARED);
 		Long academicYearId;
@@ -111,7 +111,7 @@ class ReportCardE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/terms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -128,7 +128,7 @@ class ReportCardE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students/" + studentPublicId + "/report-cards?termPublicId=" + termPublicId)
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue());
+				.body("data.publicId", notNullValue());
 	}
 
 	@Test
@@ -171,7 +171,7 @@ class ReportCardE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students/" + studentPublicId + "/report-cards?termPublicId=" + termPublicId)
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

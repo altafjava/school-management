@@ -91,8 +91,8 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("status", equalTo("SUBMITTED"));
+				.body("data.publicId", notNullValue())
+				.body("data.status", equalTo("SUBMITTED"));
 	}
 
 	@Test
@@ -133,7 +133,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -164,7 +164,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		String studentCode = "STU-E2E-" + UUID.randomUUID().toString().substring(0, 6);
 
 		String approvalRequestId = given()
@@ -185,7 +185,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/admissions/" + publicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("SUBMITTED"));
+				.body("data.status", equalTo("SUBMITTED"));
 
 		Long principalUserId = createUserWithRole("principal-" + UUID.randomUUID().toString().substring(0, 8)
 				+ "@school.test", "PRINCIPAL");
@@ -209,7 +209,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/admissions/" + publicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("ENROLLED"));
+				.body("data.status", equalTo("ENROLLED"));
 	}
 
 	private Long createUserWithRole(String email, String roleName) {
@@ -263,8 +263,8 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions/apply")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("status", equalTo("SUBMITTED"));
+				.body("data.publicId", notNullValue())
+				.body("data.status", equalTo("SUBMITTED"));
 	}
 
 	@Test
@@ -280,8 +280,8 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions/apply")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("status", equalTo("SUBMITTED"));
+				.body("data.publicId", notNullValue())
+				.body("data.status", equalTo("SUBMITTED"));
 	}
 
 	private String submitAndMoveUnderReview(String accessToken, String applicantFirstName, String appliedGrade) {
@@ -298,7 +298,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -330,8 +330,8 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 
 		// Groovy's JSON parser types decimal literals as Float, not Double — closeTo() requires an
 		// exact Double, so extract via getDouble() (which coerces) rather than asserting in the DSL chain.
-		assertEquals(88.0, response.jsonPath().getDouble("entranceTestScore"), 0.01);
-		assertEquals(100.0, response.jsonPath().getDouble("entranceTestMaxScore"), 0.01);
+		assertEquals(88.0, response.jsonPath().getDouble("data.entranceTestScore"), 0.01);
+		assertEquals(100.0, response.jsonPath().getDouble("data.entranceTestMaxScore"), 0.01);
 	}
 
 	@Test
@@ -396,7 +396,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions/merit-list?appliedGrade=" + grade + "&availableSeats=1")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("size()", equalTo(2));
+				.body("data.size()", equalTo(2));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -405,8 +405,8 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/admissions/" + firstPlaceId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("meritRank", equalTo(1))
-				.body("status", equalTo("UNDER_REVIEW"));
+				.body("data.meritRank", equalTo(1))
+				.body("data.status", equalTo("UNDER_REVIEW"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -415,8 +415,8 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/admissions/" + secondPlaceId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("meritRank", equalTo(2))
-				.body("status", equalTo("WAITLISTED"));
+				.body("data.meritRank", equalTo(2))
+				.body("data.status", equalTo("WAITLISTED"));
 	}
 
 	@Test
@@ -461,7 +461,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/admissions/" + publicId + "/promote-from-waitlist")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("UNDER_REVIEW"));
+				.body("data.status", equalTo("UNDER_REVIEW"));
 	}
 
 	@Test
@@ -511,7 +511,7 @@ class AdmissionCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/admissions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

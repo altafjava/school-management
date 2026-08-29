@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,10 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.CounselingSessionApi;
 import com.altafjava.school.api.dto.request.ScheduleCounselingSessionRequest;
 import com.altafjava.school.api.dto.request.UpdateCounselingSessionNotesRequest;
 import com.altafjava.school.api.dto.response.CounselingSessionResponse;
 import com.altafjava.school.api.mapper.CounselingSessionMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.CounselingSessionService;
 
@@ -28,7 +30,7 @@ import com.altafjava.school.application.service.CounselingSessionService;
  */
 @RestController
 @RequestMapping("/api/v1/counseling-sessions")
-public class CounselingSessionController {
+public class CounselingSessionController implements CounselingSessionApi {
 
 	private final CounselingSessionService counselingSessionService;
 	private final CounselingSessionMapper counselingSessionMapper;
@@ -42,44 +44,54 @@ public class CounselingSessionController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
-	public Page<CounselingSessionResponse> listAll(
+	public ApiResponse<com.altafjava.platform.core.model.Page<CounselingSessionResponse>> listAll(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return counselingSessionService.listAll(pageableResolver.resolve(page, size))
-				.map(counselingSessionMapper::toResponse);
+		return ApiResponse.success(
+				PlatformPageMapper.toPlatformPage(counselingSessionService.listAll(pageableResolver.resolve(page, size))
+						.map(counselingSessionMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/students/{studentPublicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
-	public Page<CounselingSessionResponse> listForStudent(@PathVariable String studentPublicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<CounselingSessionResponse>> listForStudent(
+			@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return counselingSessionService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
-				.map(counselingSessionMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(
+				counselingSessionService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
+						.map(counselingSessionMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
-	public CounselingSessionResponse get(@PathVariable String publicId) {
-		return counselingSessionMapper.toResponse(counselingSessionService.get(publicId));
+	public ApiResponse<CounselingSessionResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(counselingSessionMapper.toResponse(counselingSessionService.get(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
-	public CounselingSessionResponse schedule(@Valid @RequestBody ScheduleCounselingSessionRequest request) {
-		return counselingSessionMapper.toResponse(counselingSessionService.schedule(request.studentPublicId(),
-				request.counselorTeacherPublicId(), request.sessionDate(), request.notes(),
-				request.followUpRequired()));
+	public ApiResponse<CounselingSessionResponse> schedule(
+			@Valid @RequestBody ScheduleCounselingSessionRequest request) {
+		return ApiResponse
+				.success(counselingSessionMapper.toResponse(counselingSessionService.schedule(request.studentPublicId(),
+						request.counselorTeacherPublicId(), request.sessionDate(), request.notes(),
+						request.followUpRequired())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/notes")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('COUNSELING_MANAGE')")
-	public CounselingSessionResponse updateNotes(@PathVariable String publicId,
+	public ApiResponse<CounselingSessionResponse> updateNotes(@PathVariable String publicId,
 			@Valid @RequestBody UpdateCounselingSessionNotesRequest request) {
-		return counselingSessionMapper.toResponse(
-				counselingSessionService.updateNotes(publicId, request.notes(), request.followUpRequired()));
+		return ApiResponse.success(counselingSessionMapper.toResponse(
+				counselingSessionService.updateNotes(publicId, request.notes(), request.followUpRequired())));
 	}
 }

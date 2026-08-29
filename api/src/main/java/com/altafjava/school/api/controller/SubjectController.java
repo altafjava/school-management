@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,16 +12,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.SubjectApi;
 import com.altafjava.school.api.dto.request.AssignSubjectCurriculumRequest;
 import com.altafjava.school.api.dto.request.CreateSubjectRequest;
 import com.altafjava.school.api.dto.response.SubjectResponse;
 import com.altafjava.school.api.mapper.SubjectMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.SubjectService;
 
 @RestController
 @RequestMapping("/api/v1/subjects")
-public class SubjectController {
+public class SubjectController implements SubjectApi {
 
 	private final SubjectService subjectService;
 	private final SubjectMapper subjectMapper;
@@ -36,41 +38,48 @@ public class SubjectController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBJECT_READ')")
-	public Page<SubjectResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<SubjectResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return subjectService.listSubjects(pageableResolver.resolve(page, size))
-				.map(subjectMapper::toResponse);
+		return ApiResponse.success(
+				PlatformPageMapper.toPlatformPage(subjectService.listSubjects(pageableResolver.resolve(page, size))
+						.map(subjectMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBJECT_READ')")
-	public SubjectResponse get(@PathVariable String publicId) {
-		return subjectMapper.toResponse(subjectService.findByPublicId(publicId));
+	public ApiResponse<SubjectResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(subjectMapper.toResponse(subjectService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBJECT_WRITE')")
-	public SubjectResponse create(@Valid @RequestBody CreateSubjectRequest request) {
-		return subjectMapper.toResponse(subjectService.create(
+	public ApiResponse<SubjectResponse> create(@Valid @RequestBody CreateSubjectRequest request) {
+		return ApiResponse.success(subjectMapper.toResponse(subjectService.create(
 				request.code(),
 				request.name(),
-				request.description()));
+				request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/deactivate")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBJECT_WRITE')")
-	public SubjectResponse deactivate(@PathVariable String publicId) {
-		return subjectMapper.toResponse(subjectService.deactivate(publicId));
+	public ApiResponse<SubjectResponse> deactivate(@PathVariable String publicId) {
+		return ApiResponse.success(subjectMapper.toResponse(subjectService.deactivate(publicId)));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/curriculum")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('SUBJECT_WRITE')")
-	public SubjectResponse assignCurriculum(@PathVariable String publicId,
+	public ApiResponse<SubjectResponse> assignCurriculum(@PathVariable String publicId,
 			@Valid @RequestBody AssignSubjectCurriculumRequest request) {
-		return subjectMapper.toResponse(subjectService.assignCurriculum(publicId, request.curriculumPublicId()));
+		return ApiResponse.success(
+				subjectMapper.toResponse(subjectService.assignCurriculum(publicId, request.curriculumPublicId())));
 	}
 }

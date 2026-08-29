@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,17 +12,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.CurriculumApi;
 import com.altafjava.school.api.dto.request.AssignGradingScaleRequest;
 import com.altafjava.school.api.dto.request.CreateCurriculumRequest;
 import com.altafjava.school.api.dto.request.UpdateCurriculumRequest;
 import com.altafjava.school.api.dto.response.CurriculumResponse;
 import com.altafjava.school.api.mapper.CurriculumMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.CurriculumService;
 
 @RestController
 @RequestMapping("/api/v1/curricula")
-public class CurriculumController {
+public class CurriculumController implements CurriculumApi {
 
 	private final CurriculumService curriculumService;
 	private final CurriculumMapper curriculumMapper;
@@ -37,47 +39,55 @@ public class CurriculumController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_READ')")
-	public Page<CurriculumResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<CurriculumResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return curriculumService.list(pageableResolver.resolve(page, size)).map(curriculumMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(
+				curriculumService.list(pageableResolver.resolve(page, size)).map(curriculumMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_READ')")
-	public CurriculumResponse get(@PathVariable String publicId) {
-		return curriculumMapper.toResponse(curriculumService.findByPublicId(publicId));
+	public ApiResponse<CurriculumResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(curriculumMapper.toResponse(curriculumService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
-	public CurriculumResponse create(@Valid @RequestBody CreateCurriculumRequest request) {
-		return curriculumMapper.toResponse(curriculumService.create(request.boardPublicId(), request.name(),
-				request.code(), request.description()));
+	public ApiResponse<CurriculumResponse> create(@Valid @RequestBody CreateCurriculumRequest request) {
+		return ApiResponse
+				.success(curriculumMapper.toResponse(curriculumService.create(request.boardPublicId(), request.name(),
+						request.code(), request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
-	public CurriculumResponse updateDetails(@PathVariable String publicId,
+	public ApiResponse<CurriculumResponse> updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateCurriculumRequest request) {
-		return curriculumMapper.toResponse(
-				curriculumService.updateDetails(publicId, request.name(), request.code(), request.description()));
+		return ApiResponse.success(curriculumMapper.toResponse(
+				curriculumService.updateDetails(publicId, request.name(), request.code(), request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/grading-scale")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
-	public CurriculumResponse assignGradingScale(@PathVariable String publicId,
+	public ApiResponse<CurriculumResponse> assignGradingScale(@PathVariable String publicId,
 			@Valid @RequestBody AssignGradingScaleRequest request) {
-		return curriculumMapper
-				.toResponse(curriculumService.assignGradingScale(publicId, request.gradingScalePublicId()));
+		return ApiResponse.success(curriculumMapper
+				.toResponse(curriculumService.assignGradingScale(publicId, request.gradingScalePublicId())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/deactivate")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CURRICULUM_WRITE')")
-	public CurriculumResponse deactivate(@PathVariable String publicId) {
-		return curriculumMapper.toResponse(curriculumService.deactivate(publicId));
+	public ApiResponse<CurriculumResponse> deactivate(@PathVariable String publicId) {
+		return ApiResponse.success(curriculumMapper.toResponse(curriculumService.deactivate(publicId)));
 	}
 }

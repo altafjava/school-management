@@ -100,7 +100,7 @@ class StudentCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content", hasSize(0));
+				.body("data.content", hasSize(0));
 	}
 
 	@Test
@@ -124,10 +124,10 @@ class StudentCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("studentCode", equalTo("STU-001"))
-				.body("firstName", equalTo("Alice"))
-				.body("enrollmentStatus", equalTo("ACTIVE"));
+				.body("data.publicId", notNullValue())
+				.body("data.studentCode", equalTo("STU-001"))
+				.body("data.firstName", equalTo("Alice"))
+				.body("data.enrollmentStatus", equalTo("ACTIVE"));
 	}
 
 	@Test

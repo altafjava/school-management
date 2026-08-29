@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,10 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.HostelBuildingApi;
 import com.altafjava.school.api.dto.request.CreateHostelBuildingRequest;
 import com.altafjava.school.api.dto.request.UpdateHostelBuildingRequest;
 import com.altafjava.school.api.dto.response.HostelBuildingResponse;
 import com.altafjava.school.api.mapper.HostelBuildingMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.HostelBuildingService;
 
@@ -24,7 +26,7 @@ import com.altafjava.school.application.service.HostelBuildingService;
 // TENANT_ADMIN-or-TEACHER gate for reads) — a warden-specific role is a follow-up.
 @RestController
 @RequestMapping("/api/v1/hostel-buildings")
-public class HostelBuildingController {
+public class HostelBuildingController implements HostelBuildingApi {
 
 	private final HostelBuildingService hostelBuildingService;
 	private final HostelBuildingMapper hostelBuildingMapper;
@@ -38,38 +40,45 @@ public class HostelBuildingController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOSTEL_READ')")
-	public Page<HostelBuildingResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<HostelBuildingResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return hostelBuildingService.list(pageableResolver.resolve(page, size)).map(hostelBuildingMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(hostelBuildingService
+				.list(pageableResolver.resolve(page, size)).map(hostelBuildingMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOSTEL_READ')")
-	public HostelBuildingResponse get(@PathVariable String publicId) {
-		return hostelBuildingMapper.toResponse(hostelBuildingService.findByPublicId(publicId));
+	public ApiResponse<HostelBuildingResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(hostelBuildingMapper.toResponse(hostelBuildingService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOSTEL_WRITE')")
-	public HostelBuildingResponse create(@Valid @RequestBody CreateHostelBuildingRequest request) {
-		return hostelBuildingMapper.toResponse(hostelBuildingService.create(request.name(), request.address()));
+	public ApiResponse<HostelBuildingResponse> create(@Valid @RequestBody CreateHostelBuildingRequest request) {
+		return ApiResponse.success(
+				hostelBuildingMapper.toResponse(hostelBuildingService.create(request.name(), request.address())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOSTEL_WRITE')")
-	public HostelBuildingResponse updateDetails(@PathVariable String publicId,
+	public ApiResponse<HostelBuildingResponse> updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateHostelBuildingRequest request) {
-		return hostelBuildingMapper.toResponse(
-				hostelBuildingService.updateDetails(publicId, request.name(), request.address()));
+		return ApiResponse.success(hostelBuildingMapper.toResponse(
+				hostelBuildingService.updateDetails(publicId, request.name(), request.address())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/deactivate")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOSTEL_WRITE')")
-	public HostelBuildingResponse deactivate(@PathVariable String publicId) {
-		return hostelBuildingMapper.toResponse(hostelBuildingService.deactivate(publicId));
+	public ApiResponse<HostelBuildingResponse> deactivate(@PathVariable String publicId) {
+		return ApiResponse.success(hostelBuildingMapper.toResponse(hostelBuildingService.deactivate(publicId)));
 	}
 }

@@ -68,8 +68,8 @@ class PeriodCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/periods")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("name", equalTo("Period 1"));
+				.body("data.publicId", notNullValue())
+				.body("data.name", equalTo("Period 1"));
 	}
 
 	@Test
@@ -112,7 +112,7 @@ class PeriodCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/periods")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

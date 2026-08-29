@@ -32,6 +32,17 @@ jobs:
   build-and-test:
     name: Compile & Test
     runs-on: self-hosted
+    # The auto-pr job below opens/updates a develop→main PR on every push to develop, and that
+    # PR-open/synchronize event matches the pull_request trigger above (base: main) — without this
+    # guard, every push to develop runs this entire job TWICE back to back on the same commit and
+    # the same self-hosted runner: once for the push, once for the PR it just created. The second
+    # run has raced the first for the runner's shared ~/.gradle daemon/build-cache and failed
+    # inconsistently. Skip only this specific bot-created promotion PR; a real PR from any other
+    # branch still runs full CI as normal.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.ref != 'develop' ||
+      github.event.pull_request.base.ref != 'main'
 
     steps:
       - name: Checkout school-saas

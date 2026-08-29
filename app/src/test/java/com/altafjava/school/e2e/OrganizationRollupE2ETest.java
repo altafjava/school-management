@@ -164,15 +164,15 @@ class OrganizationRollupE2ETest extends SchoolIntegrationTestBase {
 				.get(rollupPath())
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("organizationPublicId", equalTo(organization.getPublicId().toString()))
-				.body("campuses", hasSize(2))
+				.body("data.organizationPublicId", equalTo(organization.getPublicId().toString()))
+				.body("data.campuses", hasSize(2))
 				// campusA: 2 students, 2*400=800 due, 2*100=200 paid -> 600 outstanding
 				// campusB: 1 student, 1*600=600 due, 1*600=600 paid -> fully paid
-				.body("totals.activeStudentCount", equalTo(3))
-				.body("totals.attendance.present", equalTo(3))
-				.body("totals.fees.totalDue", comparesEqualTo(1400.00f))
-				.body("totals.fees.totalPaid", comparesEqualTo(800.00f))
-				.body("totals.fees.outstandingBalance", comparesEqualTo(600.00f));
+				.body("data.totals.activeStudentCount", equalTo(3))
+				.body("data.totals.attendance.present", equalTo(3))
+				.body("data.totals.fees.totalDue", comparesEqualTo(1400.00f))
+				.body("data.totals.fees.totalPaid", comparesEqualTo(800.00f))
+				.body("data.totals.fees.outstandingBalance", comparesEqualTo(600.00f));
 	}
 
 	@Test
@@ -192,10 +192,10 @@ class OrganizationRollupE2ETest extends SchoolIntegrationTestBase {
 				.get(rollupPath())
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("campuses", hasSize(2))
-				.body("totals.activeStudentCount", equalTo(3))
-				.body("totals.fees.totalDue", comparesEqualTo(1400.00f))
-				.body("totals.fees.totalPaid", comparesEqualTo(800.00f));
+				.body("data.campuses", hasSize(2))
+				.body("data.totals.activeStudentCount", equalTo(3))
+				.body("data.totals.fees.totalDue", comparesEqualTo(1400.00f))
+				.body("data.totals.fees.totalPaid", comparesEqualTo(800.00f));
 	}
 
 	@Test

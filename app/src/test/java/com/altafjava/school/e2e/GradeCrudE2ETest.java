@@ -103,7 +103,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		Long classroomId = withTenant(() -> classroomRepository
 				.findByPublicIdAndTenantId(UUID.fromString(classroomPublicId), tenantId).orElseThrow().getId());
 
@@ -116,7 +116,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		Long subjectId = withTenant(() -> subjectRepository
 				.findByPublicIdAndTenantId(UUID.fromString(subjectPublicId), tenantId).orElseThrow().getId());
 
@@ -133,7 +133,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/exams")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		return withTenant(() -> examRepository
 				.findByPublicIdAndTenantId(UUID.fromString(examPublicId), tenantId).orElseThrow().getId());
 	}
@@ -149,7 +149,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		return withTenant(() -> studentRepository
 				.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId).orElseThrow().getId());
 	}
@@ -179,8 +179,8 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/grades")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("gradeLetter", equalTo("A"));
+				.body("data.publicId", notNullValue())
+				.body("data.gradeLetter", equalTo("A"));
 	}
 
 	@Test
@@ -228,7 +228,7 @@ class GradeCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/grades")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

@@ -67,7 +67,7 @@ class AlumniProfileCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", forTenantId)
@@ -98,9 +98,9 @@ class AlumniProfileCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/alumni-profiles")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("active", equalTo(true))
-				.extract().path("publicId");
+				.body("data.publicId", notNullValue())
+				.body("data.active", equalTo(true))
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -109,7 +109,7 @@ class AlumniProfileCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/alumni-profiles/" + profilePublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("currentOccupation", equalTo("Software Engineer"));
+				.body("data.currentOccupation", equalTo("Software Engineer"));
 	}
 
 	@Test
@@ -158,7 +158,7 @@ class AlumniProfileCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -189,7 +189,7 @@ class AlumniProfileCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/alumni-profiles")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

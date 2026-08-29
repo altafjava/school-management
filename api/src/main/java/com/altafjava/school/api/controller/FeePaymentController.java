@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,16 +11,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
 import com.altafjava.platform.core.idempotency.RequireIdempotencyKey;
+import com.altafjava.school.api.controller.api.FeePaymentApi;
 import com.altafjava.school.api.dto.request.RecordFeePaymentRequest;
 import com.altafjava.school.api.dto.response.FeePaymentResponse;
 import com.altafjava.school.api.mapper.FeePaymentMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.FeePaymentService;
 
 @RestController
 @RequestMapping("/api/v1/fee-payments")
-public class FeePaymentController {
+public class FeePaymentController implements FeePaymentApi {
 
 	private final FeePaymentService feePaymentService;
 	private final FeePaymentMapper feePaymentMapper;
@@ -35,31 +37,35 @@ public class FeePaymentController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_MANAGE')")
-	public Page<FeePaymentResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<FeePaymentResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return feePaymentService.listFeePayments(pageableResolver.resolve(page, size))
-				.map(feePaymentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(feePaymentService.listFeePayments(pageableResolver.resolve(page, size))
+						.map(feePaymentMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_MANAGE')")
-	public FeePaymentResponse get(@PathVariable String publicId) {
-		return feePaymentMapper.toResponse(feePaymentService.findByPublicId(publicId));
+	public ApiResponse<FeePaymentResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(feePaymentMapper.toResponse(feePaymentService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('FEE_PAYMENT_MANAGE')")
 	@RequireIdempotencyKey
-	public FeePaymentResponse record(@Valid @RequestBody RecordFeePaymentRequest request) {
-		return feePaymentMapper.toResponse(feePaymentService.record(
+	public ApiResponse<FeePaymentResponse> record(@Valid @RequestBody RecordFeePaymentRequest request) {
+		return ApiResponse.success(feePaymentMapper.toResponse(feePaymentService.record(
 				request.studentId(),
 				request.feeStructureId(),
 				request.paidAmount(),
 				request.paidAt(),
-				request.receiptNumber()));
+				request.receiptNumber())));
 	}
 }

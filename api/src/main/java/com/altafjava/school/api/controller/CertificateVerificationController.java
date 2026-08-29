@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.CertificateVerificationApi;
 import com.altafjava.school.api.dto.response.CertificateVerificationResponse;
 import com.altafjava.school.api.mapper.CertificateVerificationMapper;
 import com.altafjava.school.application.service.CertificateService;
@@ -26,7 +28,7 @@ import com.altafjava.school.application.service.CertificateService;
  */
 @RestController
 @RequestMapping("/api/v1/certificates")
-public class CertificateVerificationController {
+public class CertificateVerificationController implements CertificateVerificationApi {
 
 	private final CertificateService certificateService;
 	private final CertificateVerificationMapper certificateVerificationMapper;
@@ -37,8 +39,10 @@ public class CertificateVerificationController {
 		this.certificateVerificationMapper = certificateVerificationMapper;
 	}
 
+	@Override
 	@GetMapping("/verify/{verificationCode}")
-	public CertificateVerificationResponse verify(@PathVariable String verificationCode) {
-		return certificateVerificationMapper.toResponse(certificateService.verify(verificationCode));
+	public ApiResponse<CertificateVerificationResponse> verify(@PathVariable String verificationCode) {
+		return ApiResponse
+				.success(certificateVerificationMapper.toResponse(certificateService.verify(verificationCode)));
 	}
 }

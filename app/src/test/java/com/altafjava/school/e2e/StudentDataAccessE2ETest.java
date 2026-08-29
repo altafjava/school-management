@@ -192,7 +192,7 @@ class StudentDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		Long feeStructureId = withTenant(() -> feeStructureRepository
 				.findByPublicIdAndTenantId(UUID.fromString(feeStructurePublicId), tenantId).orElseThrow().getId());
 
@@ -226,8 +226,9 @@ class StudentDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/students/" + studentAPublicId + "/fee-balance")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("find { it.feeStructureId == " + feeStructureId + " }.outstandingBalance", org.hamcrest.Matchers
-						.comparesEqualTo(600.00f));
+				.body("data.find { it.feeStructureId == " + feeStructureId + " }.outstandingBalance",
+						org.hamcrest.Matchers
+								.comparesEqualTo(600.00f));
 	}
 
 	private String createStudent(String studentCode, String email) {
@@ -241,7 +242,7 @@ class StudentDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createGuardian(Long userId) {
@@ -256,7 +257,7 @@ class StudentDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/guardians")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void linkGuardianToStudent(String guardianPublicId, String studentPublicId) {

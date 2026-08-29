@@ -107,7 +107,7 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void enrollStudent(String accessToken, String classroomPublicId, String studentPublicId) {
@@ -135,7 +135,7 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createSubjectPublicId(String accessToken, String code) {
@@ -148,7 +148,7 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createTeacherPublicId(String accessToken, String employeeCode) {
@@ -162,7 +162,7 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createPeriodPublicId(String accessToken, String name) {
@@ -176,7 +176,7 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/periods")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private Long resolveClassroomId(String publicId) {
@@ -244,7 +244,7 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/timetable-entries")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null, TenantType.SHARED);
 		try {
@@ -284,8 +284,8 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/period-attendance")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("status", equalTo("PRESENT"));
+				.body("data.publicId", notNullValue())
+				.body("data.status", equalTo("PRESENT"));
 	}
 
 	@Test
@@ -339,7 +339,7 @@ class PeriodAttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/period-attendance")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

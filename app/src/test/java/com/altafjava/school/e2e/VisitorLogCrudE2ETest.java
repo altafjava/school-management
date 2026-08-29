@@ -75,7 +75,7 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -95,8 +95,8 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/visitor-logs")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("checkOutAt", nullValue());
+				.body("data.publicId", notNullValue())
+				.body("data.checkOutAt", nullValue());
 	}
 
 	@Test
@@ -149,7 +149,7 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/visitor-logs")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -159,7 +159,7 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/visitor-logs")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", equalTo(1));
+				.body("data.content.size()", equalTo(1));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -168,7 +168,7 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/visitor-logs/" + logPublicId + "/check-out")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("checkOutAt", notNullValue());
+				.body("data.checkOutAt", notNullValue());
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -178,7 +178,7 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/visitor-logs")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", equalTo(0));
+				.body("data.content.size()", equalTo(0));
 	}
 
 	@Test
@@ -196,7 +196,7 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/visitor-logs")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -230,7 +230,7 @@ class VisitorLogCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/visitor-logs")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

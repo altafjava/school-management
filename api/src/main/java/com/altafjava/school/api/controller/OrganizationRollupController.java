@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
 import com.altafjava.platform.core.security.Roles;
+import com.altafjava.school.api.controller.api.OrganizationRollupApi;
 import com.altafjava.school.api.dto.response.OrganizationRollupResponse;
 import com.altafjava.school.api.mapper.OrganizationRollupMapper;
 import com.altafjava.school.application.rollup.OrganizationRollupService;
@@ -25,7 +27,7 @@ import com.altafjava.school.application.rollup.OrganizationRollupService;
 @RequestMapping("/api/v1/organizations/{organizationPublicId}/rollup-report")
 @PreAuthorize(Roles.HAS_SUPER_ADMIN
 		+ " or @organizationAccessGuard.canAccessOrganization(authentication, #organizationPublicId)")
-public class OrganizationRollupController {
+public class OrganizationRollupController implements OrganizationRollupApi {
 
 	private final OrganizationRollupService organizationRollupService;
 	private final OrganizationRollupMapper organizationRollupMapper;
@@ -36,12 +38,13 @@ public class OrganizationRollupController {
 		this.organizationRollupMapper = organizationRollupMapper;
 	}
 
+	@Override
 	@GetMapping
-	public OrganizationRollupResponse get(
+	public ApiResponse<OrganizationRollupResponse> get(
 			@PathVariable String organizationPublicId,
 			@RequestParam LocalDate from,
 			@RequestParam LocalDate to) {
-		return organizationRollupMapper.toResponse(
-				organizationRollupService.generate(organizationPublicId, from, to));
+		return ApiResponse.success(organizationRollupMapper.toResponse(
+				organizationRollupService.generate(organizationPublicId, from, to)));
 	}
 }

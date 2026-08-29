@@ -67,7 +67,7 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/certificate-templates")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String enrollStudent(String accessToken, Long forTenantId, String studentCode) {
@@ -83,7 +83,7 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -101,8 +101,8 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/certificate-templates")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("active", equalTo(true));
+				.body("data.publicId", notNullValue())
+				.body("data.active", equalTo(true));
 	}
 
 	@Test
@@ -151,9 +151,9 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 						+ templatePublicId)
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("verificationCode", notNullValue())
-				.extract().path("publicId");
+				.body("data.publicId", notNullValue())
+				.body("data.verificationCode", notNullValue())
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -162,7 +162,7 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/students/" + studentPublicId + "/certificates")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", equalTo(1));
+				.body("data.content.size()", equalTo(1));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -206,7 +206,7 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 						+ templatePublicId)
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("verificationCode");
+				.extract().path("data.verificationCode");
 
 		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
 		given()
@@ -216,8 +216,8 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/certificates/verify/" + verificationCode)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("studentName", equalTo("Alice Smith"))
-				.body("issuedAt", notNullValue());
+				.body("data.studentName", equalTo("Alice Smith"))
+				.body("data.issuedAt", notNullValue());
 	}
 
 	@Test
@@ -247,7 +247,7 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 						+ templatePublicId)
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("verificationCode");
+				.extract().path("data.verificationCode");
 
 		// No Authorization header at all — a third party with no account on this tenant, the
 		// exact caller this endpoint exists for.
@@ -257,7 +257,7 @@ class CertificateCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/certificates/verify/" + verificationCode)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("studentName", equalTo("Alice Smith"));
+				.body("data.studentName", equalTo("Alice Smith"));
 	}
 
 	@Test

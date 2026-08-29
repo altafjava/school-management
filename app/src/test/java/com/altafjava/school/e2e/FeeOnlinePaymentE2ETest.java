@@ -88,7 +88,7 @@ class FeeOnlinePaymentE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createFeeStructure(String name) {
@@ -102,7 +102,7 @@ class FeeOnlinePaymentE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void assignFeeStructure(String feeStructurePublicId, String studentPublicId) {
@@ -174,9 +174,9 @@ class FeeOnlinePaymentE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-payments/self-service/charges")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("gatewayChargeReference", notNullValue())
-				.body("clientSecret", notNullValue())
-				.extract().path("gatewayChargeReference");
+				.body("data.gatewayChargeReference", notNullValue())
+				.body("data.clientSecret", notNullValue())
+				.extract().path("data.gatewayChargeReference");
 
 		String receiptPublicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -189,9 +189,9 @@ class FeeOnlinePaymentE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-payments/self-service/charges/" + gatewayChargeReference + "/confirm")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("receiptNumber", startsWith("GTW-"))
-				.body("paidAmount", equalTo(500.0f))
-				.extract().path("publicId");
+				.body("data.receiptNumber", startsWith("GTW-"))
+				.body("data.paidAmount", equalTo(500.0f))
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -200,7 +200,7 @@ class FeeOnlinePaymentE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/fee-payments/self-service/" + receiptPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("publicId", equalTo(receiptPublicId));
+				.body("data.publicId", equalTo(receiptPublicId));
 	}
 
 	@Test

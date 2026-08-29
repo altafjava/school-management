@@ -101,9 +101,9 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/lessons")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("title", equalTo("Intro to Cells"))
-				.extract().path("publicId");
+				.body("data.publicId", notNullValue())
+				.body("data.title", equalTo("Intro to Cells"))
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -112,8 +112,8 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/lessons/classroom/" + classroomPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", org.hamcrest.Matchers.equalTo(1))
-				.body("content[0].publicId", equalTo(lessonPublicId));
+				.body("data.content.size()", org.hamcrest.Matchers.equalTo(1))
+				.body("data.content[0].publicId", equalTo(lessonPublicId));
 
 		String assignmentPublicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -126,8 +126,8 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/assignments")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.extract().path("publicId");
+				.body("data.publicId", notNullValue())
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -136,7 +136,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/assignments/classroom/" + classroomPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", org.hamcrest.Matchers.equalTo(1));
+				.body("data.content.size()", org.hamcrest.Matchers.equalTo(1));
 
 		LocalDate newDueDate = LocalDate.now().plusDays(14);
 		given()
@@ -148,7 +148,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/assignments/" + assignmentPublicId + "/reschedule")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("dueDate", equalTo(newDueDate.toString()));
+				.body("data.dueDate", equalTo(newDueDate.toString()));
 
 		Long studentUserId = createUserWithRole("student-" + suffix + "@school.test", "STUDENT");
 		String studentPublicId = createStudent("STU-" + suffix);
@@ -166,8 +166,8 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/assignments/" + assignmentPublicId + "/submissions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("status", equalTo("SUBMITTED"))
-				.extract().path("publicId");
+				.body("data.status", equalTo("SUBMITTED"))
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -176,8 +176,8 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/assignments/" + assignmentPublicId + "/submissions")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", org.hamcrest.Matchers.equalTo(1))
-				.body("content[0].publicId", equalTo(submissionPublicId));
+				.body("data.content.size()", org.hamcrest.Matchers.equalTo(1))
+				.body("data.content[0].publicId", equalTo(submissionPublicId));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -188,9 +188,9 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/assignments/" + assignmentPublicId + "/submissions/" + submissionPublicId + "/grade")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("GRADED"))
-				.body("marksObtained", equalTo(88.0f))
-				.body("feedback", equalTo("Well done"));
+				.body("data.status", equalTo("GRADED"))
+				.body("data.marksObtained", equalTo(88.0f))
+				.body("data.feedback", equalTo("Well done"));
 	}
 
 	@Test
@@ -287,7 +287,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/assignments")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(
@@ -309,7 +309,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		Long otherTeacherUserId = withTenantId(otherTenant.getId(), () -> {
 			var role = roleRepository.findAll().stream()
 					.filter(r -> r.getTenantId() == null && "TEACHER".equals(r.getName()))
@@ -372,7 +372,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private Long linkTeacherToUser(String teacherPublicId, Long userId) {
@@ -407,7 +407,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createAcademicYear(String name) {
@@ -421,7 +421,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/academic-years")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createSubject(String code) {
@@ -434,7 +434,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createStudent(String studentCode) {
@@ -448,7 +448,7 @@ class LmsCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void enrollStudent(String classroomPublicId, String studentPublicId) {

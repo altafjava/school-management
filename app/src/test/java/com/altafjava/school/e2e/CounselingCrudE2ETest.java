@@ -69,7 +69,7 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String hireTeacher(String accessToken, Long forTenantId, String employeeCode) {
@@ -85,7 +85,7 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -108,9 +108,9 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/counseling-sessions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("followUpRequired", equalTo(true))
-				.extract().path("publicId");
+				.body("data.publicId", notNullValue())
+				.body("data.followUpRequired", equalTo(true))
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -119,7 +119,7 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/counseling-sessions/" + sessionPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("notes", equalTo("Discussed exam anxiety"));
+				.body("data.notes", equalTo("Discussed exam anxiety"));
 	}
 
 	@Test
@@ -174,9 +174,9 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/counseling-referrals")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("status", equalTo("PENDING"))
-				.extract().path("publicId");
+				.body("data.publicId", notNullValue())
+				.body("data.status", equalTo("PENDING"))
+				.extract().path("data.publicId");
 
 		String sessionPublicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -190,7 +190,7 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/counseling-sessions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -203,7 +203,7 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/counseling-referrals/" + referralPublicId + "/schedule")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("SCHEDULED"));
+				.body("data.status", equalTo("SCHEDULED"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -212,7 +212,7 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/counseling-referrals/" + referralPublicId + "/complete")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("COMPLETED"));
+				.body("data.status", equalTo("COMPLETED"));
 	}
 
 	@Test
@@ -251,7 +251,7 @@ class CounselingCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/counseling-sessions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

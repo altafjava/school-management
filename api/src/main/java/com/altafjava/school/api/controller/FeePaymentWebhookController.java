@@ -20,6 +20,7 @@ import com.altafjava.platform.domain.paymentgateway.service.PaymentGatewayProvid
 import com.altafjava.platform.domain.paymentgateway.service.PaymentWebhookEvent;
 import com.altafjava.platform.domain.tenant.model.Tenant;
 import com.altafjava.platform.domain.tenant.repository.TenantRepository;
+import com.altafjava.school.api.controller.api.FeePaymentWebhookApi;
 import com.altafjava.school.application.service.FeeOnlinePaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/v1/fee-payments/webhooks")
 @RequiredArgsConstructor
-public class FeePaymentWebhookController {
+public class FeePaymentWebhookController implements FeePaymentWebhookApi {
 
 	private final TenantRepository tenantRepository;
 	private final PaymentGatewayResolver paymentGatewayResolver;
@@ -52,6 +53,10 @@ public class FeePaymentWebhookController {
 	private final PaymentGatewayCredentialsDecryptor paymentGatewayCredentialsDecryptor;
 	private final FeeOnlinePaymentService feeOnlinePaymentService;
 
+	// Not ApiResponse-wrapped, unlike every other endpoint in this codebase — matches platform's
+	// own WebhookController: a gateway provider posts here and expects a raw HTTP response, not
+	// this application's JSON envelope.
+	@Override
 	@PostMapping("/{tenantPublicId}/{providerType}")
 	public ResponseEntity<Void> handleWebhook(
 			@PathVariable String tenantPublicId,

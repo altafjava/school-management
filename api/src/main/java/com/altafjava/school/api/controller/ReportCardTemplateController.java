@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.ReportCardTemplateApi;
 import com.altafjava.school.api.dto.request.ConfigureReportCardTemplateRequest;
 import com.altafjava.school.api.dto.response.ReportCardTemplateResponse;
 import com.altafjava.school.api.mapper.ReportCardTemplateMapper;
@@ -16,7 +18,7 @@ import com.altafjava.school.application.service.ReportCardTemplateService;
 // (teachers need to know what a generated report card will contain); writes are tenant-admin-only.
 @RestController
 @RequestMapping("/api/v1/report-card-template")
-public class ReportCardTemplateController {
+public class ReportCardTemplateController implements ReportCardTemplateApi {
 
 	private final ReportCardTemplateService reportCardTemplateService;
 	private final ReportCardTemplateMapper reportCardTemplateMapper;
@@ -27,17 +29,21 @@ public class ReportCardTemplateController {
 		this.reportCardTemplateMapper = reportCardTemplateMapper;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('REPORT_CARD_TEMPLATE_READ')")
-	public ReportCardTemplateResponse get() {
-		return reportCardTemplateMapper.toResponse(reportCardTemplateService.getForCurrentTenant());
+	public ApiResponse<ReportCardTemplateResponse> get() {
+		return ApiResponse
+				.success(reportCardTemplateMapper.toResponse(reportCardTemplateService.getForCurrentTenant()));
 	}
 
+	@Override
 	@PutMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('REPORT_CARD_TEMPLATE_WRITE')")
-	public ReportCardTemplateResponse configure(@Valid @RequestBody ConfigureReportCardTemplateRequest request) {
-		return reportCardTemplateMapper.toResponse(reportCardTemplateService.configure(
+	public ApiResponse<ReportCardTemplateResponse> configure(
+			@Valid @RequestBody ConfigureReportCardTemplateRequest request) {
+		return ApiResponse.success(reportCardTemplateMapper.toResponse(reportCardTemplateService.configure(
 				request.showAttendanceSummary(), request.showRemarks(), request.showCompetencyGrid(),
-				request.showRank()));
+				request.showRank())));
 	}
 }

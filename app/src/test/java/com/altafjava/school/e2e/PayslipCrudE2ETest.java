@@ -89,7 +89,7 @@ class PayslipCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void createSalaryStructure(String accessToken, String teacherPublicId) {
@@ -146,9 +146,9 @@ class PayslipCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/payslips")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", equalTo(1))
-				.body("content[0].status", equalTo("DRAFT"))
-				.body("content[0].publicId", notNullValue());
+				.body("data.content.size()", equalTo(1))
+				.body("data.content[0].status", equalTo("DRAFT"))
+				.body("data.content[0].publicId", notNullValue());
 	}
 
 	@Test
@@ -163,7 +163,7 @@ class PayslipCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/payslips/" + publicId + "/finalize")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("FINALIZED"));
+				.body("data.status", equalTo("FINALIZED"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -172,7 +172,7 @@ class PayslipCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/payslips/" + publicId + "/disburse")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("DISBURSED"));
+				.body("data.status", equalTo("DISBURSED"));
 	}
 
 	@Test

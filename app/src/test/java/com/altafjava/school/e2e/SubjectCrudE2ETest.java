@@ -67,9 +67,9 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("code", equalTo("MATH-101"))
-				.body("name", equalTo("Mathematics"));
+				.body("data.publicId", notNullValue())
+				.body("data.code", equalTo("MATH-101"))
+				.body("data.name", equalTo("Mathematics"));
 	}
 
 	@Test
@@ -110,7 +110,7 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(
@@ -140,7 +140,7 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		String curriculumPublicId = createCurriculum(accessToken, "IB-DP");
 
 		given()
@@ -152,7 +152,7 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/subjects/" + subjectPublicId + "/curriculum")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("curriculumId", notNullValue());
+				.body("data.curriculumId", notNullValue());
 	}
 
 	@Test
@@ -167,7 +167,7 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		String curriculumPublicId = createCurriculum(accessToken, "CHEM-CURR");
 		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
 
@@ -192,7 +192,7 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/boards")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		return given()
 				.header("X-Tenant-ID", tenantId)
@@ -204,7 +204,7 @@ class SubjectCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/curricula")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String login() {

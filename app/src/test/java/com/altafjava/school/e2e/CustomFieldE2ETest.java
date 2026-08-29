@@ -68,7 +68,7 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/custom-field-definitions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String defineSelectField(String accessToken, Long forTenantId, String fieldKey, String options) {
@@ -84,7 +84,7 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/custom-field-definitions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String enrollStudent(String accessToken, Long forTenantId, String studentCode) {
@@ -100,7 +100,7 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -118,8 +118,8 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/custom-field-definitions")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("active", equalTo(true));
+				.body("data.publicId", notNullValue())
+				.body("data.active", equalTo(true));
 	}
 
 	@Test
@@ -171,7 +171,7 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.put("/api/v1/students/" + studentPublicId + "/custom-fields")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("find { it.fieldKey == 'bloodGroup' }.value", equalTo("O+"));
+				.body("data.find { it.fieldKey == 'bloodGroup' }.value", equalTo("O+"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -180,7 +180,7 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/students/" + studentPublicId + "/custom-fields")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("find { it.fieldKey == 'bloodGroup' }.value", equalTo("O+"));
+				.body("data.find { it.fieldKey == 'bloodGroup' }.value", equalTo("O+"));
 	}
 
 	@Test
@@ -344,8 +344,8 @@ class CustomFieldE2ETest extends SchoolIntegrationTestBase {
 				.put("/api/v1/students/" + studentPublicId + "/custom-fields")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("find { it.fieldKey == 'houseColor' }.value", equalTo("Blue"))
-				.body("find { it.fieldKey == 'houseColor' }.options", equalTo(java.util.List.of("Red", "Blue",
+				.body("data.find { it.fieldKey == 'houseColor' }.value", equalTo("Blue"))
+				.body("data.find { it.fieldKey == 'houseColor' }.options", equalTo(java.util.List.of("Red", "Blue",
 						"Green")));
 	}
 

@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,16 +12,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.AssetAssignmentApi;
 import com.altafjava.school.api.dto.request.AssignAssetRequest;
 import com.altafjava.school.api.dto.request.ReturnAssetRequest;
 import com.altafjava.school.api.dto.response.AssetAssignmentResponse;
 import com.altafjava.school.api.mapper.AssetAssignmentMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.AssetAssignmentService;
 
 @RestController
 @RequestMapping("/api/v1/assets/{assetPublicId}/assignments")
-public class AssetAssignmentController {
+public class AssetAssignmentController implements AssetAssignmentApi {
 
 	private final AssetAssignmentService assetAssignmentService;
 	private final AssetAssignmentMapper assetAssignmentMapper;
@@ -36,29 +38,34 @@ public class AssetAssignmentController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
-	public Page<AssetAssignmentResponse> list(@PathVariable String assetPublicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<AssetAssignmentResponse>> list(
+			@PathVariable String assetPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return assetAssignmentService.listForAsset(assetPublicId, pageableResolver.resolve(page, size))
-				.map(assetAssignmentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(assetAssignmentService.listForAsset(assetPublicId, pageableResolver.resolve(page, size))
+						.map(assetAssignmentMapper::toResponse)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
-	public AssetAssignmentResponse assign(@PathVariable String assetPublicId,
+	public ApiResponse<AssetAssignmentResponse> assign(@PathVariable String assetPublicId,
 			@Valid @RequestBody AssignAssetRequest request) {
-		return assetAssignmentMapper.toResponse(assetAssignmentService.assign(assetPublicId,
-				request.assignedToType(), request.assignedToId(), request.assignedAt()));
+		return ApiResponse.success(assetAssignmentMapper.toResponse(assetAssignmentService.assign(assetPublicId,
+				request.assignedToType(), request.assignedToId(), request.assignedAt())));
 	}
 
+	@Override
 	@PatchMapping("/{assignmentPublicId}/return")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('ASSET_MANAGE')")
-	public AssetAssignmentResponse markReturned(@PathVariable String assetPublicId,
+	public ApiResponse<AssetAssignmentResponse> markReturned(@PathVariable String assetPublicId,
 			@PathVariable String assignmentPublicId, @Valid @RequestBody ReturnAssetRequest request) {
-		return assetAssignmentMapper.toResponse(
-				assetAssignmentService.markReturned(assignmentPublicId, request.returnedAt()));
+		return ApiResponse.success(assetAssignmentMapper.toResponse(
+				assetAssignmentService.markReturned(assignmentPublicId, request.returnedAt())));
 	}
 }

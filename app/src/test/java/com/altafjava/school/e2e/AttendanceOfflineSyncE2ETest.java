@@ -158,8 +158,8 @@ class AttendanceOfflineSyncE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/attendance/" + serverEntityId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("PRESENT"))
-				.body("markedBy", equalTo("teacher-offline"));
+				.body("data.status", equalTo("PRESENT"))
+				.body("data.markedBy", equalTo("teacher-offline"));
 	}
 
 	@Test

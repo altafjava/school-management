@@ -82,8 +82,8 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("classCode", equalTo("CLS-001"));
+				.body("data.publicId", notNullValue())
+				.body("data.classCode", equalTo("CLS-001"));
 	}
 
 	@Test
@@ -140,7 +140,7 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(
@@ -178,7 +178,7 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -189,7 +189,7 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/classrooms/" + publicId + "/capacity")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("capacity", equalTo(1));
+				.body("data.capacity", equalTo(1));
 	}
 
 	@Test
@@ -213,7 +213,7 @@ class ClassroomCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)

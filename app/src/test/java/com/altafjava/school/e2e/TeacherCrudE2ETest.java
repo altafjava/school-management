@@ -75,9 +75,9 @@ class TeacherCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("employeeCode", equalTo("EMP-001"))
-				.body("firstName", equalTo("Alice"));
+				.body("data.publicId", notNullValue())
+				.body("data.employeeCode", equalTo("EMP-001"))
+				.body("data.firstName", equalTo("Alice"));
 	}
 
 	@Test
@@ -134,7 +134,7 @@ class TeacherCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

@@ -72,7 +72,7 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -100,9 +100,9 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/salary-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("active", equalTo(true))
-				.body("grossPay", equalTo(62500.00f));
+				.body("data.publicId", notNullValue())
+				.body("data.active", equalTo(true))
+				.body("data.grossPay", equalTo(62500.00f));
 	}
 
 	@Test
@@ -126,7 +126,7 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/salary-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -146,8 +146,8 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/salary-structures/" + firstPublicId + "/supersede")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("active", equalTo(true))
-				.body("grossPay", equalTo(72000.00f));
+				.body("data.active", equalTo(true))
+				.body("data.grossPay", equalTo(72000.00f));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -156,7 +156,7 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/salary-structures/" + firstPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("active", equalTo(false));
+				.body("data.active", equalTo(false));
 	}
 
 	@Test
@@ -215,7 +215,7 @@ class SalaryStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/salary-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

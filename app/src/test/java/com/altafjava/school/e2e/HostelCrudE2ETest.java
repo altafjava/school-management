@@ -66,7 +66,7 @@ class HostelCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/hostel-buildings")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createRoom(String accessToken, Long forTenantId, String buildingPublicId, String roomNumber,
@@ -83,7 +83,7 @@ class HostelCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/rooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String enrollStudent(String accessToken, Long forTenantId, String studentCode) {
@@ -99,7 +99,7 @@ class HostelCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -117,8 +117,8 @@ class HostelCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/hostel-buildings")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("active", equalTo(true));
+				.body("data.publicId", notNullValue())
+				.body("data.active", equalTo(true));
 	}
 
 	@Test
@@ -171,9 +171,9 @@ class HostelCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/room-allocations")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("active", equalTo(true))
-				.extract().path("publicId");
+				.body("data.publicId", notNullValue())
+				.body("data.active", equalTo(true))
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -183,7 +183,7 @@ class HostelCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/room-allocations")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", equalTo(1));
+				.body("data.content.size()", equalTo(1));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -196,8 +196,8 @@ class HostelCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/room-allocations/" + allocationPublicId + "/vacate")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("active", equalTo(false))
-				.body("allocatedUntil", equalTo("2026-06-30"));
+				.body("data.active", equalTo(false))
+				.body("data.allocatedUntil", equalTo("2026-06-30"));
 	}
 
 	@Test

@@ -89,7 +89,7 @@ class AttendancePercentageE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void enrollStudent(String accessToken, String classroomPublicId, String studentPublicId) {
@@ -117,7 +117,7 @@ class AttendancePercentageE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void markAttendance(String accessToken, long classroomId, long studentId, LocalDate date,
@@ -175,9 +175,9 @@ class AttendancePercentageE2ETest extends SchoolIntegrationTestBase {
 						+ day2)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("presentDays", org.hamcrest.Matchers.equalTo(1))
-				.body("totalMarkedDays", org.hamcrest.Matchers.equalTo(2))
-				.body("percentage", org.hamcrest.Matchers.comparesEqualTo(50.00f));
+				.body("data.presentDays", org.hamcrest.Matchers.equalTo(1))
+				.body("data.totalMarkedDays", org.hamcrest.Matchers.equalTo(2))
+				.body("data.percentage", org.hamcrest.Matchers.comparesEqualTo(50.00f));
 	}
 
 	@Test

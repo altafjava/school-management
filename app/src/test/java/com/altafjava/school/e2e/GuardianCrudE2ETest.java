@@ -69,8 +69,8 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/guardians")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("firstName", equalTo("Jane"));
+				.body("data.publicId", notNullValue())
+				.body("data.firstName", equalTo("Jane"));
 	}
 
 	@Test
@@ -113,7 +113,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/guardians")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		var otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(
@@ -146,7 +146,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/guardians/" + guardianPublicId + "/students/" + studentPublicId + "/consent/grant")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("consentGivenAt", notNullValue());
+				.body("data.consentGivenAt", notNullValue());
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -156,7 +156,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/guardians/" + guardianPublicId + "/students/" + studentPublicId + "/consent/revoke")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("consentGivenAt", org.hamcrest.Matchers.nullValue());
+				.body("data.consentGivenAt", org.hamcrest.Matchers.nullValue());
 	}
 
 	@Test
@@ -188,7 +188,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/guardians")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private String createStudent(String accessToken, String studentCode) {
@@ -202,7 +202,7 @@ class GuardianCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void linkGuardianToStudent(String accessToken, String guardianPublicId, String studentPublicId) {

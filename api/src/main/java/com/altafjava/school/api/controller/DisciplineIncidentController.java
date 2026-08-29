@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,16 +12,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.DisciplineIncidentApi;
 import com.altafjava.school.api.dto.request.RecordDisciplineActionRequest;
 import com.altafjava.school.api.dto.request.RecordDisciplineIncidentRequest;
 import com.altafjava.school.api.dto.response.DisciplineIncidentResponse;
 import com.altafjava.school.api.mapper.DisciplineIncidentMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.DisciplineIncidentService;
 
 @RestController
 @RequestMapping("/api/v1/discipline-incidents")
-public class DisciplineIncidentController {
+public class DisciplineIncidentController implements DisciplineIncidentApi {
 
 	private final DisciplineIncidentService disciplineIncidentService;
 	private final DisciplineIncidentMapper disciplineIncidentMapper;
@@ -36,37 +38,45 @@ public class DisciplineIncidentController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_MANAGE')")
-	public Page<DisciplineIncidentResponse> listAll(
+	public ApiResponse<com.altafjava.platform.core.model.Page<DisciplineIncidentResponse>> listAll(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return disciplineIncidentService.listAll(pageableResolver.resolve(page, size))
-				.map(disciplineIncidentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(disciplineIncidentService.listAll(pageableResolver.resolve(page, size))
+						.map(disciplineIncidentMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/students/{studentPublicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_READ')")
-	public Page<DisciplineIncidentResponse> listForStudent(@PathVariable String studentPublicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<DisciplineIncidentResponse>> listForStudent(
+			@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return disciplineIncidentService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
-				.map(disciplineIncidentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(
+				disciplineIncidentService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
+						.map(disciplineIncidentMapper::toResponse)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_WRITE')")
-	public DisciplineIncidentResponse record(@Valid @RequestBody RecordDisciplineIncidentRequest request) {
-		return disciplineIncidentMapper.toResponse(disciplineIncidentService.record(request.studentPublicId(),
-				request.incidentDate(), request.severity(), request.description()));
+	public ApiResponse<DisciplineIncidentResponse> record(@Valid @RequestBody RecordDisciplineIncidentRequest request) {
+		return ApiResponse
+				.success(disciplineIncidentMapper.toResponse(disciplineIncidentService.record(request.studentPublicId(),
+						request.incidentDate(), request.severity(), request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/action")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DISCIPLINE_ACTION')")
-	public DisciplineIncidentResponse recordAction(@PathVariable String publicId,
+	public ApiResponse<DisciplineIncidentResponse> recordAction(@PathVariable String publicId,
 			@Valid @RequestBody RecordDisciplineActionRequest request) {
-		return disciplineIncidentMapper.toResponse(
-				disciplineIncidentService.recordAction(publicId, request.actionTaken()));
+		return ApiResponse.success(disciplineIncidentMapper.toResponse(
+				disciplineIncidentService.recordAction(publicId, request.actionTaken())));
 	}
 }
