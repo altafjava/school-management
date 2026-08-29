@@ -1,6 +1,5 @@
 package com.altafjava.school.api.controller;
 
-import org.springframework.data.domain.Page;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
 import com.altafjava.platform.core.security.AuthenticatedUser;
+import com.altafjava.school.api.controller.api.CertificateApi;
 import com.altafjava.school.api.dto.response.CertificateIssuanceResponse;
 import com.altafjava.school.api.mapper.CertificateIssuanceMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.CertificateService;
 import com.altafjava.school.domain.certificate.model.CertificateIssuance;
@@ -27,7 +29,7 @@ import com.altafjava.school.domain.certificate.model.CertificateIssuance;
 // for a parent/student, it is always issued by staff on request.
 @RestController
 @RequestMapping("/api/v1/students/{studentPublicId}/certificates")
-public class CertificateController {
+public class CertificateController implements CertificateApi {
 
 	private final CertificateService certificateService;
 	private final CertificateIssuanceMapper certificateIssuanceMapper;
@@ -41,26 +43,33 @@ public class CertificateController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_MANAGE')")
-	public Page<CertificateIssuanceResponse> list(@PathVariable String studentPublicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<CertificateIssuanceResponse>> list(
+			@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return certificateService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
-				.map(certificateIssuanceMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(certificateService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
+						.map(certificateIssuanceMapper::toResponse)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_MANAGE')")
-	public CertificateIssuanceResponse issue(@PathVariable String studentPublicId,
+	public ApiResponse<CertificateIssuanceResponse> issue(@PathVariable String studentPublicId,
 			@RequestParam String certificateTemplatePublicId,
 			@AuthenticationPrincipal AuthenticatedUser user) {
 		CertificateIssuance issuance = certificateService.issue(studentPublicId, certificateTemplatePublicId,
 				user.getId());
-		return certificateIssuanceMapper.toResponse(issuance);
+		return ApiResponse.success(certificateIssuanceMapper.toResponse(issuance));
 	}
 
+	// Not ApiResponse-wrapped, unlike every other endpoint in this codebase — a raw PDF download
+	// needs its own Content-Type/Content-Disposition headers and binary body, not a JSON envelope.
+	@Override
 	@GetMapping("/{certificatePublicId}/download")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CERTIFICATE_MANAGE')")
 	public ResponseEntity<byte[]> download(@PathVariable String studentPublicId,

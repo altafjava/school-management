@@ -70,8 +70,8 @@ class TicketCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/tickets")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("status", equalTo("OPEN"));
+				.body("data.publicId", notNullValue())
+				.body("data.status", equalTo("OPEN"));
 	}
 
 	@Test
@@ -116,7 +116,7 @@ class TicketCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/tickets")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -129,8 +129,8 @@ class TicketCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/tickets/" + ticketPublicId + "/assign")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("IN_PROGRESS"))
-				.body("assignedToUserId", equalTo(99));
+				.body("data.status", equalTo("IN_PROGRESS"))
+				.body("data.assignedToUserId", equalTo(99));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -143,7 +143,7 @@ class TicketCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/tickets/" + ticketPublicId + "/resolve")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("RESOLVED"));
+				.body("data.status", equalTo("RESOLVED"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -152,7 +152,7 @@ class TicketCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/tickets/" + ticketPublicId + "/close")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("CLOSED"));
+				.body("data.status", equalTo("CLOSED"));
 	}
 
 	@Test
@@ -170,7 +170,7 @@ class TicketCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/tickets")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

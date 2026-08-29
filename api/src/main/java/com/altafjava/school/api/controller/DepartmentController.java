@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,17 +12,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.DepartmentApi;
 import com.altafjava.school.api.dto.request.AssignHeadTeacherRequest;
 import com.altafjava.school.api.dto.request.CreateDepartmentRequest;
 import com.altafjava.school.api.dto.request.UpdateDepartmentRequest;
 import com.altafjava.school.api.dto.response.DepartmentResponse;
 import com.altafjava.school.api.mapper.DepartmentMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.DepartmentService;
 
 @RestController
 @RequestMapping("/api/v1/departments")
-public class DepartmentController {
+public class DepartmentController implements DepartmentApi {
 
 	private final DepartmentService departmentService;
 	private final DepartmentMapper departmentMapper;
@@ -37,47 +39,54 @@ public class DepartmentController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
-	public Page<DepartmentResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<DepartmentResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return departmentService.list(pageableResolver.resolve(page, size)).map(departmentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(
+				departmentService.list(pageableResolver.resolve(page, size)).map(departmentMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
-	public DepartmentResponse get(@PathVariable String publicId) {
-		return departmentMapper.toResponse(departmentService.findByPublicId(publicId));
+	public ApiResponse<DepartmentResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(departmentMapper.toResponse(departmentService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
-	public DepartmentResponse create(@Valid @RequestBody CreateDepartmentRequest request) {
-		return departmentMapper
-				.toResponse(departmentService.create(request.name(), request.code(), request.description()));
+	public ApiResponse<DepartmentResponse> create(@Valid @RequestBody CreateDepartmentRequest request) {
+		return ApiResponse.success(departmentMapper
+				.toResponse(departmentService.create(request.name(), request.code(), request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
-	public DepartmentResponse updateDetails(@PathVariable String publicId,
+	public ApiResponse<DepartmentResponse> updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateDepartmentRequest request) {
-		return departmentMapper.toResponse(
-				departmentService.updateDetails(publicId, request.name(), request.code(), request.description()));
+		return ApiResponse.success(departmentMapper.toResponse(
+				departmentService.updateDetails(publicId, request.name(), request.code(), request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/head-teacher")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
-	public DepartmentResponse assignHeadTeacher(@PathVariable String publicId,
+	public ApiResponse<DepartmentResponse> assignHeadTeacher(@PathVariable String publicId,
 			@Valid @RequestBody AssignHeadTeacherRequest request) {
-		return departmentMapper
-				.toResponse(departmentService.assignHeadTeacher(publicId, request.headTeacherPublicId()));
+		return ApiResponse.success(departmentMapper
+				.toResponse(departmentService.assignHeadTeacher(publicId, request.headTeacherPublicId())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/deactivate")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('DEPARTMENT_MANAGE')")
-	public DepartmentResponse deactivate(@PathVariable String publicId) {
-		return departmentMapper.toResponse(departmentService.deactivate(publicId));
+	public ApiResponse<DepartmentResponse> deactivate(@PathVariable String publicId) {
+		return ApiResponse.success(departmentMapper.toResponse(departmentService.deactivate(publicId)));
 	}
 }

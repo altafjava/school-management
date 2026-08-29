@@ -74,8 +74,8 @@ class FeeStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("name", equalTo("Tuition Fee"));
+				.body("data.publicId", notNullValue())
+				.body("data.name", equalTo("Tuition Fee"));
 	}
 
 	@Test
@@ -130,7 +130,7 @@ class FeeStructureCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

@@ -76,7 +76,7 @@ class FeePaymentCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		return withTenant(() -> studentRepository
 				.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId).orElseThrow().getId());
 	}
@@ -92,7 +92,7 @@ class FeePaymentCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-structures")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		return withTenant(() -> feeStructureRepository
 				.findByPublicIdAndTenantId(UUID.fromString(publicId), tenantId).orElseThrow().getId());
 	}
@@ -124,8 +124,8 @@ class FeePaymentCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-payments")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("receiptNumber", equalTo("RCPT-FP1"));
+				.body("data.publicId", notNullValue())
+				.body("data.receiptNumber", equalTo("RCPT-FP1"));
 	}
 
 	@Test
@@ -177,7 +177,7 @@ class FeePaymentCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/fee-payments")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

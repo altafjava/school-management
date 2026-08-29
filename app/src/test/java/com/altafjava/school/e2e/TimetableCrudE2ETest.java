@@ -106,7 +106,7 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/periods")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String classroomPublicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -118,7 +118,7 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String subjectPublicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -129,7 +129,7 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String teacherPublicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -141,7 +141,7 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null, TenantType.SHARED);
 		try {
@@ -179,8 +179,8 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/timetable-entries")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("dayOfWeek", equalTo("MONDAY"));
+				.body("data.publicId", notNullValue())
+				.body("data.dayOfWeek", equalTo("MONDAY"));
 	}
 
 	@Test
@@ -250,7 +250,7 @@ class TimetableCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/timetable-entries")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

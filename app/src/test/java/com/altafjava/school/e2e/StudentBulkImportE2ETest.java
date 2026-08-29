@@ -73,9 +73,9 @@ class StudentBulkImportE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students/bulk-import")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("totalRows", equalTo(2))
-				.body("successCount", equalTo(1))
-				.body("failureCount", equalTo(1));
+				.body("data.totalRows", equalTo(2))
+				.body("data.successCount", equalTo(1))
+				.body("data.failureCount", equalTo(1));
 	}
 
 	@Test

@@ -137,8 +137,8 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/grades?size=100")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", org.hamcrest.Matchers.equalTo(1))
-				.body("content[0].examId", org.hamcrest.Matchers.equalTo(examAId.intValue()));
+				.body("data.content.size()", org.hamcrest.Matchers.equalTo(1))
+				.body("data.content[0].examId", org.hamcrest.Matchers.equalTo(examAId.intValue()));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -147,7 +147,7 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/attendance?size=100")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", org.hamcrest.Matchers.equalTo(1));
+				.body("data.content.size()", org.hamcrest.Matchers.equalTo(1));
 	}
 
 	private Long createTeacherUser(String email) {
@@ -182,7 +182,7 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/teachers")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void linkTeacherToUser(String teacherPublicId, Long userId) {
@@ -215,7 +215,7 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private Long internalClassroomId(String publicId) {
@@ -233,7 +233,7 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private Long internalSubjectId(String publicId) {
@@ -252,7 +252,7 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private Long internalStudentIdFromPublicId(String publicId) {
@@ -274,7 +274,7 @@ class TeacherScopedDataAccessE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/exams")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private Long internalExamId(String publicId) {

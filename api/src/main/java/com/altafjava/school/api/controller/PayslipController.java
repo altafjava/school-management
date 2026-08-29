@@ -9,15 +9,18 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.PayslipApi;
 import com.altafjava.school.api.dto.response.PayslipResponse;
 import com.altafjava.school.api.mapper.PayslipMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.PayslipService;
 import com.altafjava.school.domain.payroll.model.Payslip;
 
 @RestController
 @RequestMapping("/api/v1/payslips")
-public class PayslipController {
+public class PayslipController implements PayslipApi {
 
 	private final PayslipService payslipService;
 	private final PayslipMapper payslipMapper;
@@ -31,9 +34,10 @@ public class PayslipController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_MANAGE')")
-	public Page<PayslipResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<PayslipResponse>> list(
 			@RequestParam(required = false) String teacherPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
@@ -41,26 +45,29 @@ public class PayslipController {
 		Page<Payslip> payslips = teacherPublicId != null
 				? payslipService.listForTeacher(teacherPublicId, pageable)
 				: payslipService.listAll(pageable);
-		return payslips.map(payslipMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(payslips.map(payslipMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_MANAGE')")
-	public PayslipResponse get(@PathVariable String publicId) {
-		return payslipMapper.toResponse(payslipService.findByPublicId(publicId));
+	public ApiResponse<PayslipResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(payslipMapper.toResponse(payslipService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/finalize")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_MANAGE')")
-	public PayslipResponse finalizePayslip(@PathVariable String publicId) {
-		return payslipMapper.toResponse(payslipService.finalizePayslip(publicId));
+	public ApiResponse<PayslipResponse> finalizePayslip(@PathVariable String publicId) {
+		return ApiResponse.success(payslipMapper.toResponse(payslipService.finalizePayslip(publicId)));
 	}
 
 	// Disbursement is the finance action of actually paying out — gated separately from the HR
 	// actions above.
+	@Override
 	@PatchMapping("/{publicId}/disburse")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('PAYSLIP_DISBURSE')")
-	public PayslipResponse disburse(@PathVariable String publicId) {
-		return payslipMapper.toResponse(payslipService.markDisbursed(publicId));
+	public ApiResponse<PayslipResponse> disburse(@PathVariable String publicId) {
+		return ApiResponse.success(payslipMapper.toResponse(payslipService.markDisbursed(publicId)));
 	}
 }

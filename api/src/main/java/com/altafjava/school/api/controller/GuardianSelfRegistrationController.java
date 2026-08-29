@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.GuardianSelfRegistrationApi;
 import com.altafjava.school.api.dto.request.GuardianSelfRegisterRequest;
 import com.altafjava.school.api.dto.response.GuardianResponse;
 import com.altafjava.school.api.mapper.GuardianMapper;
@@ -19,7 +21,7 @@ import com.altafjava.school.application.service.GuardianSelfRegistrationService;
 // reachable without a JWT via a literal entry in platform-saas's SecurityConfig permitAll allowlist.
 @RestController
 @RequestMapping("/api/v1/guardians")
-public class GuardianSelfRegistrationController {
+public class GuardianSelfRegistrationController implements GuardianSelfRegistrationApi {
 
 	private final GuardianSelfRegistrationService guardianSelfRegistrationService;
 	private final GuardianMapper guardianMapper;
@@ -30,14 +32,15 @@ public class GuardianSelfRegistrationController {
 		this.guardianMapper = guardianMapper;
 	}
 
+	@Override
 	@PostMapping("/self-register")
 	@ResponseStatus(HttpStatus.CREATED)
-	public GuardianResponse selfRegister(@Valid @RequestBody GuardianSelfRegisterRequest request) {
-		return guardianMapper.toResponse(guardianSelfRegistrationService.register(
+	public ApiResponse<GuardianResponse> selfRegister(@Valid @RequestBody GuardianSelfRegisterRequest request) {
+		return ApiResponse.success(guardianMapper.toResponse(guardianSelfRegistrationService.register(
 				request.email(),
 				request.password(),
 				request.firstName(),
 				request.lastName(),
-				request.phone()));
+				request.phone())));
 	}
 }

@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import java.time.LocalDateTime;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.VisitorLogApi;
 import com.altafjava.school.api.dto.request.CheckInVisitorRequest;
 import com.altafjava.school.api.dto.response.VisitorLogResponse;
 import com.altafjava.school.api.mapper.VisitorLogMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.VisitorLogService;
 
@@ -30,7 +32,7 @@ import com.altafjava.school.application.service.VisitorLogService;
  */
 @RestController
 @RequestMapping("/api/v1/visitor-logs")
-public class VisitorLogController {
+public class VisitorLogController implements VisitorLogApi {
 
 	private final VisitorLogService visitorLogService;
 	private final VisitorLogMapper visitorLogMapper;
@@ -44,35 +46,41 @@ public class VisitorLogController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
-	public Page<VisitorLogResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<VisitorLogResponse>> list(
 			@RequestParam(required = false) Boolean stillCheckedIn,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return visitorLogService.list(stillCheckedIn, from, to, pageableResolver.resolve(page, size))
-				.map(visitorLogMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(visitorLogService.list(stillCheckedIn, from, to, pageableResolver.resolve(page, size))
+						.map(visitorLogMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
-	public VisitorLogResponse get(@PathVariable String publicId) {
-		return visitorLogMapper.toResponse(visitorLogService.findByPublicId(publicId));
+	public ApiResponse<VisitorLogResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(visitorLogMapper.toResponse(visitorLogService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
-	public VisitorLogResponse checkIn(@Valid @RequestBody CheckInVisitorRequest request) {
-		return visitorLogMapper.toResponse(visitorLogService.checkIn(request.visitorName(), request.visitorPhone(),
-				request.purpose(), request.hostTeacherPublicId()));
+	public ApiResponse<VisitorLogResponse> checkIn(@Valid @RequestBody CheckInVisitorRequest request) {
+		return ApiResponse.success(
+				visitorLogMapper.toResponse(visitorLogService.checkIn(request.visitorName(), request.visitorPhone(),
+						request.purpose(), request.hostTeacherPublicId())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/check-out")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('VISITOR_LOG_MANAGE')")
-	public VisitorLogResponse checkOut(@PathVariable String publicId) {
-		return visitorLogMapper.toResponse(visitorLogService.checkOut(publicId));
+	public ApiResponse<VisitorLogResponse> checkOut(@PathVariable String publicId) {
+		return ApiResponse.success(visitorLogMapper.toResponse(visitorLogService.checkOut(publicId)));
 	}
 }

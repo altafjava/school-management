@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import java.util.List;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.RouteApi;
 import com.altafjava.school.api.dto.request.AddRouteStopRequest;
 import com.altafjava.school.api.dto.request.CreateRouteRequest;
 import com.altafjava.school.api.dto.request.UpdateRouteRequest;
@@ -21,12 +22,13 @@ import com.altafjava.school.api.dto.response.RouteResponse;
 import com.altafjava.school.api.dto.response.RouteStopResponse;
 import com.altafjava.school.api.mapper.RouteMapper;
 import com.altafjava.school.api.mapper.RouteStopMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.RouteService;
 
 @RestController
 @RequestMapping("/api/v1/routes")
-public class RouteController {
+public class RouteController implements RouteApi {
 
 	private final RouteService routeService;
 	private final RouteMapper routeMapper;
@@ -42,51 +44,63 @@ public class RouteController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_READ')")
-	public Page<RouteResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<RouteResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return routeService.list(pageableResolver.resolve(page, size)).map(routeMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(routeService.list(pageableResolver.resolve(page, size)).map(routeMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_READ')")
-	public RouteResponse get(@PathVariable String publicId) {
-		return routeMapper.toResponse(routeService.findByPublicId(publicId));
+	public ApiResponse<RouteResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(routeMapper.toResponse(routeService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
-	public RouteResponse create(@Valid @RequestBody CreateRouteRequest request) {
-		return routeMapper.toResponse(routeService.create(request.name(), request.code(), request.description()));
+	public ApiResponse<RouteResponse> create(@Valid @RequestBody CreateRouteRequest request) {
+		return ApiResponse.success(
+				routeMapper.toResponse(routeService.create(request.name(), request.code(), request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
-	public RouteResponse updateDetails(@PathVariable String publicId, @Valid @RequestBody UpdateRouteRequest request) {
-		return routeMapper.toResponse(
-				routeService.updateDetails(publicId, request.name(), request.code(), request.description()));
+	public ApiResponse<RouteResponse> updateDetails(@PathVariable String publicId,
+			@Valid @RequestBody UpdateRouteRequest request) {
+		return ApiResponse.success(routeMapper.toResponse(
+				routeService.updateDetails(publicId, request.name(), request.code(), request.description())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/deactivate")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
-	public RouteResponse deactivate(@PathVariable String publicId) {
-		return routeMapper.toResponse(routeService.deactivate(publicId));
+	public ApiResponse<RouteResponse> deactivate(@PathVariable String publicId) {
+		return ApiResponse.success(routeMapper.toResponse(routeService.deactivate(publicId)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/stops")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_READ')")
-	public List<RouteStopResponse> listStops(@PathVariable String publicId) {
-		return routeService.listStops(publicId).stream().map(routeStopMapper::toResponse).toList();
+	public ApiResponse<List<RouteStopResponse>> listStops(@PathVariable String publicId) {
+		return ApiResponse.success(routeService.listStops(publicId).stream().map(routeStopMapper::toResponse).toList());
 	}
 
+	@Override
 	@PostMapping("/{publicId}/stops")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TRANSPORT_ROUTE_WRITE')")
-	public RouteStopResponse addStop(@PathVariable String publicId, @Valid @RequestBody AddRouteStopRequest request) {
-		return routeStopMapper.toResponse(routeService.addStop(publicId, request.stopName(), request.sequenceOrder(),
-				request.pickupTime(), request.dropTime()));
+	public ApiResponse<RouteStopResponse> addStop(@PathVariable String publicId,
+			@Valid @RequestBody AddRouteStopRequest request) {
+		return ApiResponse.success(
+				routeStopMapper.toResponse(routeService.addStop(publicId, request.stopName(), request.sequenceOrder(),
+						request.pickupTime(), request.dropTime())));
 	}
 }

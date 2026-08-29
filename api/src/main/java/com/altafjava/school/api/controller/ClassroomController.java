@@ -2,7 +2,6 @@ package com.altafjava.school.api.controller;
 
 import java.util.List;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.ClassroomApi;
 import com.altafjava.school.api.dto.request.AssignClassroomCurriculumRequest;
 import com.altafjava.school.api.dto.request.CreateClassroomRequest;
 import com.altafjava.school.api.dto.request.EnrollStudentInClassroomRequest;
@@ -28,13 +29,14 @@ import com.altafjava.school.api.mapper.ClassroomMapper;
 import com.altafjava.school.api.mapper.StudentClassroomLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
 import com.altafjava.school.api.mapper.TimetableEntryMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.ClassroomService;
 import com.altafjava.school.application.service.TimetableService;
 
 @RestController
 @RequestMapping("/api/v1/classrooms")
-public class ClassroomController {
+public class ClassroomController implements ClassroomApi {
 
 	private final ClassroomService classroomService;
 	private final ClassroomMapper classroomMapper;
@@ -58,90 +60,107 @@ public class ClassroomController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
-	public Page<ClassroomResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<ClassroomResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return classroomService.listClassrooms(pageableResolver.resolve(page, size))
-				.map(classroomMapper::toResponse);
+		return ApiResponse.success(
+				PlatformPageMapper.toPlatformPage(classroomService.listClassrooms(pageableResolver.resolve(page, size))
+						.map(classroomMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
-	public ClassroomResponse get(@PathVariable String publicId) {
-		return classroomMapper.toResponse(classroomService.findByPublicId(publicId));
+	public ApiResponse<ClassroomResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(classroomMapper.toResponse(classroomService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
-	public ClassroomResponse create(@Valid @RequestBody CreateClassroomRequest request) {
-		return classroomMapper.toResponse(classroomService.create(
+	public ApiResponse<ClassroomResponse> create(@Valid @RequestBody CreateClassroomRequest request) {
+		return ApiResponse.success(classroomMapper.toResponse(classroomService.create(
 				request.classCode(),
 				request.grade(),
 				request.section(),
 				request.academicYearPublicId(),
-				request.classTeacherId()));
+				request.classTeacherId())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/teacher")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
-	public ClassroomResponse reassignTeacher(@PathVariable String publicId,
+	public ApiResponse<ClassroomResponse> reassignTeacher(@PathVariable String publicId,
 			@Valid @RequestBody ReassignClassTeacherRequest request) {
-		return classroomMapper.toResponse(classroomService.reassignTeacher(publicId, request.teacherId()));
+		return ApiResponse
+				.success(classroomMapper.toResponse(classroomService.reassignTeacher(publicId, request.teacherId())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/academic-year")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
-	public ClassroomResponse moveToAcademicYear(@PathVariable String publicId,
+	public ApiResponse<ClassroomResponse> moveToAcademicYear(@PathVariable String publicId,
 			@Valid @RequestBody MoveClassroomAcademicYearRequest request) {
-		return classroomMapper.toResponse(
-				classroomService.moveToAcademicYear(publicId, request.academicYearPublicId()));
+		return ApiResponse.success(classroomMapper.toResponse(
+				classroomService.moveToAcademicYear(publicId, request.academicYearPublicId())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/capacity")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
-	public ClassroomResponse updateCapacity(@PathVariable String publicId,
+	public ApiResponse<ClassroomResponse> updateCapacity(@PathVariable String publicId,
 			@Valid @RequestBody UpdateClassroomCapacityRequest request) {
-		return classroomMapper.toResponse(classroomService.updateCapacity(publicId, request.capacity()));
+		return ApiResponse
+				.success(classroomMapper.toResponse(classroomService.updateCapacity(publicId, request.capacity())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/curriculum")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
-	public ClassroomResponse assignCurriculum(@PathVariable String publicId,
+	public ApiResponse<ClassroomResponse> assignCurriculum(@PathVariable String publicId,
 			@Valid @RequestBody AssignClassroomCurriculumRequest request) {
-		return classroomMapper.toResponse(classroomService.assignCurriculum(publicId, request.curriculumPublicId()));
+		return ApiResponse.success(
+				classroomMapper.toResponse(classroomService.assignCurriculum(publicId, request.curriculumPublicId())));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/timetable")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
-	public List<TimetableEntryResponse> timetable(@PathVariable String publicId) {
-		return timetableEntryMapper.toResponseList(timetableService.listForClassroom(publicId));
+	public ApiResponse<List<TimetableEntryResponse>> timetable(@PathVariable String publicId) {
+		return ApiResponse.success(timetableEntryMapper.toResponseList(timetableService.listForClassroom(publicId)));
 	}
 
+	@Override
 	@PostMapping("/{publicId}/students")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
-	public StudentClassroomLinkResponse enrollStudent(@PathVariable String publicId,
+	public ApiResponse<StudentClassroomLinkResponse> enrollStudent(@PathVariable String publicId,
 			@Valid @RequestBody EnrollStudentInClassroomRequest request) {
-		return studentClassroomLinkMapper.toResponse(
+		return ApiResponse.success(studentClassroomLinkMapper.toResponse(
 				classroomService.enrollStudent(publicId, request.studentPublicId(), request.academicYearPublicId()),
-				request.studentPublicId(), publicId, request.academicYearPublicId());
+				request.studentPublicId(), publicId, request.academicYearPublicId()));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/students")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_READ')")
-	public Page<StudentResponse> roster(@PathVariable String publicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<StudentResponse>> roster(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return classroomService.listRoster(publicId, pageableResolver.resolve(page, size))
-				.map(studentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(classroomService.listRoster(publicId, pageableResolver.resolve(page, size))
+						.map(studentMapper::toResponse)));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/students/{studentPublicId}/withdraw")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('CLASSROOM_WRITE')")
-	public void withdrawStudent(@PathVariable String publicId, @PathVariable String studentPublicId) {
+	public ApiResponse<Void> withdrawStudent(@PathVariable String publicId, @PathVariable String studentPublicId) {
 		classroomService.withdrawStudentFromClassroom(publicId, studentPublicId);
+		return ApiResponse.success(null);
 	}
 }

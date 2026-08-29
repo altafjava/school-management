@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,18 +12,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.GradeApi;
 import com.altafjava.school.api.dto.request.CorrectGradeRequest;
 import com.altafjava.school.api.dto.request.RecordGradeRequest;
 import com.altafjava.school.api.dto.response.GradeCorrectionResponse;
 import com.altafjava.school.api.dto.response.GradeResponse;
 import com.altafjava.school.api.mapper.GradeCorrectionMapper;
 import com.altafjava.school.api.mapper.GradeMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.GradeService;
 
 @RestController
 @RequestMapping("/api/v1/grades")
-public class GradeController {
+public class GradeController implements GradeApi {
 
 	private final GradeService gradeService;
 	private final GradeMapper gradeMapper;
@@ -40,44 +42,53 @@ public class GradeController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_READ')")
-	public Page<GradeResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<GradeResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return gradeService.listGrades(pageableResolver.resolve(page, size))
-				.map(gradeMapper::toResponse);
+		return ApiResponse
+				.success(PlatformPageMapper.toPlatformPage(gradeService.listGrades(pageableResolver.resolve(page, size))
+						.map(gradeMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_READ')")
-	public GradeResponse get(@PathVariable String publicId) {
-		return gradeMapper.toResponse(gradeService.findByPublicId(publicId));
+	public ApiResponse<GradeResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(gradeMapper.toResponse(gradeService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_WRITE')")
-	public GradeResponse record(@Valid @RequestBody RecordGradeRequest request) {
-		return gradeMapper.toResponse(gradeService.record(
+	public ApiResponse<GradeResponse> record(@Valid @RequestBody RecordGradeRequest request) {
+		return ApiResponse.success(gradeMapper.toResponse(gradeService.record(
 				request.studentId(),
 				request.examId(),
 				request.marks(),
-				request.gradedBy()));
+				request.gradedBy())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/marks")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_WRITE')")
-	public GradeResponse correct(@PathVariable String publicId, @Valid @RequestBody CorrectGradeRequest request) {
-		return gradeMapper.toResponse(gradeService.correct(publicId, request.marks()));
+	public ApiResponse<GradeResponse> correct(@PathVariable String publicId,
+			@Valid @RequestBody CorrectGradeRequest request) {
+		return ApiResponse.success(gradeMapper.toResponse(gradeService.correct(publicId, request.marks())));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/corrections")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_GRADES_READ')")
-	public Page<GradeCorrectionResponse> listCorrections(@PathVariable String publicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<GradeCorrectionResponse>> listCorrections(
+			@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return gradeService.listCorrections(publicId, pageableResolver.resolve(page, size))
-				.map(gradeCorrectionMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(gradeService.listCorrections(publicId, pageableResolver.resolve(page, size))
+						.map(gradeCorrectionMapper::toResponse)));
 	}
 }

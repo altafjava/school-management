@@ -69,7 +69,7 @@ class HealthCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	@Test
@@ -89,8 +89,8 @@ class HealthCrudE2ETest extends SchoolIntegrationTestBase {
 				.put("/api/v1/health-records/students/" + studentPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("publicId", notNullValue())
-				.body("bloodGroup", equalTo("O+"));
+				.body("data.publicId", notNullValue())
+				.body("data.bloodGroup", equalTo("O+"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -99,7 +99,7 @@ class HealthCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/health-records/students/" + studentPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("allergies", equalTo("Peanuts"));
+				.body("data.allergies", equalTo("Peanuts"));
 	}
 
 	@Test
@@ -151,8 +151,8 @@ class HealthCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/medical-incidents")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("description", equalTo("Fell during PE"));
+				.body("data.publicId", notNullValue())
+				.body("data.description", equalTo("Fell during PE"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -161,7 +161,7 @@ class HealthCrudE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/medical-incidents/students/" + studentPublicId)
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("content.size()", equalTo(1));
+				.body("data.content.size()", equalTo(1));
 	}
 
 	@Test

@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,9 +11,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.MedicalIncidentApi;
 import com.altafjava.school.api.dto.request.RecordMedicalIncidentRequest;
 import com.altafjava.school.api.dto.response.MedicalIncidentResponse;
 import com.altafjava.school.api.mapper.MedicalIncidentMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.MedicalIncidentService;
 
@@ -22,7 +24,7 @@ import com.altafjava.school.application.service.MedicalIncidentService;
 // health-staff role in the seeded catalog).
 @RestController
 @RequestMapping("/api/v1/medical-incidents")
-public class MedicalIncidentController {
+public class MedicalIncidentController implements MedicalIncidentApi {
 
 	private final MedicalIncidentService medicalIncidentService;
 	private final MedicalIncidentMapper medicalIncidentMapper;
@@ -36,29 +38,36 @@ public class MedicalIncidentController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('MEDICAL_INCIDENT_MANAGE')")
-	public Page<MedicalIncidentResponse> listAll(
+	public ApiResponse<com.altafjava.platform.core.model.Page<MedicalIncidentResponse>> listAll(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return medicalIncidentService.listAll(pageableResolver.resolve(page, size))
-				.map(medicalIncidentMapper::toResponse);
+		return ApiResponse.success(
+				PlatformPageMapper.toPlatformPage(medicalIncidentService.listAll(pageableResolver.resolve(page, size))
+						.map(medicalIncidentMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/students/{studentPublicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('MEDICAL_INCIDENT_MANAGE')")
-	public Page<MedicalIncidentResponse> listForStudent(@PathVariable String studentPublicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<MedicalIncidentResponse>> listForStudent(
+			@PathVariable String studentPublicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return medicalIncidentService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
-				.map(medicalIncidentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(
+				medicalIncidentService.listForStudent(studentPublicId, pageableResolver.resolve(page, size))
+						.map(medicalIncidentMapper::toResponse)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('MEDICAL_INCIDENT_MANAGE')")
-	public MedicalIncidentResponse record(@Valid @RequestBody RecordMedicalIncidentRequest request) {
-		return medicalIncidentMapper.toResponse(medicalIncidentService.record(request.studentPublicId(),
-				request.occurredAt(), request.description(), request.treatmentGiven()));
+	public ApiResponse<MedicalIncidentResponse> record(@Valid @RequestBody RecordMedicalIncidentRequest request) {
+		return ApiResponse
+				.success(medicalIncidentMapper.toResponse(medicalIncidentService.record(request.studentPublicId(),
+						request.occurredAt(), request.description(), request.treatmentGiven())));
 	}
 }

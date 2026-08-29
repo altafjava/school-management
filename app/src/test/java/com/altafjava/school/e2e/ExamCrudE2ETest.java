@@ -101,7 +101,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null,
 				com.altafjava.platform.core.tenant.TenantType.SHARED);
@@ -134,7 +134,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/subjects")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null,
 				com.altafjava.platform.core.tenant.TenantType.SHARED);
@@ -163,8 +163,8 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/exams")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("title", equalTo("Midterm"));
+				.body("data.publicId", notNullValue())
+				.body("data.title", equalTo("Midterm"));
 	}
 
 	@Test
@@ -214,7 +214,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/exams")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(
@@ -248,8 +248,8 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/exams")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("status", equalTo("SCHEDULED"))
-				.extract().path("publicId");
+				.body("data.status", equalTo("SCHEDULED"))
+				.extract().path("data.publicId");
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -259,7 +259,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.patch("/api/v1/exams/" + publicId + "/complete")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("status", equalTo("COMPLETED"));
+				.body("data.status", equalTo("COMPLETED"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -287,7 +287,7 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/exams")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 		String teacherToken = authHelper.tokenWithRole(tenantId, "TEACHER");
 
 		given()

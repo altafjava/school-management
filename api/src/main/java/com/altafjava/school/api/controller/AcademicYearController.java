@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,15 +11,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.AcademicYearApi;
 import com.altafjava.school.api.dto.request.CreateAcademicYearRequest;
 import com.altafjava.school.api.dto.response.AcademicYearResponse;
 import com.altafjava.school.api.mapper.AcademicYearMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.AcademicYearService;
 
 @RestController
 @RequestMapping("/api/v1/academic-years")
-public class AcademicYearController {
+public class AcademicYearController implements AcademicYearApi {
 
 	private final AcademicYearService academicYearService;
 	private final AcademicYearMapper academicYearMapper;
@@ -34,29 +36,33 @@ public class AcademicYearController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('ACADEMIC_YEAR_READ')")
-	public Page<AcademicYearResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<AcademicYearResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return academicYearService.listAcademicYears(pageableResolver.resolve(page, size))
-				.map(academicYearMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(academicYearService.listAcademicYears(pageableResolver.resolve(page, size))
+						.map(academicYearMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('ACADEMIC_YEAR_READ')")
-	public AcademicYearResponse get(@PathVariable String publicId) {
-		return academicYearMapper.toResponse(academicYearService.findByPublicId(publicId));
+	public ApiResponse<AcademicYearResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(academicYearMapper.toResponse(academicYearService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('ACADEMIC_YEAR_WRITE')")
-	public AcademicYearResponse create(@Valid @RequestBody CreateAcademicYearRequest request) {
-		return academicYearMapper.toResponse(academicYearService.create(
+	public ApiResponse<AcademicYearResponse> create(@Valid @RequestBody CreateAcademicYearRequest request) {
+		return ApiResponse.success(academicYearMapper.toResponse(academicYearService.create(
 				request.name(),
 				request.startDate(),
 				request.endDate(),
-				request.current()));
+				request.current())));
 	}
 }

@@ -74,8 +74,8 @@ class AcademicYearCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/academic-years")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("name", equalTo("2030-31"));
+				.body("data.publicId", notNullValue())
+				.body("data.name", equalTo("2030-31"));
 	}
 
 	@Test
@@ -130,7 +130,7 @@ class AcademicYearCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/academic-years")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.TeacherApi;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateTeacherRequest;
 import com.altafjava.school.api.dto.request.SetTeacherProbationRequest;
@@ -22,12 +23,13 @@ import com.altafjava.school.api.dto.request.UpdateTeacherHrDetailsRequest;
 import com.altafjava.school.api.dto.response.TeacherResponse;
 import com.altafjava.school.api.mapper.AddressMapper;
 import com.altafjava.school.api.mapper.TeacherMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.TeacherService;
 
 @RestController
 @RequestMapping("/api/v1/teachers")
-public class TeacherController {
+public class TeacherController implements TeacherApi {
 
 	private final TeacherService teacherService;
 	private final TeacherMapper teacherMapper;
@@ -43,72 +45,87 @@ public class TeacherController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public Page<TeacherResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<TeacherResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return teacherService.listTeachers(pageableResolver.resolve(page, size))
-				.map(teacherMapper::toResponse);
+		return ApiResponse.success(
+				PlatformPageMapper.toPlatformPage(teacherService.listTeachers(pageableResolver.resolve(page, size))
+						.map(teacherMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse get(@PathVariable String publicId) {
-		return teacherMapper.toResponse(teacherService.findByPublicId(publicId));
+	public ApiResponse<TeacherResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(teacherMapper.toResponse(teacherService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse hire(@Valid @RequestBody CreateTeacherRequest request) {
-		return teacherMapper.toResponse(teacherService.hire(
+	public ApiResponse<TeacherResponse> hire(@Valid @RequestBody CreateTeacherRequest request) {
+		return ApiResponse.success(teacherMapper.toResponse(teacherService.hire(
 				request.employeeCode(),
 				request.firstName(),
 				request.lastName(),
 				request.email(),
-				request.joinDate()));
+				request.joinDate())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/contact-details")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse updateContactDetails(@PathVariable String publicId,
+	public ApiResponse<TeacherResponse> updateContactDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateTeacherContactDetailsRequest request) {
-		return teacherMapper.toResponse(teacherService.updateContactDetails(publicId, request.firstName(),
-				request.lastName(), request.email()));
+		return ApiResponse
+				.success(teacherMapper.toResponse(teacherService.updateContactDetails(publicId, request.firstName(),
+						request.lastName(), request.email())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/hr-details")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse updateHrDetails(@PathVariable String publicId,
+	public ApiResponse<TeacherResponse> updateHrDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateTeacherHrDetailsRequest request) {
-		return teacherMapper.toResponse(teacherService.updateHrDetails(publicId, request.departmentPublicId(),
-				request.qualification(), request.employmentType()));
+		return ApiResponse
+				.success(teacherMapper.toResponse(teacherService.updateHrDetails(publicId, request.departmentPublicId(),
+						request.qualification(), request.employmentType())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/phone")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse updatePhone(@PathVariable String publicId,
+	public ApiResponse<TeacherResponse> updatePhone(@PathVariable String publicId,
 			@Valid @RequestBody UpdatePhoneRequest request) {
-		return teacherMapper.toResponse(teacherService.updatePhone(publicId, request.phone()));
+		return ApiResponse.success(teacherMapper.toResponse(teacherService.updatePhone(publicId, request.phone())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/address")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
-		return teacherMapper.toResponse(teacherService.updateAddress(publicId, addressMapper.toDomain(request)));
+	public ApiResponse<TeacherResponse> updateAddress(@PathVariable String publicId,
+			@Valid @RequestBody AddressRequest request) {
+		return ApiResponse.success(
+				teacherMapper.toResponse(teacherService.updateAddress(publicId, addressMapper.toDomain(request))));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/probation")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse setProbationPeriod(@PathVariable String publicId,
+	public ApiResponse<TeacherResponse> setProbationPeriod(@PathVariable String publicId,
 			@Valid @RequestBody SetTeacherProbationRequest request) {
-		return teacherMapper.toResponse(teacherService.setProbationPeriod(publicId, request.probationEndDate()));
+		return ApiResponse.success(
+				teacherMapper.toResponse(teacherService.setProbationPeriod(publicId, request.probationEndDate())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/probation/end")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('TEACHER_MANAGE')")
-	public TeacherResponse endProbation(@PathVariable String publicId) {
-		return teacherMapper.toResponse(teacherService.endProbation(publicId));
+	public ApiResponse<TeacherResponse> endProbation(@PathVariable String publicId) {
+		return ApiResponse.success(teacherMapper.toResponse(teacherService.endProbation(publicId)));
 	}
 }

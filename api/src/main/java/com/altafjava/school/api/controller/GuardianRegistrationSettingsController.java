@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.GuardianRegistrationSettingsApi;
 import com.altafjava.school.api.dto.request.UpdateGuardianRegistrationSettingsRequest;
 import com.altafjava.school.api.dto.response.GuardianRegistrationSettingsResponse;
 import com.altafjava.school.application.service.GuardianRegistrationSettingsService;
@@ -17,21 +19,24 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/v1/guardians/self-registration-settings")
 @RequiredArgsConstructor
-public class GuardianRegistrationSettingsController {
+public class GuardianRegistrationSettingsController implements GuardianRegistrationSettingsApi {
 
 	private final GuardianRegistrationSettingsService guardianRegistrationSettingsService;
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_REGISTRATION_SETTINGS_MANAGE')")
-	public GuardianRegistrationSettingsResponse get() {
-		return new GuardianRegistrationSettingsResponse(guardianRegistrationSettingsService.getMode());
+	public ApiResponse<GuardianRegistrationSettingsResponse> get() {
+		return ApiResponse
+				.success(new GuardianRegistrationSettingsResponse(guardianRegistrationSettingsService.getMode()));
 	}
 
+	@Override
 	@PutMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_REGISTRATION_SETTINGS_MANAGE')")
-	public GuardianRegistrationSettingsResponse update(
+	public ApiResponse<GuardianRegistrationSettingsResponse> update(
 			@Valid @RequestBody UpdateGuardianRegistrationSettingsRequest request) {
 		guardianRegistrationSettingsService.setMode(request.mode());
-		return new GuardianRegistrationSettingsResponse(request.mode());
+		return ApiResponse.success(new GuardianRegistrationSettingsResponse(request.mode()));
 	}
 }

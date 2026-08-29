@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,10 +13,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.HolidayApi;
 import com.altafjava.school.api.dto.request.CreateHolidayRequest;
 import com.altafjava.school.api.dto.request.UpdateHolidayRequest;
 import com.altafjava.school.api.dto.response.HolidayResponse;
 import com.altafjava.school.api.mapper.HolidayMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.HolidayService;
 
@@ -26,7 +28,7 @@ import com.altafjava.school.application.service.HolidayService;
 // tenant-admin-only.
 @RestController
 @RequestMapping("/api/v1/holidays")
-public class HolidayController {
+public class HolidayController implements HolidayApi {
 
 	private final HolidayService holidayService;
 	private final HolidayMapper holidayMapper;
@@ -40,39 +42,47 @@ public class HolidayController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_READ')")
-	public Page<HolidayResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<HolidayResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return holidayService.list(pageableResolver.resolve(page, size)).map(holidayMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper.toPlatformPage(
+				holidayService.list(pageableResolver.resolve(page, size)).map(holidayMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_READ')")
-	public HolidayResponse get(@PathVariable String publicId) {
-		return holidayMapper.toResponse(holidayService.findByPublicId(publicId));
+	public ApiResponse<HolidayResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(holidayMapper.toResponse(holidayService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_WRITE')")
-	public HolidayResponse create(@Valid @RequestBody CreateHolidayRequest request) {
-		return holidayMapper.toResponse(holidayService.create(request.date(), request.name(), request.recurring()));
+	public ApiResponse<HolidayResponse> create(@Valid @RequestBody CreateHolidayRequest request) {
+		return ApiResponse.success(
+				holidayMapper.toResponse(holidayService.create(request.date(), request.name(), request.recurring())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_WRITE')")
-	public HolidayResponse updateDetails(@PathVariable String publicId,
+	public ApiResponse<HolidayResponse> updateDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateHolidayRequest request) {
-		return holidayMapper.toResponse(
-				holidayService.updateDetails(publicId, request.date(), request.name(), request.recurring()));
+		return ApiResponse.success(holidayMapper.toResponse(
+				holidayService.updateDetails(publicId, request.date(), request.name(), request.recurring())));
 	}
 
+	@Override
 	@DeleteMapping("/{publicId}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('HOLIDAY_WRITE')")
-	public void delete(@PathVariable String publicId) {
+	public ApiResponse<Void> delete(@PathVariable String publicId) {
 		holidayService.delete(publicId);
+		return ApiResponse.success(null);
 	}
 }

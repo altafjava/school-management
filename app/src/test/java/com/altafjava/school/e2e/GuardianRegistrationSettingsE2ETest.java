@@ -63,7 +63,7 @@ class GuardianRegistrationSettingsE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/guardians/self-registration-settings")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("mode", equalTo("CLAIM_ONLY"));
+				.body("data.mode", equalTo("CLAIM_ONLY"));
 	}
 
 	@Test
@@ -79,7 +79,7 @@ class GuardianRegistrationSettingsE2ETest extends SchoolIntegrationTestBase {
 				.put("/api/v1/guardians/self-registration-settings")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("mode", equalTo("OPEN"));
+				.body("data.mode", equalTo("OPEN"));
 
 		given()
 				.header("X-Tenant-ID", tenantId)
@@ -88,7 +88,7 @@ class GuardianRegistrationSettingsE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/guardians/self-registration-settings")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("mode", equalTo("OPEN"));
+				.body("data.mode", equalTo("OPEN"));
 	}
 
 	@Test
@@ -142,7 +142,7 @@ class GuardianRegistrationSettingsE2ETest extends SchoolIntegrationTestBase {
 				.get("/api/v1/guardians/self-registration-settings")
 				.then()
 				.statusCode(HttpStatus.OK.value())
-				.body("mode", equalTo("CLAIM_ONLY"));
+				.body("data.mode", equalTo("CLAIM_ONLY"));
 	}
 
 	private String login() {

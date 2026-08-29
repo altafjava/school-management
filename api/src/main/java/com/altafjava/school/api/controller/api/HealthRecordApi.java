@@ -1,0 +1,24 @@
+package com.altafjava.school.api.controller.api;
+
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.dto.request.UpsertHealthRecordRequest;
+import com.altafjava.school.api.dto.response.HealthRecordResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(name = "Health Record", description = "APIs for managing Health Record operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public.")
+@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(name = "tenantHeader")
+public interface HealthRecordApi {
+
+	@Operation(summary = "Get by student", operationId = "healthrecord_getByStudent")
+	public ApiResponse<HealthRecordResponse> getByStudent(@PathVariable String studentPublicId);
+
+	@Operation(summary = "Upsert", operationId = "healthrecord_upsert")
+	public ApiResponse<HealthRecordResponse> upsert(@PathVariable String studentPublicId,
+			@Valid @RequestBody UpsertHealthRecordRequest request);
+}

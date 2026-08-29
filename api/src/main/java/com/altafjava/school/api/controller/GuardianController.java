@@ -1,7 +1,6 @@
 package com.altafjava.school.api.controller;
 
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.GuardianApi;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateGuardianRequest;
 import com.altafjava.school.api.dto.request.LinkGuardianRequest;
@@ -24,12 +25,13 @@ import com.altafjava.school.api.mapper.AddressMapper;
 import com.altafjava.school.api.mapper.GuardianMapper;
 import com.altafjava.school.api.mapper.StudentGuardianLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.GuardianService;
 
 @RestController
 @RequestMapping("/api/v1/guardians")
-public class GuardianController {
+public class GuardianController implements GuardianApi {
 
 	private final GuardianService guardianService;
 	private final GuardianMapper guardianMapper;
@@ -50,80 +52,93 @@ public class GuardianController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
-	public Page<GuardianResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<GuardianResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return guardianService.listGuardians(pageableResolver.resolve(page, size))
-				.map(guardianMapper::toResponse);
+		return ApiResponse.success(
+				PlatformPageMapper.toPlatformPage(guardianService.listGuardians(pageableResolver.resolve(page, size))
+						.map(guardianMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
-	public GuardianResponse get(@PathVariable String publicId) {
-		return guardianMapper.toResponse(guardianService.findByPublicId(publicId));
+	public ApiResponse<GuardianResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(guardianMapper.toResponse(guardianService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
-	public GuardianResponse create(@Valid @RequestBody CreateGuardianRequest request) {
-		return guardianMapper.toResponse(guardianService.create(
+	public ApiResponse<GuardianResponse> create(@Valid @RequestBody CreateGuardianRequest request) {
+		return ApiResponse.success(guardianMapper.toResponse(guardianService.create(
 				request.firstName(),
 				request.lastName(),
 				request.email(),
 				request.phone(),
-				request.userId()));
+				request.userId())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/address")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
-	public GuardianResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
-		return guardianMapper.toResponse(guardianService.updateAddress(publicId, addressMapper.toDomain(request)));
+	public ApiResponse<GuardianResponse> updateAddress(@PathVariable String publicId,
+			@Valid @RequestBody AddressRequest request) {
+		return ApiResponse.success(
+				guardianMapper.toResponse(guardianService.updateAddress(publicId, addressMapper.toDomain(request))));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/phone")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
-	public GuardianResponse updatePhone(@PathVariable String publicId,
+	public ApiResponse<GuardianResponse> updatePhone(@PathVariable String publicId,
 			@Valid @RequestBody UpdatePhoneRequest request) {
-		return guardianMapper.toResponse(guardianService.updatePhone(publicId, request.phone()));
+		return ApiResponse.success(guardianMapper.toResponse(guardianService.updatePhone(publicId, request.phone())));
 	}
 
+	@Override
 	@PostMapping("/{publicId}/students")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
-	public StudentGuardianLinkResponse linkStudent(@PathVariable String publicId,
+	public ApiResponse<StudentGuardianLinkResponse> linkStudent(@PathVariable String publicId,
 			@Valid @RequestBody LinkGuardianRequest request) {
-		return studentGuardianLinkMapper.toResponse(guardianService.linkToStudent(
+		return ApiResponse.success(studentGuardianLinkMapper.toResponse(guardianService.linkToStudent(
 				publicId,
 				request.studentPublicId(),
 				request.relationshipType(),
-				request.primaryContact()));
+				request.primaryContact())));
 	}
 
+	@Override
 	@PatchMapping("/{guardianPublicId}/students/{studentPublicId}/consent/grant")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_CONSENT_MANAGE')")
-	public StudentGuardianLinkResponse grantConsent(@PathVariable String guardianPublicId,
+	public ApiResponse<StudentGuardianLinkResponse> grantConsent(@PathVariable String guardianPublicId,
 			@PathVariable String studentPublicId) {
-		return studentGuardianLinkMapper.toResponse(
-				guardianService.grantConsent(guardianPublicId, studentPublicId));
+		return ApiResponse.success(studentGuardianLinkMapper.toResponse(
+				guardianService.grantConsent(guardianPublicId, studentPublicId)));
 	}
 
+	@Override
 	@PatchMapping("/{guardianPublicId}/students/{studentPublicId}/consent/revoke")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_CONSENT_MANAGE')")
-	public StudentGuardianLinkResponse revokeConsent(@PathVariable String guardianPublicId,
+	public ApiResponse<StudentGuardianLinkResponse> revokeConsent(@PathVariable String guardianPublicId,
 			@PathVariable String studentPublicId) {
-		return studentGuardianLinkMapper.toResponse(
-				guardianService.revokeConsent(guardianPublicId, studentPublicId));
+		return ApiResponse.success(studentGuardianLinkMapper.toResponse(
+				guardianService.revokeConsent(guardianPublicId, studentPublicId)));
 	}
 
+	@Override
 	@GetMapping("/me/students")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_SELF_SERVICE')")
-	public Page<StudentResponse> myStudents(
+	public ApiResponse<com.altafjava.platform.core.model.Page<StudentResponse>> myStudents(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return guardianService.listLinkedStudentsForCurrentUser(pageableResolver.resolve(page, size))
-				.map(studentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(guardianService.listLinkedStudentsForCurrentUser(pageableResolver.resolve(page, size))
+						.map(studentMapper::toResponse)));
 	}
 }

@@ -91,7 +91,7 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/classrooms")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private void enrollStudent(String accessToken, String classroomPublicId, String studentPublicId) {
@@ -119,7 +119,7 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/students")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 	}
 
 	private long[] createEnrolledClassroomAndStudent(String accessToken, String suffix) {
@@ -166,8 +166,8 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/attendance")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.body("publicId", notNullValue())
-				.body("status", equalTo("PRESENT"));
+				.body("data.publicId", notNullValue())
+				.body("data.status", equalTo("PRESENT"));
 	}
 
 	@Test
@@ -236,7 +236,7 @@ class AttendanceCrudE2ETest extends SchoolIntegrationTestBase {
 				.post("/api/v1/attendance")
 				.then()
 				.statusCode(HttpStatus.CREATED.value())
-				.extract().path("publicId");
+				.extract().path("data.publicId");
 
 		String otherSuffix = UUID.randomUUID().toString().substring(0, 8);
 		Tenant otherTenant = onboardingService.registerTenant(new RegisterTenantCommand(

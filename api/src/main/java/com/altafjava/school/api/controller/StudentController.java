@@ -5,7 +5,6 @@ import java.io.UncheckedIOException;
 import java.time.LocalDate;
 import java.util.List;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import com.altafjava.platform.api.dto.response.ApiResponse;
+import com.altafjava.school.api.controller.api.StudentApi;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateStudentRequest;
 import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
@@ -42,6 +43,7 @@ import com.altafjava.school.api.mapper.FeeBalanceMapper;
 import com.altafjava.school.api.mapper.GradeMapper;
 import com.altafjava.school.api.mapper.ReportCardMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
+import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
 import com.altafjava.school.application.service.AttendanceService;
 import com.altafjava.school.application.service.FeePaymentService;
@@ -58,7 +60,7 @@ import com.altafjava.school.domain.student.model.Student;
 
 @RestController
 @RequestMapping("/api/v1/students")
-public class StudentController {
+public class StudentController implements StudentApi {
 
 	private final StudentService studentService;
 	private final StudentMapper studentMapper;
@@ -106,152 +108,182 @@ public class StudentController {
 		this.pageableResolver = pageableResolver;
 	}
 
+	@Override
 	@GetMapping
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_READ')")
-	public Page<StudentResponse> list(
+	public ApiResponse<com.altafjava.platform.core.model.Page<StudentResponse>> list(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size,
 			@RequestParam(required = false) EnrollmentStatus status) {
-		return studentService.listStudents(pageableResolver.resolve(page, size), status)
-				.map(studentMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(studentService.listStudents(pageableResolver.resolve(page, size), status)
+						.map(studentMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_READ')")
-	public StudentResponse get(@PathVariable String publicId) {
-		return studentMapper.toResponse(studentService.findByPublicId(publicId));
+	public ApiResponse<StudentResponse> get(@PathVariable String publicId) {
+		return ApiResponse.success(studentMapper.toResponse(studentService.findByPublicId(publicId)));
 	}
 
+	@Override
 	@PostMapping("/bulk-import")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public BulkImportResponse bulkImport(@RequestParam("file") MultipartFile file) {
+	public ApiResponse<BulkImportResponse> bulkImport(@RequestParam("file") MultipartFile file) {
 		try (var inputStream = file.getInputStream()) {
-			return bulkImportMapper.toResponse(studentBulkImportService.importCsv(inputStream));
+			return ApiResponse.success(bulkImportMapper.toResponse(studentBulkImportService.importCsv(inputStream)));
 		} catch (IOException e) {
 			throw new UncheckedIOException("Failed to read uploaded CSV file", e);
 		}
 	}
 
+	@Override
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public StudentResponse enroll(@Valid @RequestBody CreateStudentRequest request) {
+	public ApiResponse<StudentResponse> enroll(@Valid @RequestBody CreateStudentRequest request) {
 		Student student = studentService.enroll(
 				request.studentCode(),
 				request.firstName(),
 				request.lastName(),
 				request.email(),
 				request.dateOfBirth());
-		return studentMapper.toResponse(student);
+		return ApiResponse.success(studentMapper.toResponse(student));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/withdraw")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public StudentResponse withdraw(@PathVariable String publicId) {
-		return studentMapper.toResponse(studentService.withdraw(publicId));
+	public ApiResponse<StudentResponse> withdraw(@PathVariable String publicId) {
+		return ApiResponse.success(studentMapper.toResponse(studentService.withdraw(publicId)));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/transfer")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public StudentResponse transfer(@PathVariable String publicId) {
-		return studentMapper.toResponse(studentService.transfer(publicId));
+	public ApiResponse<StudentResponse> transfer(@PathVariable String publicId) {
+		return ApiResponse.success(studentMapper.toResponse(studentService.transfer(publicId)));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/graduate")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public StudentResponse graduate(@PathVariable String publicId) {
-		return studentMapper.toResponse(studentService.graduate(publicId));
+	public ApiResponse<StudentResponse> graduate(@PathVariable String publicId) {
+		return ApiResponse.success(studentMapper.toResponse(studentService.graduate(publicId)));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/contact-details")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public StudentResponse updateContactDetails(@PathVariable String publicId,
+	public ApiResponse<StudentResponse> updateContactDetails(@PathVariable String publicId,
 			@Valid @RequestBody UpdateStudentContactDetailsRequest request) {
-		return studentMapper.toResponse(studentService.updateContactDetails(publicId, request.firstName(),
-				request.lastName(), request.email(), request.dateOfBirth()));
+		return ApiResponse
+				.success(studentMapper.toResponse(studentService.updateContactDetails(publicId, request.firstName(),
+						request.lastName(), request.email(), request.dateOfBirth())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/phone")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public StudentResponse updatePhone(@PathVariable String publicId,
+	public ApiResponse<StudentResponse> updatePhone(@PathVariable String publicId,
 			@Valid @RequestBody UpdatePhoneRequest request) {
-		return studentMapper.toResponse(studentService.updatePhone(publicId, request.phone()));
+		return ApiResponse.success(studentMapper.toResponse(studentService.updatePhone(publicId, request.phone())));
 	}
 
+	@Override
 	@PatchMapping("/{publicId}/address")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public StudentResponse updateAddress(@PathVariable String publicId, @Valid @RequestBody AddressRequest request) {
-		return studentMapper.toResponse(studentService.updateAddress(publicId, addressMapper.toDomain(request)));
+	public ApiResponse<StudentResponse> updateAddress(@PathVariable String publicId,
+			@Valid @RequestBody AddressRequest request) {
+		return ApiResponse.success(
+				studentMapper.toResponse(studentService.updateAddress(publicId, addressMapper.toDomain(request))));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/grades")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
-	public Page<GradeResponse> grades(@PathVariable String publicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<GradeResponse>> grades(@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return gradeService.getStudentGrades(publicId, pageableResolver.resolve(page, size))
-				.map(gradeMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(gradeService.getStudentGrades(publicId, pageableResolver.resolve(page, size))
+						.map(gradeMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/gpa/term")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
-	public GpaResponse termGpa(@PathVariable String publicId, @RequestParam String termPublicId) {
-		return toGpaResponse(studentGpaService.calculateTermGpa(publicId, termPublicId));
+	public ApiResponse<GpaResponse> termGpa(@PathVariable String publicId, @RequestParam String termPublicId) {
+		return ApiResponse.success(toGpaResponse(studentGpaService.calculateTermGpa(publicId, termPublicId)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/gpa/academic-year")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
-	public GpaResponse academicYearGpa(@PathVariable String publicId, @RequestParam String academicYearPublicId) {
-		return toGpaResponse(studentGpaService.calculateAcademicYearGpa(publicId, academicYearPublicId));
+	public ApiResponse<GpaResponse> academicYearGpa(@PathVariable String publicId,
+			@RequestParam String academicYearPublicId) {
+		return ApiResponse
+				.success(toGpaResponse(studentGpaService.calculateAcademicYearGpa(publicId, academicYearPublicId)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/gpa/cumulative")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
-	public GpaResponse cumulativeGpa(@PathVariable String publicId) {
-		return toGpaResponse(studentGpaService.calculateCumulativeGpa(publicId));
+	public ApiResponse<GpaResponse> cumulativeGpa(@PathVariable String publicId) {
+		return ApiResponse.success(toGpaResponse(studentGpaService.calculateCumulativeGpa(publicId)));
 	}
 
 	private GpaResponse toGpaResponse(GpaResult result) {
 		return new GpaResponse(result.gpa(), result.gradeCount());
 	}
 
+	@Override
 	@GetMapping("/{publicId}/attendance")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
-	public Page<AttendanceResponse> attendance(@PathVariable String publicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<AttendanceResponse>> attendance(
+			@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return attendanceService.getStudentAttendance(publicId, pageableResolver.resolve(page, size))
-				.map(attendanceMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(attendanceService.getStudentAttendance(publicId, pageableResolver.resolve(page, size))
+						.map(attendanceMapper::toResponse)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/attendance/percentage")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
-	public AttendancePercentageResponse attendancePercentage(@PathVariable String publicId,
+	public ApiResponse<AttendancePercentageResponse> attendancePercentage(@PathVariable String publicId,
 			@RequestParam LocalDate fromDate,
 			@RequestParam LocalDate toDate) {
-		return attendancePercentageMapper.toResponse(
-				attendanceService.calculatePercentage(publicId, fromDate, toDate));
+		return ApiResponse.success(attendancePercentageMapper.toResponse(
+				attendanceService.calculatePercentage(publicId, fromDate, toDate)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/fee-balance")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_FEE_BALANCE_READ')")
-	public List<FeeBalanceResponse> feeBalance(@PathVariable String publicId) {
-		return feeBalanceMapper.toResponseList(feePaymentService.calculateBalance(publicId));
+	public ApiResponse<List<FeeBalanceResponse>> feeBalance(@PathVariable String publicId) {
+		return ApiResponse.success(feeBalanceMapper.toResponseList(feePaymentService.calculateBalance(publicId)));
 	}
 
+	@Override
 	@GetMapping("/{publicId}/report-cards")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
-	public Page<ReportCardResponse> reportCards(@PathVariable String publicId,
+	public ApiResponse<com.altafjava.platform.core.model.Page<ReportCardResponse>> reportCards(
+			@PathVariable String publicId,
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size) {
-		return reportCardService.listForStudent(publicId, pageableResolver.resolve(page, size))
-				.map(reportCardMapper::toResponse);
+		return ApiResponse.success(PlatformPageMapper
+				.toPlatformPage(reportCardService.listForStudent(publicId, pageableResolver.resolve(page, size))
+						.map(reportCardMapper::toResponse)));
 	}
 
+	@Override
 	@PostMapping("/{publicId}/report-cards")
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_MANAGE')")
-	public ReportCardResponse generateReportCard(@PathVariable String publicId,
+	public ApiResponse<ReportCardResponse> generateReportCard(@PathVariable String publicId,
 			@RequestParam String termPublicId,
 			@RequestParam(required = false) String teacherRemarks,
 			@RequestParam(required = false) String principalRemarks) {
@@ -259,9 +291,12 @@ public class StudentController {
 		var term = termService.findByPublicId(termPublicId);
 		ReportCard reportCard = reportCardService.generate(student.getId(), term.getId(), teacherRemarks,
 				principalRemarks);
-		return reportCardMapper.toResponse(reportCard);
+		return ApiResponse.success(reportCardMapper.toResponse(reportCard));
 	}
 
+	// Not ApiResponse-wrapped, unlike every other endpoint in this codebase — a raw PDF download
+	// needs its own Content-Type/Content-Disposition headers and binary body, not a JSON envelope.
+	@Override
 	@GetMapping("/{publicId}/report-cards/{reportCardPublicId}/download")
 	@PreAuthorize("@permissionAuthorizationService.hasPermission('STUDENT_SELF_SERVICE_READ')")
 	public ResponseEntity<byte[]> downloadReportCard(@PathVariable String publicId,
