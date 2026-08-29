@@ -28,18 +28,11 @@ public class PayrollCalculator {
 
 	public PayrollComputation compute(SalarySnapshot snapshot, YearMonth payMonth,
 			List<LeaveRequest> unpaidApprovedLeaveInMonth) {
-		BigDecimal grossPay = grossPay(snapshot);
+		BigDecimal grossPay = snapshot.grossPay();
 		BigDecimal lossOfPayDays = lossOfPayDays(unpaidApprovedLeaveInMonth, payMonth);
 		BigDecimal lossOfPayAmount = lossOfPayAmount(grossPay, lossOfPayDays, payMonth);
-		BigDecimal netPay = grossPay.subtract(snapshot.otherDeductions()).subtract(lossOfPayAmount);
+		BigDecimal netPay = grossPay.subtract(snapshot.totalDeductions()).subtract(lossOfPayAmount);
 		return new PayrollComputation(grossPay, lossOfPayDays, lossOfPayAmount, netPay);
-	}
-
-	private BigDecimal grossPay(SalarySnapshot snapshot) {
-		return snapshot.basicPay()
-				.add(snapshot.houseRentAllowance())
-				.add(snapshot.transportAllowance())
-				.add(snapshot.otherAllowances());
 	}
 
 	// Per-day rate is based on gross pay (basic + allowances), not basic pay alone — a day of

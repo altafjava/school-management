@@ -11,8 +11,8 @@ import com.altafjava.platform.core.exception.ResourceNotFoundException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
-import com.altafjava.school.domain.exam.model.ExamType;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
+import com.altafjava.school.domain.exam.repository.ExamTypeDefinitionRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.domain.term.repository.TermRepository;
 
@@ -23,13 +23,16 @@ public class ExamService {
 	private final ClassroomRepository classroomRepository;
 	private final SubjectRepository subjectRepository;
 	private final TermRepository termRepository;
+	private final ExamTypeDefinitionRepository examTypeDefinitionRepository;
 
 	public ExamService(ExamRepository examRepository, ClassroomRepository classroomRepository,
-			SubjectRepository subjectRepository, TermRepository termRepository) {
+			SubjectRepository subjectRepository, TermRepository termRepository,
+			ExamTypeDefinitionRepository examTypeDefinitionRepository) {
 		this.examRepository = examRepository;
 		this.classroomRepository = classroomRepository;
 		this.subjectRepository = subjectRepository;
 		this.termRepository = termRepository;
+		this.examTypeDefinitionRepository = examTypeDefinitionRepository;
 	}
 
 	@Transactional(readOnly = true)
@@ -46,7 +49,7 @@ public class ExamService {
 
 	@Transactional
 	public Exam schedule(String title, Long subjectId, Long classroomId,
-			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId, ExamType examType) {
+			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId, Long examTypeId) {
 		Long tenantId = TenantContext.getCurrentTenantId();
 		if (!classroomRepository.existsByIdAndTenantId(classroomId, tenantId)) {
 			throw new ResourceNotFoundException("Classroom not found: " + classroomId);
@@ -57,7 +60,10 @@ public class ExamService {
 		if (termId != null && !termRepository.existsByIdAndTenantId(termId, tenantId)) {
 			throw new ResourceNotFoundException("Term not found: " + termId);
 		}
-		Exam exam = Exam.create(title, subjectId, classroomId, scheduledAt, maxMarks, termId, examType);
+		if (!examTypeDefinitionRepository.existsByIdAndTenantId(examTypeId, tenantId)) {
+			throw new ResourceNotFoundException("Exam type not found: " + examTypeId);
+		}
+		Exam exam = Exam.create(title, subjectId, classroomId, scheduledAt, maxMarks, termId, examTypeId);
 		return examRepository.save(exam);
 	}
 

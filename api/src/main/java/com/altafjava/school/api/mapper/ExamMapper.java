@@ -11,6 +11,5 @@ public interface ExamMapper {
 
 	@Mapping(target = "publicId", expression = "java(exam.getPublicId().toString())")
 	@Mapping(target = "status", expression = "java(exam.getStatus().name())")
-	@Mapping(target = "examType", expression = "java(exam.getExamType().name())")
 	ExamResponse toResponse(Exam exam);
 }

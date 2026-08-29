@@ -246,4 +246,29 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
+    <!--
+      EI_EXPOSE_REP2 on TeacherCustomFieldController/GuardianCustomFieldController/
+      AdmissionCustomFieldController's constructors (doc22 Phase 1, item 1.3): flags storing the
+      injected per-entity application service (TeacherService/GuardianService/AdmissionService)
+      and CustomFieldValueService references into fields. Same standard constructor-injection
+      pattern as StudentCustomFieldController and the 8 controllers above (already
+      flagged/excluded for the identical CustomFieldValueService field), investigated 2026-08-29:
+      no mutable state leak, reference never handed back to a caller — consistent detector noise,
+      not a real defect.
+    -->
+    <Match>
+        <Class name="com.altafjava.school.api.controller.TeacherCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.GuardianCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Class name="com.altafjava.school.api.controller.AdmissionCustomFieldController"/>
+        <Method name="&lt;init&gt;"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
 </FindBugsFilter>

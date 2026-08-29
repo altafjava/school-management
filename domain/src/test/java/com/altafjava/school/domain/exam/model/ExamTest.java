@@ -10,8 +10,7 @@ import com.altafjava.platform.core.exception.BusinessException;
 class ExamTest {
 
 	private Exam newExam() {
-		return Exam.create("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100), null,
-				ExamType.MIDTERM);
+		return Exam.create("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100), null, 1L);
 	}
 
 	@Test

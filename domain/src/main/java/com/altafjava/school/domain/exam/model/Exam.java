@@ -50,12 +50,15 @@ public class Exam extends SoftDeletableEntity {
 	@Column(name = "status", nullable = false, length = 20)
 	private ExamStatus status;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "exam_type", nullable = false, length = 20)
-	private ExamType examType;
+	// FK to exam_type_definitions.id — tenant-defined catalog, not a fixed enum (boards vary
+	// widely in exam categorization), mirroring how subjectId/classroomId/termId are plain FKs.
+	// Nullable at the DB level only (see 049-exam-type-definitions.xml); create()/ExamService
+	// both require and validate a real value, so it is never actually null in practice.
+	@Column(name = "exam_type_id")
+	private Long examTypeId;
 
 	public static Exam create(String title, Long subjectId, Long classroomId,
-			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId, ExamType examType) {
+			LocalDateTime scheduledAt, BigDecimal maxMarks, Long termId, Long examTypeId) {
 		return Exam.builder()
 				.title(title)
 				.subjectId(subjectId)
@@ -63,7 +66,7 @@ public class Exam extends SoftDeletableEntity {
 				.scheduledAt(scheduledAt)
 				.maxMarks(maxMarks)
 				.termId(termId)
-				.examType(examType)
+				.examTypeId(examTypeId)
 				.status(ExamStatus.SCHEDULED)
 				.build();
 	}

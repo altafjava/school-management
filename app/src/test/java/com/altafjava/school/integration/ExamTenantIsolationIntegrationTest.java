@@ -28,6 +28,7 @@ import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.academicyear.model.AcademicYear;
 import com.altafjava.school.domain.classroom.model.Classroom;
 import com.altafjava.school.domain.exam.model.Exam;
+import com.altafjava.school.domain.exam.repository.ExamTypeDefinitionRepository;
 import com.altafjava.school.domain.subject.model.Subject;
 
 /**
@@ -50,6 +51,9 @@ class ExamTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private TenantOnboardingService onboardingService;
+
+	@Autowired
+	private ExamTypeDefinitionRepository examTypeDefinitionRepository;
 
 	private Tenant tenantA;
 	private Tenant tenantB;
@@ -81,6 +85,12 @@ class ExamTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 		return academicYear.getPublicId().toString();
 	}
 
+	// SchoolTenantProvisioningListener seeds UNIT_TEST/MIDTERM/FINAL/QUIZ for every new tenant.
+	private Long examTypeIdFor(String code) {
+		return examTypeDefinitionRepository.findByCodeAndTenantId(code, TenantContext.getCurrentTenantId())
+				.orElseThrow().getId();
+	}
+
 	@Test
 	void examScheduledUnderTenantA_isNotVisibleToTenantB() {
 		activateTenant(tenantA);
@@ -89,7 +99,7 @@ class ExamTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 				"CLS-" + UUID.randomUUID().toString().substring(0, 6), "Grade 5", "A", academicYearPublicId, null);
 		Subject subject = subjectService.create("MATH-" + UUID.randomUUID().toString().substring(0, 6), "Math", null);
 		examService.schedule("Midterm", subject.getId(), classroom.getId(), LocalDateTime.now().plusDays(7),
-				BigDecimal.valueOf(100), null, com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
+				BigDecimal.valueOf(100), null, examTypeIdFor("MIDTERM"));
 
 		activateTenant(tenantB);
 		Page<Exam> tenantBExams = examService.listExams(PageRequest.of(0, 100));
@@ -109,7 +119,7 @@ class ExamTenantIsolationIntegrationTest extends SchoolIntegrationTestBase {
 				null);
 		Exam exam = examService.schedule("Final", subject.getId(), classroom.getId(),
 				LocalDateTime.now().plusDays(14), BigDecimal.valueOf(100), null,
-				com.altafjava.school.domain.exam.model.ExamType.FINAL);
+				examTypeIdFor("FINAL"));
 		String publicId = exam.getPublicId().toString();
 
 		activateTenant(tenantB);

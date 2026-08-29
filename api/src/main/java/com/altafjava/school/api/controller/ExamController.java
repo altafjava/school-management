@@ -62,7 +62,7 @@ public class ExamController {
 				request.scheduledAt(),
 				request.maxMarks(),
 				request.termId(),
-				request.examType()));
+				request.examTypeId()));
 	}
 
 	@PatchMapping("/{publicId}/schedule")

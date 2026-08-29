@@ -24,8 +24,8 @@ import com.altafjava.platform.core.tenant.TenantType;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
 import com.altafjava.school.domain.exam.model.Exam;
 import com.altafjava.school.domain.exam.model.ExamStatus;
-import com.altafjava.school.domain.exam.model.ExamType;
 import com.altafjava.school.domain.exam.repository.ExamRepository;
+import com.altafjava.school.domain.exam.repository.ExamTypeDefinitionRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.domain.term.repository.TermRepository;
 
@@ -40,12 +40,15 @@ class ExamServiceTest {
 	private SubjectRepository subjectRepository;
 	@Mock
 	private TermRepository termRepository;
+	@Mock
+	private ExamTypeDefinitionRepository examTypeDefinitionRepository;
 
 	private ExamService examService;
 
 	@BeforeEach
 	void setUp() {
-		examService = new ExamService(examRepository, classroomRepository, subjectRepository, termRepository);
+		examService = new ExamService(examRepository, classroomRepository, subjectRepository, termRepository,
+				examTypeDefinitionRepository);
 		TenantContext.ForTesting.setCurrentTenant(1L, null, null, TenantType.SHARED);
 	}
 
@@ -60,7 +63,7 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 5L, 99L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100), null, ExamType.MIDTERM));
+						BigDecimal.valueOf(100), null, 1L));
 
 		verify(examRepository, never()).save(any());
 	}
@@ -72,7 +75,7 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 99L, 10L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100), null, ExamType.MIDTERM));
+						BigDecimal.valueOf(100), null, 1L));
 
 		verify(examRepository, never()).save(any());
 	}
@@ -81,10 +84,11 @@ class ExamServiceTest {
 	void schedule_withExistingClassroomAndSubject_succeeds() {
 		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
 		when(subjectRepository.existsByIdAndTenantId(5L, 1L)).thenReturn(true);
+		when(examTypeDefinitionRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(examRepository.save(any(Exam.class))).thenAnswer(inv -> inv.getArgument(0));
 
 		assertDoesNotThrow(() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
-				BigDecimal.valueOf(100), null, ExamType.MIDTERM));
+				BigDecimal.valueOf(100), null, 1L));
 	}
 
 	@Test
@@ -95,14 +99,27 @@ class ExamServiceTest {
 
 		assertThrows(ResourceNotFoundException.class,
 				() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
-						BigDecimal.valueOf(100), 99L, ExamType.MIDTERM));
+						BigDecimal.valueOf(100), 99L, 1L));
+
+		verify(examRepository, never()).save(any());
+	}
+
+	@Test
+	void schedule_withNonExistentExamType_throwsResourceNotFound() {
+		when(classroomRepository.existsByIdAndTenantId(10L, 1L)).thenReturn(true);
+		when(subjectRepository.existsByIdAndTenantId(5L, 1L)).thenReturn(true);
+		when(examTypeDefinitionRepository.existsByIdAndTenantId(99L, 1L)).thenReturn(false);
+
+		assertThrows(ResourceNotFoundException.class,
+				() -> examService.schedule("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7),
+						BigDecimal.valueOf(100), null, 99L));
 
 		verify(examRepository, never()).save(any());
 	}
 
 	private Exam examWithPublicId(UUID publicId) {
 		Exam exam = Exam.create("Midterm", 5L, 10L, LocalDateTime.now().plusDays(7), BigDecimal.valueOf(100), null,
-				ExamType.MIDTERM);
+				1L);
 		exam.setPublicId(publicId);
 		return exam;
 	}

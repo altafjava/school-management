@@ -2,17 +2,14 @@ package com.altafjava.school.api.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record PayslipResponse(
 		String publicId,
 		Long teacherId,
 		int payYear,
 		int payMonth,
-		BigDecimal basicPay,
-		BigDecimal houseRentAllowance,
-		BigDecimal transportAllowance,
-		BigDecimal otherAllowances,
-		BigDecimal otherDeductions,
+		List<PayComponentAmountResponse> components,
 		BigDecimal grossPay,
 		BigDecimal lossOfPayDays,
 		BigDecimal lossOfPayAmount,
@@ -20,4 +17,8 @@ public record PayslipResponse(
 		String status,
 		LocalDateTime finalizedAt,
 		LocalDateTime disbursedAt) {
+
+	public PayslipResponse {
+		components = List.copyOf(components);
+	}
 }

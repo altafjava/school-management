@@ -20,6 +20,7 @@ import com.altafjava.school.base.SchoolIntegrationTestBase;
 import com.altafjava.school.config.TestPaymentConfig;
 import com.altafjava.school.config.TestRedisConfig;
 import com.altafjava.school.domain.classroom.repository.ClassroomRepository;
+import com.altafjava.school.domain.exam.repository.ExamTypeDefinitionRepository;
 import com.altafjava.school.domain.subject.repository.SubjectRepository;
 import com.altafjava.school.util.SchoolAuthenticationHelper;
 import io.restassured.RestAssured;
@@ -57,6 +58,9 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 
 	@Autowired
 	private AcademicYearService academicYearService;
+
+	@Autowired
+	private ExamTypeDefinitionRepository examTypeDefinitionRepository;
 
 	private Long tenantId;
 	private String adminEmail;
@@ -109,6 +113,17 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 		}
 	}
 
+	// SchoolTenantProvisioningListener seeds UNIT_TEST/MIDTERM/FINAL/QUIZ for every new tenant.
+	private Long examTypeIdFor(String code) {
+		TenantContext.ForTesting.setCurrentTenant(tenantId, null, null,
+				com.altafjava.platform.core.tenant.TenantType.SHARED);
+		try {
+			return examTypeDefinitionRepository.findByCodeAndTenantId(code, tenantId).orElseThrow().getId();
+		} finally {
+			TenantContext.ForTesting.clear();
+		}
+	}
+
 	private Long createSubjectAndGetInternalId(String accessToken, String code) {
 		String publicId = given()
 				.header("X-Tenant-ID", tenantId)
@@ -142,7 +157,8 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Midterm\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100,\"examType\":\"MIDTERM\"}")
+						+ ",\"scheduledAt\":\"2026-03-01T09:00:00\",\"maxMarks\":100,\"examTypeId\":"
+						+ examTypeIdFor("MIDTERM") + "}")
 				.when()
 				.post("/api/v1/exams")
 				.then()
@@ -174,7 +190,8 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + studentToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Final\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-05-01T09:00:00\",\"maxMarks\":100,\"examType\":\"FINAL\"}")
+						+ ",\"scheduledAt\":\"2026-05-01T09:00:00\",\"maxMarks\":100,\"examTypeId\":"
+						+ examTypeIdFor("FINAL") + "}")
 				.when()
 				.post("/api/v1/exams")
 				.then()
@@ -191,7 +208,8 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Quiz\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-04-01T09:00:00\",\"maxMarks\":50,\"examType\":\"QUIZ\"}")
+						+ ",\"scheduledAt\":\"2026-04-01T09:00:00\",\"maxMarks\":50,\"examTypeId\":"
+						+ examTypeIdFor("QUIZ") + "}")
 				.when()
 				.post("/api/v1/exams")
 				.then()
@@ -224,7 +242,8 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Unit Test\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-03-05T09:00:00\",\"maxMarks\":50,\"examType\":\"UNIT_TEST\"}")
+						+ ",\"scheduledAt\":\"2026-03-05T09:00:00\",\"maxMarks\":50,\"examTypeId\":"
+						+ examTypeIdFor("UNIT_TEST") + "}")
 				.when()
 				.post("/api/v1/exams")
 				.then()
@@ -262,7 +281,8 @@ class ExamCrudE2ETest extends SchoolIntegrationTestBase {
 				.header("Authorization", "Bearer " + accessToken)
 				.contentType(ContentType.JSON)
 				.body("{\"title\":\"Quiz\",\"subjectId\":" + subjectId + ",\"classroomId\":" + classroomId
-						+ ",\"scheduledAt\":\"2026-03-06T09:00:00\",\"maxMarks\":50,\"examType\":\"QUIZ\"}")
+						+ ",\"scheduledAt\":\"2026-03-06T09:00:00\",\"maxMarks\":50,\"examTypeId\":"
+						+ examTypeIdFor("QUIZ") + "}")
 				.when()
 				.post("/api/v1/exams")
 				.then()

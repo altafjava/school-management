@@ -2,12 +2,15 @@ package com.altafjava.school.domain.payroll.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.model.SoftDeletableEntity;
+import com.altafjava.school.domain.payroll.converter.PayComponentAmountListConverter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,6 +20,12 @@ import lombok.experimental.SuperBuilder;
  * A teacher's compensation terms as of {@link #effectiveFrom}. At most one structure is
  * {@link #active} per teacher at a time — {@code SalaryStructureService} deactivates the previous
  * one when a new one is created, mirroring how {@code Term}/{@code AcademicYear} flip {@code current}.
+ *
+ * <p>
+ * Pay components (basic pay, allowances, deductions) are a tenant-defined list rather than fixed
+ * columns — see {@link PayComponentDefinition} — since compensation structure varies materially by
+ * region (e.g. "House Rent Allowance" is a specifically Indian convention with no equivalent
+ * elsewhere). This system does not compute statutory deductions; see docs/architecture-analysis.
  */
 @Entity
 @Table(name = "salary_structures")
@@ -30,22 +39,9 @@ public class SalaryStructure extends SoftDeletableEntity {
 	@Column(name = "teacher_id", nullable = false)
 	private Long teacherId;
 
-	@Column(name = "basic_pay", nullable = false, precision = 12, scale = 2)
-	private BigDecimal basicPay;
-
-	@Column(name = "house_rent_allowance", nullable = false, precision = 12, scale = 2)
-	private BigDecimal houseRentAllowance;
-
-	@Column(name = "transport_allowance", nullable = false, precision = 12, scale = 2)
-	private BigDecimal transportAllowance;
-
-	@Column(name = "other_allowances", nullable = false, precision = 12, scale = 2)
-	private BigDecimal otherAllowances;
-
-	// Free-text-adjacent by design — e.g. a manually computed tax withholding a school wants on
-	// record. This system does not compute statutory deductions; see docs/architecture-analysis.
-	@Column(name = "other_deductions", nullable = false, precision = 12, scale = 2)
-	private BigDecimal otherDeductions;
+	@Convert(converter = PayComponentAmountListConverter.class)
+	@Column(name = "components_json", nullable = false)
+	private List<PayComponentAmount> components;
 
 	@Column(name = "effective_from", nullable = false)
 	private LocalDate effectiveFrom;
@@ -53,19 +49,18 @@ public class SalaryStructure extends SoftDeletableEntity {
 	@Column(name = "active", nullable = false)
 	private boolean active;
 
-	public static SalaryStructure create(Long teacherId, BigDecimal basicPay, BigDecimal houseRentAllowance,
-			BigDecimal transportAllowance, BigDecimal otherAllowances, BigDecimal otherDeductions,
+	public static SalaryStructure create(Long teacherId, List<PayComponentAmount> components,
 			LocalDate effectiveFrom) {
-		if (basicPay == null || basicPay.signum() <= 0) {
-			throw new BusinessException("Basic pay must be greater than zero");
+		if (components == null || components.isEmpty()) {
+			throw new BusinessException("At least one pay component is required");
+		}
+		SalarySnapshot snapshot = new SalarySnapshot(components);
+		if (snapshot.grossPay().signum() <= 0) {
+			throw new BusinessException("Total earning components must be greater than zero");
 		}
 		return SalaryStructure.builder()
 				.teacherId(teacherId)
-				.basicPay(basicPay)
-				.houseRentAllowance(houseRentAllowance)
-				.transportAllowance(transportAllowance)
-				.otherAllowances(otherAllowances)
-				.otherDeductions(otherDeductions)
+				.components(components)
 				.effectiveFrom(effectiveFrom)
 				.active(true)
 				.build();
@@ -76,10 +71,10 @@ public class SalaryStructure extends SoftDeletableEntity {
 	}
 
 	public BigDecimal grossPay() {
-		return basicPay.add(houseRentAllowance).add(transportAllowance).add(otherAllowances);
+		return toSnapshot().grossPay();
 	}
 
 	public SalarySnapshot toSnapshot() {
-		return new SalarySnapshot(basicPay, houseRentAllowance, transportAllowance, otherAllowances, otherDeductions);
+		return new SalarySnapshot(components);
 	}
 }

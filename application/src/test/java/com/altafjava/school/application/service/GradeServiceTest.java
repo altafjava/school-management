@@ -87,7 +87,7 @@ class GradeServiceTest {
 	@Test
 	void record_duplicateForSameStudentExam_throwsIllegalArgument() {
 		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100), null,
-				com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
+				1L);
 		when(studentRepository.existsByIdAndTenantId(1L, 1L)).thenReturn(true);
 		when(examRepository.findByIdAndTenantId(2L, 1L)).thenReturn(Optional.of(exam));
 		when(gradeRepository.existsByStudentIdAndExamIdAndTenantId(1L, 2L, 1L)).thenReturn(true);
@@ -99,7 +99,7 @@ class GradeServiceTest {
 	@Test
 	void record_withValidReferences_computesLetterGradeFromDefaultScale() {
 		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100), null,
-				com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
+				1L);
 		List<GradingScaleThreshold> thresholds = List.of(
 				GradingScaleThreshold.create(1L, "A", new BigDecimal("90"), new BigDecimal("4.0")),
 				GradingScaleThreshold.create(1L, "F", BigDecimal.ZERO, BigDecimal.ZERO));
@@ -165,7 +165,7 @@ class GradeServiceTest {
 		grade.setId(100L);
 		grade.setPublicId(java.util.UUID.fromString("11111111-1111-1111-1111-111111111111"));
 		Exam exam = Exam.create("Midterm", 5L, 10L, null, BigDecimal.valueOf(100), null,
-				com.altafjava.school.domain.exam.model.ExamType.MIDTERM);
+				1L);
 		List<GradingScaleThreshold> thresholds = List.of(
 				GradingScaleThreshold.create(1L, "A", new BigDecimal("90"), new BigDecimal("4.0")),
 				GradingScaleThreshold.create(1L, "F", BigDecimal.ZERO, BigDecimal.ZERO));

@@ -27,6 +27,8 @@ import com.altafjava.school.domain.leave.model.LeaveRequestStatus;
 import com.altafjava.school.domain.leave.model.LeaveType;
 import com.altafjava.school.domain.leave.repository.LeaveRequestRepository;
 import com.altafjava.school.domain.leave.repository.LeaveTypeRepository;
+import com.altafjava.school.domain.payroll.model.PayComponentAmount;
+import com.altafjava.school.domain.payroll.model.PayComponentType;
 import com.altafjava.school.domain.payroll.model.PayrollComputation;
 import com.altafjava.school.domain.payroll.model.Payslip;
 import com.altafjava.school.domain.payroll.model.PayslipStatus;
@@ -64,8 +66,17 @@ class PayslipServiceTest {
 	}
 
 	private SalaryStructure activeStructure() {
-		return SalaryStructure.create(10L, BigDecimal.valueOf(50000), BigDecimal.valueOf(10000),
-				BigDecimal.valueOf(2000), BigDecimal.valueOf(500), BigDecimal.valueOf(1000), LocalDate.of(2026, 1, 1));
+		List<PayComponentAmount> components = List.of(
+				new PayComponentAmount("BASIC", "Basic Pay", PayComponentType.EARNING, BigDecimal.valueOf(50000)),
+				new PayComponentAmount("HRA", "House Rent Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(10000)),
+				new PayComponentAmount("TRANSPORT", "Transport Allowance", PayComponentType.EARNING,
+						BigDecimal.valueOf(2000)),
+				new PayComponentAmount("OTHER_ALLOWANCE", "Other Allowances", PayComponentType.EARNING,
+						BigDecimal.valueOf(500)),
+				new PayComponentAmount("OTHER_DEDUCTION", "Other Deductions", PayComponentType.DEDUCTION,
+						BigDecimal.valueOf(1000)));
+		return SalaryStructure.create(10L, components, LocalDate.of(2026, 1, 1));
 	}
 
 	@Test

@@ -12,5 +12,5 @@ public record ExamResponse(
 		BigDecimal maxMarks,
 		Long termId,
 		String status,
-		String examType) {
+		Long examTypeId) {
 }
