@@ -10,10 +10,8 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Stores a {@link SalaryStructure}/{@link Payslip}'s pay-component breakdown as a JSON array
- * column — mirrors the same tenant-flexible-list-as-JSON pattern already used for
- * {@code Coupon.appliesToPlansJson} rather than a normalized child table, since the list is always
- * read/written whole with its parent, never queried independently.
+ * Stores a pay-component breakdown as a JSON array column rather than a normalized child table,
+ * since it's always read/written whole with its parent, never queried independently.
  */
 @Converter
 public class PayComponentAmountListConverter implements AttributeConverter<List<PayComponentAmount>, String> {

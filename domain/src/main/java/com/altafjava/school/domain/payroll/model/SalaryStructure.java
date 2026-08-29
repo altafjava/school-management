@@ -22,10 +22,8 @@ import lombok.experimental.SuperBuilder;
  * one when a new one is created, mirroring how {@code Term}/{@code AcademicYear} flip {@code current}.
  *
  * <p>
- * Pay components (basic pay, allowances, deductions) are a tenant-defined list rather than fixed
- * columns — see {@link PayComponentDefinition} — since compensation structure varies materially by
- * region (e.g. "House Rent Allowance" is a specifically Indian convention with no equivalent
- * elsewhere). This system does not compute statutory deductions; see docs/architecture-analysis.
+ * Pay components are a tenant-defined list ({@link PayComponentDefinition}), not fixed columns —
+ * compensation structure varies materially by region. Does not compute statutory deductions.
  */
 @Entity
 @Table(name = "salary_structures")

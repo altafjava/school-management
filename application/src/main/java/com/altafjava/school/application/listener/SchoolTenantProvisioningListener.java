@@ -137,9 +137,8 @@ public class SchoolTenantProvisioningListener {
 			new AlertRuleSeed(LibraryOverdueRuleEvaluator.RULE_TYPE, "Library book overdue",
 					BigDecimal.ZERO, NotificationType.BOOK_OVERDUE));
 
-	// Preserves the pre-Phase-1 fixed Basic/HRA/Transport/Other shape as each tenant's own
-	// editable starting point — a non-Indian tenant can freely rename, deactivate, or add
-	// components afterward via PayComponentDefinitionController, no code change needed.
+	// Default starting catalog — freely renamed/deactivated afterward via
+	// PayComponentDefinitionController, no code change needed for non-Indian tenants.
 	private static final List<PayComponentSeed> PAY_COMPONENT_SEEDS = List.of(
 			new PayComponentSeed("BASIC", "Basic Pay", PayComponentType.EARNING, 1),
 			new PayComponentSeed("HRA", "House Rent Allowance", PayComponentType.EARNING, 2),
@@ -147,10 +146,8 @@ public class SchoolTenantProvisioningListener {
 			new PayComponentSeed("OTHER_ALLOWANCE", "Other Allowances", PayComponentType.EARNING, 4),
 			new PayComponentSeed("OTHER_DEDUCTION", "Other Deductions", PayComponentType.DEDUCTION, 5));
 
-	// Preserves the pre-Phase-1 fixed ExamType enum values (UNIT_TEST/MIDTERM/FINAL/QUIZ) as each
-	// tenant's own editable starting point — a board with a different exam categorization scheme
-	// (e.g. Formative/Summative) can rename, deactivate, or add types afterward via
-	// ExamTypeDefinitionController, no code change needed.
+	// Default starting catalog — freely renamed/deactivated afterward via
+	// ExamTypeDefinitionController for boards with a different scheme (e.g. Formative/Summative).
 	private static final List<ExamTypeSeed> EXAM_TYPE_SEEDS = List.of(
 			new ExamTypeSeed("UNIT_TEST", "Unit Test", 1),
 			new ExamTypeSeed("MIDTERM", "Midterm", 2),

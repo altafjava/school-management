@@ -27,11 +27,7 @@ dependencies {
     // so they are not transitively visible — declare them explicitly here
     implementation libs.spring.boot.starter.security
     implementation libs.mapstruct
-    // Tenant-scoped rate limiting on the highest-cost endpoints (bulk import, report/certificate
-    // generation) — see RateLimitAspect. Reuses platform's own ProxyManager<String> bean (Redis-
-    // backed bucket4j) rather than platform's RateLimitInterceptor, which is a flat per-tenant
-    // request-count limit applied to every endpoint uniformly and has no notion of one endpoint
-    // being far more expensive per call than another.
+    // Per-operation rate limiting on the highest-cost endpoints — see RateLimitAspect.
     implementation libs.bucket4j.core
     implementation libs.aspectjweaver
 
