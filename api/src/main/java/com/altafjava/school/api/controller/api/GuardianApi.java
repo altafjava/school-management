@@ -1,5 +1,6 @@
 package com.altafjava.school.api.controller.api;
 
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -7,11 +8,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.altafjava.platform.api.dto.response.ApiResponse;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateGuardianRequest;
+import com.altafjava.school.api.dto.request.GrantGuardianConsentRequest;
 import com.altafjava.school.api.dto.request.LinkGuardianRequest;
 import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
+import com.altafjava.school.api.dto.response.GuardianConsentRecordResponse;
 import com.altafjava.school.api.dto.response.GuardianResponse;
 import com.altafjava.school.api.dto.response.StudentGuardianLinkResponse;
 import com.altafjava.school.api.dto.response.StudentResponse;
+import com.altafjava.school.domain.guardian.model.GuardianConsentType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -56,4 +60,18 @@ public interface GuardianApi {
 	public ApiResponse<com.altafjava.platform.core.model.Page<StudentResponse>> myStudents(
 			@RequestParam(defaultValue = "0") int page,
 			@RequestParam(defaultValue = "20") int size);
+
+	@Operation(summary = "Grant a data-processing consent for my linked student", operationId = "guardian_grantSelfConsent")
+	public ApiResponse<GuardianConsentRecordResponse> grantSelfConsent(@PathVariable String studentPublicId,
+			@Valid @RequestBody GrantGuardianConsentRequest request);
+
+	@Operation(summary = "Revoke a previously granted data-processing consent for my linked student", operationId = "guardian_revokeSelfConsent")
+	public ApiResponse<GuardianConsentRecordResponse> revokeSelfConsent(@PathVariable String studentPublicId,
+			@PathVariable GuardianConsentType consentType);
+
+	@Operation(summary = "List my own consent records for a linked student", operationId = "guardian_myConsents")
+	public ApiResponse<List<GuardianConsentRecordResponse>> myConsents(@PathVariable String studentPublicId);
+
+	@Operation(summary = "List a student's guardian consent records (admin view)", operationId = "guardian_studentConsents")
+	public ApiResponse<List<GuardianConsentRecordResponse>> studentConsents(@PathVariable String studentPublicId);
 }

@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.student.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,4 +37,11 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 	Optional<Student> findByEmailAndTenantId(@Param("email") String email, @Param("tenantId") Long tenantId);
 
 	Optional<Student> findByUserIdAndTenantId(Long userId, Long tenantId);
+
+	/**
+	 * Bulk-fetch for {@code SchoolDataRetentionHandler} — inactive students past a tenant's configured retention
+	 * window.
+	 */
+	List<Student> findAllByTenantIdAndEnrollmentStatusInAndEnrollmentStatusChangedAtLessThanEqual(Long tenantId,
+			List<EnrollmentStatus> enrollmentStatuses, Instant cutoff);
 }

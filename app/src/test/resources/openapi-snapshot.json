@@ -151,6 +151,9 @@
     "name" : "AdminAuditLog Management",
     "description" : "APIs for managing AdminAuditLog operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
+    "name" : "Data Retention Policies",
+    "description" : "Tenant-admin endpoints for configuring FERPA/COPPA/GDPR-K/DPDP data-retention windows enforced daily by DataRetentionEnforcementScheduler"
+  }, {
     "name" : "Circulation",
     "description" : "APIs for managing Circulation operations.\n\n**Tenant Scope**: All endpoints are tenant-scoped via X-Tenant-ID header.\n**Auth**: JWT Bearer token required on all endpoints unless marked public."
   }, {
@@ -2594,6 +2597,90 @@
           "bearerAuth" : [ ]
         }, {
           "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/data-retention-policies/{id}" : {
+      "put" : {
+        "tags" : [ "Data Retention Policies" ],
+        "summary" : "Update a data-retention policy's window/handling",
+        "operationId" : "update_1",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Retention policy public UUID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateDataRetentionPolicyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseDataRetentionPolicyResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/data-retention-policies/{id}/active" : {
+      "put" : {
+        "tags" : [ "Data Retention Policies" ],
+        "summary" : "Enable or disable a data-retention policy",
+        "operationId" : "setActive",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Retention policy public UUID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetDataRetentionPolicyActiveRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseDataRetentionPolicyResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
         } ]
       }
     },
@@ -7876,6 +7963,78 @@
         }
       }
     },
+    "/api/v1/guardians/me/students/{studentPublicId}/consents" : {
+      "get" : {
+        "tags" : [ "Guardian" ],
+        "summary" : "List my own consent records for a linked student",
+        "operationId" : "guardian_myConsents",
+        "parameters" : [ {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListGuardianConsentRecordResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "Guardian" ],
+        "summary" : "Grant a data-processing consent for my linked student",
+        "operationId" : "guardian_grantSelfConsent",
+        "parameters" : [ {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GrantGuardianConsentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseGuardianConsentRecordResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/grading-scales" : {
       "get" : {
         "tags" : [ "Grading Scale" ],
@@ -8961,6 +9120,68 @@
           "bearerAuth" : [ ]
         }, {
           "tenantHeader" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/data-retention-policies" : {
+      "get" : {
+        "tags" : [ "Data Retention Policies" ],
+        "summary" : "List the caller's tenant's data-retention policies",
+        "operationId" : "list_3",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListDataRetentionPolicyResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "Data Retention Policies" ],
+        "summary" : "Create a data-retention policy for the caller's tenant",
+        "operationId" : "create_3",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateDataRetentionPolicyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Policy created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseDataRetentionPolicyResponse"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "A policy for this entityType already exists",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseDataRetentionPolicyResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
         } ]
       }
     },
@@ -11547,7 +11768,7 @@
       "get" : {
         "tags" : [ "Alert Rules" ],
         "summary" : "List the caller's tenant's alert rules",
-        "operationId" : "list_3",
+        "operationId" : "list_4",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -11567,7 +11788,7 @@
       "post" : {
         "tags" : [ "Alert Rules" ],
         "summary" : "Create an alert rule for the caller's tenant",
-        "operationId" : "create_3",
+        "operationId" : "create_4",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -21707,6 +21928,38 @@
         } ]
       }
     },
+    "/api/v1/guardians/students/{studentPublicId}/consents" : {
+      "get" : {
+        "tags" : [ "Guardian" ],
+        "summary" : "List a student's guardian consent records (admin view)",
+        "operationId" : "guardian_studentConsents",
+        "parameters" : [ {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListGuardianConsentRecordResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/guardians/me/students" : {
       "get" : {
         "tags" : [ "Guardian" ],
@@ -25893,6 +26146,46 @@
         } ]
       }
     },
+    "/api/v1/guardians/me/students/{studentPublicId}/consents/{consentType}" : {
+      "delete" : {
+        "tags" : [ "Guardian" ],
+        "summary" : "Revoke a previously granted data-processing consent for my linked student",
+        "operationId" : "guardian_revokeSelfConsent",
+        "parameters" : [ {
+          "name" : "studentPublicId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "consentType",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "DATA_PROCESSING", "DIRECTORY_INFORMATION_DISCLOSURE", "MARKETING_COMMUNICATIONS", "PHOTO_VIDEO_MEDIA" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseGuardianConsentRecordResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/files/{fileId}" : {
       "delete" : {
         "tags" : [ "File Management" ],
@@ -27433,6 +27726,114 @@
           }
         }
       },
+      "UpdateDataRetentionPolicyRequest" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Request to update a data-retention policy's window/handling",
+        "properties" : {
+          "retentionPeriodDays" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : "",
+            "description" : "Days after the entity's retention-relevant timestamp before this policy applies",
+            "example" : 2555,
+            "minimum" : 1
+          },
+          "deletionPolicy" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "How matching records are handled once the window elapses",
+            "enum" : [ "HARD_DELETE", "SOFT_DELETE", "ANONYMIZE" ]
+          },
+          "description" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Human-readable note, e.g. the jurisdiction/legal basis this window was set for"
+          }
+        },
+        "required" : [ "deletionPolicy", "retentionPeriodDays" ]
+      },
+      "ApiResponseDataRetentionPolicyResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/DataRetentionPolicyResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "DataRetentionPolicyResponse" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Data-retention policy details",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Public UUID of the policy"
+          },
+          "entityType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Domain-defined entity type this policy governs"
+          },
+          "retentionPeriodDays" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : "",
+            "description" : "Days after the entity's retention-relevant timestamp before this policy applies"
+          },
+          "deletionPolicy" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "How matching records are handled once the window elapses",
+            "enum" : [ "HARD_DELETE", "SOFT_DELETE", "ANONYMIZE" ]
+          },
+          "active" : {
+            "type" : "boolean",
+            "default" : false,
+            "description" : "Whether the policy is enforced by the daily retention sweep"
+          },
+          "description" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Human-readable note, e.g. the jurisdiction/legal basis this window was set for"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "default" : "",
+            "description" : "Timestamp when created"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "default" : "",
+            "description" : "Timestamp when last updated"
+          }
+        }
+      },
+      "SetDataRetentionPolicyActiveRequest" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Request to enable or disable a data-retention policy",
+        "properties" : {
+          "active" : {
+            "type" : "boolean",
+            "default" : false,
+            "description" : "Whether the policy is enforced by the daily retention sweep"
+          }
+        },
+        "required" : [ "active" ]
+      },
       "ApiResponsePaymentMethodResponse" : {
         "type" : "object",
         "properties" : {
@@ -28616,7 +29017,7 @@
           "dataResidencyRegion" : {
             "type" : "string",
             "default" : "",
-            "description" : "Geographic region in which this tenant's data must be stored (DPDP/GDPR)",
+            "description" : "Tenant's declared data-residency region (DPDP/GDPR). Currently routes object/file storage (uploads, generated PDFs) to a region-specific S3 bucket when one is provisioned — see StorageRegionConfig. Does not yet relocate the tenant's database; full database-level residency is tracked as future work (see platform-saas ROADMAP.md H-4).",
             "enum" : [ "IN", "EU", "US", "GLOBAL" ],
             "example" : "IN"
           }
@@ -31494,6 +31895,83 @@
         },
         "required" : [ "email", "firstName", "lastName", "password" ]
       },
+      "GrantGuardianConsentRequest" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Request for the current guardian to grant consent for a linked student",
+        "properties" : {
+          "consentType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Category of processing being consented to",
+            "enum" : [ "DATA_PROCESSING", "DIRECTORY_INFORMATION_DISCLOSURE", "MARKETING_COMMUNICATIONS", "PHOTO_VIDEO_MEDIA" ]
+          },
+          "policyVersion" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Privacy-policy version this consent was given under",
+            "example" : "2026-01"
+          }
+        },
+        "required" : [ "consentType" ]
+      },
+      "ApiResponseGuardianConsentRecordResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/GuardianConsentRecordResponse"
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
+      "GuardianConsentRecordResponse" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "A guardian's consent record for one category of processing on a linked student",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Public UUID of the consent record"
+          },
+          "consentType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Category of processing this record covers",
+            "enum" : [ "DATA_PROCESSING", "DIRECTORY_INFORMATION_DISCLOSURE", "MARKETING_COMMUNICATIONS", "PHOTO_VIDEO_MEDIA" ]
+          },
+          "granted" : {
+            "type" : "boolean",
+            "default" : false,
+            "description" : "Whether consent is currently granted"
+          },
+          "grantedAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "default" : "",
+            "description" : "When consent was last granted"
+          },
+          "revokedAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "default" : "",
+            "description" : "When consent was last revoked, if applicable"
+          },
+          "policyVersion" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Privacy-policy version this consent was given under"
+          }
+        }
+      },
       "CreateGradingScaleRequest" : {
         "type" : "object",
         "properties" : {
@@ -32420,6 +32898,40 @@
             "type" : "boolean"
           }
         }
+      },
+      "CreateDataRetentionPolicyRequest" : {
+        "type" : "object",
+        "default" : null,
+        "description" : "Request to create a data-retention policy for the caller's tenant",
+        "properties" : {
+          "entityType" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Domain-defined entity type this policy governs, e.g. STUDENT",
+            "example" : "STUDENT",
+            "minLength" : 1
+          },
+          "retentionPeriodDays" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : "",
+            "description" : "Days after the entity's retention-relevant timestamp before this policy applies",
+            "example" : 2555,
+            "minimum" : 1
+          },
+          "deletionPolicy" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "How matching records are handled once the window elapses",
+            "enum" : [ "HARD_DELETE", "SOFT_DELETE", "ANONYMIZE" ]
+          },
+          "description" : {
+            "type" : "string",
+            "default" : "",
+            "description" : "Human-readable note, e.g. the jurisdiction/legal basis this window was set for"
+          }
+        },
+        "required" : [ "deletionPolicy", "entityType", "retentionPeriodDays" ]
       },
       "CreateCustomFieldDefinitionRequest" : {
         "type" : "object",
@@ -35993,7 +36505,7 @@
           "dataResidencyRegion" : {
             "type" : "string",
             "default" : "",
-            "description" : "Geographic region in which this tenant's data must be stored (DPDP/GDPR)",
+            "description" : "Tenant's declared data-residency region (DPDP/GDPR). Currently routes object/file storage to a region-specific bucket when provisioned — see StorageRegionConfig. Does not relocate the tenant's database.",
             "enum" : [ "IN", "EU", "US", "GLOBAL" ],
             "example" : "IN"
           }
@@ -39912,6 +40424,26 @@
           }
         }
       },
+      "ApiResponseListGuardianConsentRecordResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GuardianConsentRecordResponse"
+            }
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
+          }
+        }
+      },
       "ApiResponsePageGradingScaleResponse" : {
         "type" : "object",
         "properties" : {
@@ -40504,6 +41036,26 @@
           "totalElements" : {
             "type" : "integer",
             "format" : "int64"
+          }
+        }
+      },
+      "ApiResponseListDataRetentionPolicyResponse" : {
+        "type" : "object",
+        "properties" : {
+          "success" : {
+            "type" : "boolean"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DataRetentionPolicyResponse"
+            }
+          },
+          "error" : {
+            "$ref" : "#/components/schemas/Error"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/Meta"
           }
         }
       },

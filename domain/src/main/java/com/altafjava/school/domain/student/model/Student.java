@@ -1,5 +1,6 @@
 package com.altafjava.school.domain.student.model;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -48,6 +49,11 @@ public class Student extends SoftDeletableEntity {
 	@Column(name = "enrollment_status", nullable = false, length = 30)
 	private EnrollmentStatus enrollmentStatus;
 
+	// Distinct from updatedAt — a later, unrelated contact-detail edit must not reset the
+	// retention-window clock SchoolDataRetentionHandler measures against this timestamp.
+	@Column(name = "enrollment_status_changed_at")
+	private Instant enrollmentStatusChangedAt;
+
 	// FK to platform users.id — nullable, set only once this student has their own login account.
 	@Column(name = "user_id")
 	private Long userId;
@@ -76,6 +82,7 @@ public class Student extends SoftDeletableEntity {
 			throw new BusinessException("Cannot withdraw a graduated student");
 		}
 		this.enrollmentStatus = EnrollmentStatus.WITHDRAWN;
+		this.enrollmentStatusChangedAt = Instant.now();
 	}
 
 	/**
@@ -88,6 +95,7 @@ public class Student extends SoftDeletableEntity {
 			throw new BusinessException("Cannot transfer a graduated student");
 		}
 		this.enrollmentStatus = EnrollmentStatus.TRANSFERRED;
+		this.enrollmentStatusChangedAt = Instant.now();
 	}
 
 	public void graduate() {
@@ -96,6 +104,7 @@ public class Student extends SoftDeletableEntity {
 			throw new BusinessException("Cannot graduate a " + this.enrollmentStatus.name().toLowerCase() + " student");
 		}
 		this.enrollmentStatus = EnrollmentStatus.GRADUATED;
+		this.enrollmentStatusChangedAt = Instant.now();
 	}
 
 	public void updateContactDetails(String firstName, String lastName, String email, LocalDate dateOfBirth) {

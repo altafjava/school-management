@@ -8,8 +8,10 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.core.PlatformConfigurer;
 import com.altafjava.platform.core.privacy.DomainPiiHandler;
+import com.altafjava.platform.core.privacy.DomainRetentionHandler;
 import com.altafjava.platform.core.security.permission.PermissionDefinition;
 import com.altafjava.platform.core.sync.OfflineSyncEntityHandler;
+import com.altafjava.school.application.privacy.SchoolDataRetentionHandler;
 import com.altafjava.school.application.privacy.StudentGuardianPiiHandler;
 import com.altafjava.school.application.sync.AttendanceOfflineSyncHandler;
 import com.altafjava.school.domain.metrics.SchoolMetricTypes;
@@ -28,11 +30,14 @@ public class SchoolPlatformConfigurer implements PlatformConfigurer {
 	// (see PlatformConfigurer#offlineSyncEntityHandlers's Javadoc).
 	private final Map<String, OfflineSyncEntityHandler> offlineSyncEntityHandlers;
 	private final StudentGuardianPiiHandler studentGuardianPiiHandler;
+	private final SchoolDataRetentionHandler schoolDataRetentionHandler;
 
 	public SchoolPlatformConfigurer(AttendanceOfflineSyncHandler attendanceOfflineSyncHandler,
-			StudentGuardianPiiHandler studentGuardianPiiHandler) {
+			StudentGuardianPiiHandler studentGuardianPiiHandler,
+			SchoolDataRetentionHandler schoolDataRetentionHandler) {
 		this.offlineSyncEntityHandlers = Map.of("attendance", attendanceOfflineSyncHandler);
 		this.studentGuardianPiiHandler = studentGuardianPiiHandler;
+		this.schoolDataRetentionHandler = schoolDataRetentionHandler;
 	}
 
 	@Override
@@ -43,6 +48,11 @@ public class SchoolPlatformConfigurer implements PlatformConfigurer {
 	@Override
 	public Optional<DomainPiiHandler> domainPiiHandler() {
 		return Optional.of(studentGuardianPiiHandler);
+	}
+
+	@Override
+	public Optional<DomainRetentionHandler> domainRetentionHandler() {
+		return Optional.of(schoolDataRetentionHandler);
 	}
 
 	@Override
