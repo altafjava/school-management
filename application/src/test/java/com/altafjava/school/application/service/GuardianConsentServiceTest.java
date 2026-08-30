@@ -114,6 +114,29 @@ class GuardianConsentServiceTest {
 	}
 
 	@Test
+	void grant_concurrentInsertRaceLosesToDbConstraint_retriesAsUpdateOnTheWinnerRow() {
+		Student student = studentWithId(10L);
+		Guardian guardian = guardianWithId(20L);
+		GuardianConsentRecord raceWinner = GuardianConsentRecord.create(10L, 20L, GuardianConsentType.DATA_PROCESSING);
+		when(studentRepository.findByPublicIdAndTenantId(STUDENT_PUBLIC_ID, 1L)).thenReturn(Optional.of(student));
+		when(guardianRepository.findByUserIdAndTenantId(CURRENT_USER_ID, 1L)).thenReturn(Optional.of(guardian));
+		when(studentGuardianLinkRepository.existsByGuardianIdAndStudentIdAndTenantId(20L, 10L, 1L)).thenReturn(true);
+		when(consentRecordRepository.findByGuardianIdAndStudentIdAndConsentTypeAndTenantId(20L, 10L,
+				GuardianConsentType.DATA_PROCESSING, 1L))
+				.thenReturn(Optional.empty())
+				.thenReturn(Optional.of(raceWinner));
+		when(consentRecordRepository.save(any(GuardianConsentRecord.class)))
+				.thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate key"))
+				.thenAnswer(inv -> inv.getArgument(0));
+
+		GuardianConsentRecord result = guardianConsentService.grant(STUDENT_PUBLIC_ID.toString(),
+				GuardianConsentType.DATA_PROCESSING, "2026-01");
+
+		assertTrue(result.isGranted());
+		assertEquals("2026-01", result.getPolicyVersion());
+	}
+
+	@Test
 	void grant_existingRevokedRecord_reGrantsInPlace() {
 		Student student = studentWithId(10L);
 		Guardian guardian = guardianWithId(20L);

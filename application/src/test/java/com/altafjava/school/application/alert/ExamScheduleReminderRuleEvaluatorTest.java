@@ -89,7 +89,7 @@ class ExamScheduleReminderRuleEvaluatorTest {
 		when(examRepository.findUpcoming(eq(1L), any(), any())).thenReturn(List.of(exam));
 		when(subjectRepository.findByIdAndTenantId(5L, 1L)).thenReturn(Optional.of(subject));
 		when(attendanceRepository.findDistinctStudentIdsByClassroomId(1L, 10L)).thenReturn(List.of(1L));
-		when(studentRepository.findByIdAndTenantId(1L, 1L)).thenReturn(Optional.of(student));
+		when(studentRepository.findAllByIdInAndTenantId(List.of(1L), 1L)).thenReturn(List.of(student));
 		when(recipientResolver.resolve(1L, student)).thenReturn(Optional.of(77L));
 		when(tenantFormattingService.localizedFormatter(eq(1L), any()))
 				.thenReturn(DateTimeFormatter.ofPattern("EEE, MMM d 'at' HH:mm", Locale.US));
@@ -102,6 +102,31 @@ class ExamScheduleReminderRuleEvaluatorTest {
 		assertEquals("Alice Smith", trigger.templateVariables().get("studentName"));
 		assertEquals("Midterm", trigger.templateVariables().get("examTitle"));
 		assertEquals("Math", trigger.templateVariables().get("subjectName"));
+		verify(studentRepository, never()).findByIdAndTenantId(any(), any());
+	}
+
+	@Test
+	void evaluate_multipleStudentsInClassroom_bulkFetchesRatherThanPerStudentLookup() {
+		newEvaluator();
+		Exam exam = examWithId(100L, 10L, 5L);
+		Subject subject = subjectWithId(5L, "Math");
+		Student student1 = studentWithId(1L);
+		Student student2 = studentWithId(2L);
+
+		when(examRepository.findUpcoming(eq(1L), any(), any())).thenReturn(List.of(exam));
+		when(subjectRepository.findByIdAndTenantId(5L, 1L)).thenReturn(Optional.of(subject));
+		when(attendanceRepository.findDistinctStudentIdsByClassroomId(1L, 10L)).thenReturn(List.of(1L, 2L));
+		when(studentRepository.findAllByIdInAndTenantId(List.of(1L, 2L), 1L))
+				.thenReturn(List.of(student1, student2));
+		when(recipientResolver.resolve(eq(1L), any(Student.class))).thenReturn(Optional.of(77L));
+		when(tenantFormattingService.localizedFormatter(eq(1L), any()))
+				.thenReturn(DateTimeFormatter.ofPattern("EEE, MMM d 'at' HH:mm", Locale.US));
+
+		List<AlertTrigger> triggers = evaluator.evaluate(rule());
+
+		assertEquals(2, triggers.size());
+		verify(studentRepository, never()).findByIdAndTenantId(any(), any());
+		verify(studentRepository, org.mockito.Mockito.times(1)).findAllByIdInAndTenantId(any(), any());
 	}
 
 	@Test
