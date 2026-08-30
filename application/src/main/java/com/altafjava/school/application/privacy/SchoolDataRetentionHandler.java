@@ -3,7 +3,8 @@ package com.altafjava.school.application.privacy;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import com.altafjava.platform.core.privacy.DomainRetentionHandler;
 import com.altafjava.school.domain.student.model.EnrollmentStatus;
 import com.altafjava.school.domain.student.model.Student;
@@ -17,6 +18,16 @@ import lombok.extern.slf4j.Slf4j;
  * {@link EnrollmentStatus#GRADUATED}, {@link EnrollmentStatus#TRANSFERRED}) are ever in scope — an
  * {@code ACTIVE} or {@code SUSPENDED} student's data is still in active use regardless of how a
  * tenant's {@code entityType=STUDENT} policy is configured.
+ *
+ * <p>
+ * Each student is anonymized in its own transaction ({@link TransactionTemplate}, the same
+ * pattern {@code CertificateService} uses for the same self-invocation reason —
+ * {@code @Transactional} only applies through the Spring proxy, which a private helper method
+ * called from within this class would bypass). A batch-wide single transaction would let one
+ * student with a data problem (a bad row, a constraint violation) roll back every other, otherwise
+ * healthy student in the same tenant's sweep — and since the failing row would still match the
+ * same query on every subsequent day's run, it would permanently block that tenant's retention
+ * enforcement until someone manually intervened, with no per-tenant signal beyond a log line.
  */
 @Slf4j
 @Component
@@ -27,13 +38,15 @@ public class SchoolDataRetentionHandler implements DomainRetentionHandler {
 			EnrollmentStatus.GRADUATED, EnrollmentStatus.TRANSFERRED);
 
 	private final StudentRepository studentRepository;
+	private final TransactionTemplate transactionTemplate;
 
-	public SchoolDataRetentionHandler(StudentRepository studentRepository) {
+	public SchoolDataRetentionHandler(StudentRepository studentRepository,
+			PlatformTransactionManager transactionManager) {
 		this.studentRepository = studentRepository;
+		this.transactionTemplate = new TransactionTemplate(transactionManager);
 	}
 
 	@Override
-	@Transactional
 	public int enforceRetention(Long tenantId, String entityType, Instant cutoff, String deletionPolicy) {
 		if (!ENTITY_TYPE_STUDENT.equals(entityType)) {
 			log.info("action=retention-entity-type-not-handled tenantId={} entityType={}", tenantId, entityType);
@@ -44,11 +57,42 @@ public class SchoolDataRetentionHandler implements DomainRetentionHandler {
 				.findAllByTenantIdAndEnrollmentStatusInAndEnrollmentStatusChangedAtLessThanEqual(tenantId,
 						INACTIVE_STATUSES, cutoff);
 
+		int succeeded = 0;
+		int failed = 0;
 		for (Student student : eligible) {
-			applyDeletionPolicy(student, deletionPolicy);
-			studentRepository.save(student);
+			if (anonymizeInOwnTransaction(tenantId, student.getId(), deletionPolicy)) {
+				succeeded++;
+			} else {
+				failed++;
+			}
 		}
-		return eligible.size();
+
+		if (failed > 0) {
+			// Thrown after processing every student rather than mid-loop, so the healthy
+			// students above already committed in their own transactions — only the count
+			// reported back to DataRetentionEnforcementScheduler undercounts on a partial-failure
+			// day (it logs this as a failed policy run and moves on); the actual anonymizations
+			// are not lost.
+			throw new IllegalStateException(
+					failed + " of " + eligible.size() + " student retention actions failed for tenant " + tenantId
+							+ " — see preceding per-student error logs");
+		}
+		return succeeded;
+	}
+
+	private boolean anonymizeInOwnTransaction(Long tenantId, Long studentId, String deletionPolicy) {
+		try {
+			transactionTemplate.executeWithoutResult(status -> {
+				Student student = studentRepository.findByIdAndTenantId(studentId, tenantId)
+						.orElseThrow(() -> new IllegalStateException("Student not found: " + studentId));
+				applyDeletionPolicy(student, deletionPolicy);
+				studentRepository.save(student);
+			});
+			return true;
+		} catch (Exception e) {
+			log.error("action=retention-student-failed tenantId={} studentId={}", tenantId, studentId, e);
+			return false;
+		}
 	}
 
 	private void applyDeletionPolicy(Student student, String deletionPolicy) {

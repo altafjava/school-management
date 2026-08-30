@@ -26075,6 +26075,64 @@
         } ]
       }
     },
+    "/api/v1/subscriptions/{id}/addons/{addonPurchaseId}" : {
+      "delete" : {
+        "tags" : [ "Subscriptions" ],
+        "summary" : "Cancel Add-On",
+        "description" : "Cancels an active add-on purchase and revokes whatever it granted, unless the tenant's plan or another active add-on still covers it.",
+        "operationId" : "cancelAddOn",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Subscription ID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        }, {
+          "name" : "addonPurchaseId",
+          "in" : "path",
+          "description" : "Add-on purchase ID",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "default" : ""
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Add-on cancelled successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponse",
+                  "additionalProperties" : {
+                    "default" : ""
+                  },
+                  "default" : ""
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Add-on purchase not found or not active",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseSubscriptionAddOnResponse"
+                }
+              }
+            }
+          }
+        },
+        "security" : [ {
+          "bearerAuth" : [ ]
+        }, {
+          "tenantHeader" : [ ]
+        } ]
+      }
+    },
     "/api/v1/roles/{id}/permissions/{code}" : {
       "delete" : {
         "tags" : [ "role-controller" ],

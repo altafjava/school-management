@@ -4,16 +4,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
 import com.altafjava.school.domain.student.model.EnrollmentStatus;
 import com.altafjava.school.domain.student.model.Student;
 import com.altafjava.school.domain.student.repository.StudentRepository;
@@ -23,8 +29,16 @@ class SchoolDataRetentionHandlerTest {
 
 	@Mock
 	private StudentRepository studentRepository;
+	@Mock
+	private PlatformTransactionManager transactionManager;
 
 	private SchoolDataRetentionHandler handler;
+
+	@BeforeEach
+	void setUp() {
+		lenient().when(transactionManager.getTransaction(any())).thenReturn(mock(TransactionStatus.class));
+		handler = new SchoolDataRetentionHandler(studentRepository, transactionManager);
+	}
 
 	private Student withdrawnStudent(long id) {
 		Student student = Student.create("STU-" + id, "Alice", "Smith", "alice@school.test", null);
@@ -35,8 +49,6 @@ class SchoolDataRetentionHandlerTest {
 
 	@Test
 	void enforceRetention_entityTypeNotStudent_returnsZeroWithoutQuerying() {
-		handler = new SchoolDataRetentionHandler(studentRepository);
-
 		int affected = handler.enforceRetention(1L, "GUARDIAN", Instant.now(), "ANONYMIZE");
 
 		assertEquals(0, affected);
@@ -46,11 +58,11 @@ class SchoolDataRetentionHandlerTest {
 
 	@Test
 	void enforceRetention_anonymizePolicy_erasesPiiAndSoftDeletesEachEligibleStudent() {
-		handler = new SchoolDataRetentionHandler(studentRepository);
 		Student student = withdrawnStudent(10L);
 		Instant cutoff = Instant.now();
 		when(studentRepository.findAllByTenantIdAndEnrollmentStatusInAndEnrollmentStatusChangedAtLessThanEqual(eq(1L),
 				any(), eq(cutoff))).thenReturn(List.of(student));
+		when(studentRepository.findByIdAndTenantId(10L, 1L)).thenReturn(Optional.of(student));
 
 		int affected = handler.enforceRetention(1L, "STUDENT", cutoff, "ANONYMIZE");
 
@@ -62,11 +74,11 @@ class SchoolDataRetentionHandlerTest {
 
 	@Test
 	void enforceRetention_softDeletePolicy_softDeletesWithoutErasingPii() {
-		handler = new SchoolDataRetentionHandler(studentRepository);
 		Student student = withdrawnStudent(11L);
 		Instant cutoff = Instant.now();
 		when(studentRepository.findAllByTenantIdAndEnrollmentStatusInAndEnrollmentStatusChangedAtLessThanEqual(eq(1L),
 				any(), eq(cutoff))).thenReturn(List.of(student));
+		when(studentRepository.findByIdAndTenantId(11L, 1L)).thenReturn(Optional.of(student));
 
 		handler.enforceRetention(1L, "STUDENT", cutoff, "SOFT_DELETE");
 
@@ -75,19 +87,37 @@ class SchoolDataRetentionHandlerTest {
 	}
 
 	@Test
-	void enforceRetention_hardDeletePolicy_throwsUnsupportedOperation() {
-		handler = new SchoolDataRetentionHandler(studentRepository);
+	void enforceRetention_hardDeletePolicy_throwsAfterAttemptingEveryEligibleStudent() {
+		Student student = withdrawnStudent(12L);
 		Instant cutoff = Instant.now();
 		when(studentRepository.findAllByTenantIdAndEnrollmentStatusInAndEnrollmentStatusChangedAtLessThanEqual(eq(1L),
-				any(), eq(cutoff))).thenReturn(List.of(withdrawnStudent(12L)));
+				any(), eq(cutoff))).thenReturn(List.of(student));
+		when(studentRepository.findByIdAndTenantId(12L, 1L)).thenReturn(Optional.of(student));
 
-		assertThrows(UnsupportedOperationException.class,
+		assertThrows(IllegalStateException.class,
 				() -> handler.enforceRetention(1L, "STUDENT", cutoff, "HARD_DELETE"));
+		verify(studentRepository, never()).save(any());
+	}
+
+	@Test
+	void enforceRetention_oneStudentFailsAnotherSucceeds_stillCommitsTheHealthyOne() {
+		Student failingStudent = withdrawnStudent(20L);
+		Student healthyStudent = withdrawnStudent(21L);
+		Instant cutoff = Instant.now();
+		when(studentRepository.findAllByTenantIdAndEnrollmentStatusInAndEnrollmentStatusChangedAtLessThanEqual(eq(1L),
+				any(), eq(cutoff))).thenReturn(List.of(failingStudent, healthyStudent));
+		when(studentRepository.findByIdAndTenantId(20L, 1L)).thenReturn(Optional.empty());
+		when(studentRepository.findByIdAndTenantId(21L, 1L)).thenReturn(Optional.of(healthyStudent));
+
+		assertThrows(IllegalStateException.class,
+				() -> handler.enforceRetention(1L, "STUDENT", cutoff, "ANONYMIZE"));
+
+		assertEquals("[erased]", healthyStudent.getFirstName());
+		verify(studentRepository, times(1)).save(healthyStudent);
 	}
 
 	@Test
 	void enforceRetention_queriesOnlyInactiveEnrollmentStatuses() {
-		handler = new SchoolDataRetentionHandler(studentRepository);
 		Instant cutoff = Instant.now();
 		when(studentRepository.findAllByTenantIdAndEnrollmentStatusInAndEnrollmentStatusChangedAtLessThanEqual(eq(1L),
 				eq(List.of(EnrollmentStatus.WITHDRAWN, EnrollmentStatus.GRADUATED, EnrollmentStatus.TRANSFERRED)),

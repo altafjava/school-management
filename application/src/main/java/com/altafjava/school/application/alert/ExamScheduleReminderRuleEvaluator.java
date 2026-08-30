@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import com.altafjava.platform.application.alert.AlertRuleEvaluator;
 import com.altafjava.platform.application.alert.AlertTrigger;
@@ -74,12 +76,18 @@ public class ExamScheduleReminderRuleEvaluator implements AlertRuleEvaluator {
 		if (subject == null) {
 			return List.of();
 		}
+		List<Long> studentIds = attendanceRepository.findDistinctStudentIdsByClassroomId(tenantId,
+				exam.getClassroomId());
+		Map<Long, Student> studentsById = studentRepository.findAllByIdInAndTenantId(studentIds, tenantId).stream()
+				.collect(Collectors.toMap(Student::getId, Function.identity()));
+
 		List<AlertTrigger> triggers = new ArrayList<>();
-		for (Long studentId : attendanceRepository.findDistinctStudentIdsByClassroomId(tenantId,
-				exam.getClassroomId())) {
-			studentRepository.findByIdAndTenantId(studentId, tenantId)
-					.flatMap(student -> buildTrigger(tenantId, exam, subject, student))
-					.ifPresent(triggers::add);
+		for (Long studentId : studentIds) {
+			Student student = studentsById.get(studentId);
+			if (student == null) {
+				continue;
+			}
+			buildTrigger(tenantId, exam, subject, student).ifPresent(triggers::add);
 		}
 		return triggers;
 	}
