@@ -1,8 +1,10 @@
 package com.altafjava.school.api.controller;
 
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,39 +18,49 @@ import com.altafjava.platform.api.dto.response.ApiResponse;
 import com.altafjava.school.api.controller.api.GuardianApi;
 import com.altafjava.school.api.dto.request.AddressRequest;
 import com.altafjava.school.api.dto.request.CreateGuardianRequest;
+import com.altafjava.school.api.dto.request.GrantGuardianConsentRequest;
 import com.altafjava.school.api.dto.request.LinkGuardianRequest;
 import com.altafjava.school.api.dto.request.UpdatePhoneRequest;
+import com.altafjava.school.api.dto.response.GuardianConsentRecordResponse;
 import com.altafjava.school.api.dto.response.GuardianResponse;
 import com.altafjava.school.api.dto.response.StudentGuardianLinkResponse;
 import com.altafjava.school.api.dto.response.StudentResponse;
 import com.altafjava.school.api.mapper.AddressMapper;
+import com.altafjava.school.api.mapper.GuardianConsentRecordMapper;
 import com.altafjava.school.api.mapper.GuardianMapper;
 import com.altafjava.school.api.mapper.StudentGuardianLinkMapper;
 import com.altafjava.school.api.mapper.StudentMapper;
 import com.altafjava.school.api.support.PlatformPageMapper;
 import com.altafjava.school.api.support.SpringDataPageableResolver;
+import com.altafjava.school.application.service.GuardianConsentService;
 import com.altafjava.school.application.service.GuardianService;
+import com.altafjava.school.domain.guardian.model.GuardianConsentType;
 
 @RestController
 @RequestMapping("/api/v1/guardians")
 public class GuardianController implements GuardianApi {
 
 	private final GuardianService guardianService;
+	private final GuardianConsentService guardianConsentService;
 	private final GuardianMapper guardianMapper;
 	private final AddressMapper addressMapper;
 	private final StudentGuardianLinkMapper studentGuardianLinkMapper;
 	private final StudentMapper studentMapper;
+	private final GuardianConsentRecordMapper guardianConsentRecordMapper;
 
 	private final SpringDataPageableResolver pageableResolver;
 
-	public GuardianController(GuardianService guardianService, GuardianMapper guardianMapper,
-			AddressMapper addressMapper, StudentGuardianLinkMapper studentGuardianLinkMapper,
-			StudentMapper studentMapper, SpringDataPageableResolver pageableResolver) {
+	public GuardianController(GuardianService guardianService, GuardianConsentService guardianConsentService,
+			GuardianMapper guardianMapper, AddressMapper addressMapper,
+			StudentGuardianLinkMapper studentGuardianLinkMapper, StudentMapper studentMapper,
+			GuardianConsentRecordMapper guardianConsentRecordMapper, SpringDataPageableResolver pageableResolver) {
 		this.guardianService = guardianService;
+		this.guardianConsentService = guardianConsentService;
 		this.guardianMapper = guardianMapper;
 		this.addressMapper = addressMapper;
 		this.studentGuardianLinkMapper = studentGuardianLinkMapper;
 		this.studentMapper = studentMapper;
+		this.guardianConsentRecordMapper = guardianConsentRecordMapper;
 		this.pageableResolver = pageableResolver;
 	}
 
@@ -140,5 +152,39 @@ public class GuardianController implements GuardianApi {
 		return ApiResponse.success(PlatformPageMapper
 				.toPlatformPage(guardianService.listLinkedStudentsForCurrentUser(pageableResolver.resolve(page, size))
 						.map(studentMapper::toResponse)));
+	}
+
+	@Override
+	@PostMapping("/me/students/{studentPublicId}/consents")
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_SELF_SERVICE')")
+	public ApiResponse<GuardianConsentRecordResponse> grantSelfConsent(@PathVariable String studentPublicId,
+			@Valid @RequestBody GrantGuardianConsentRequest request) {
+		return ApiResponse.success(guardianConsentRecordMapper.toResponse(
+				guardianConsentService.grant(studentPublicId, request.consentType(), request.policyVersion())));
+	}
+
+	@Override
+	@DeleteMapping("/me/students/{studentPublicId}/consents/{consentType}")
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_SELF_SERVICE')")
+	public ApiResponse<GuardianConsentRecordResponse> revokeSelfConsent(@PathVariable String studentPublicId,
+			@PathVariable GuardianConsentType consentType) {
+		return ApiResponse.success(
+				guardianConsentRecordMapper.toResponse(guardianConsentService.revoke(studentPublicId, consentType)));
+	}
+
+	@Override
+	@GetMapping("/me/students/{studentPublicId}/consents")
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_SELF_SERVICE')")
+	public ApiResponse<List<GuardianConsentRecordResponse>> myConsents(@PathVariable String studentPublicId) {
+		return ApiResponse.success(guardianConsentService.listMine(studentPublicId).stream()
+				.map(guardianConsentRecordMapper::toResponse).toList());
+	}
+
+	@Override
+	@GetMapping("/students/{studentPublicId}/consents")
+	@PreAuthorize("@permissionAuthorizationService.hasPermission('GUARDIAN_MANAGE')")
+	public ApiResponse<List<GuardianConsentRecordResponse>> studentConsents(@PathVariable String studentPublicId) {
+		return ApiResponse.success(guardianConsentService.listForStudent(studentPublicId).stream()
+				.map(guardianConsentRecordMapper::toResponse).toList());
 	}
 }

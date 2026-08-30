@@ -12,7 +12,8 @@ resources:
 # - external-secret.yaml (AWS Secrets Manager wiring) — depends on which secrets backend and
 #   cloud account this actually deploys into; provision `school-secrets` however your cluster's
 #   operator already manages secrets rather than assuming AWS.
-# - ingress.yaml, db-backup-cronjob.yaml — same reasoning: host/TLS/backup-target details are
-#   specific to the real deployment target, not safe to guess here.
+# - ingress.yaml, db-backup-cronjob.yaml, db-restore-drill-cronjob.yaml — same reasoning:
+#   host/TLS/backup-target details are specific to the real deployment target, not safe to guess
+#   here.
 # Copy the equivalent files from platform-saas/k8s/base/ as a starting point once those details
 # are known.

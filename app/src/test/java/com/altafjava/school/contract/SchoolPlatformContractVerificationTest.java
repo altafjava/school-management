@@ -13,6 +13,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import com.altafjava.platform.application.event.events.TenantCreatedEvent;
 import com.altafjava.platform.core.PlatformConfigurer;
 import com.altafjava.school.application.listener.SchoolTenantProvisioningListener;
+import com.altafjava.school.application.privacy.SchoolDataRetentionHandler;
 import com.altafjava.school.application.privacy.StudentGuardianPiiHandler;
 import com.altafjava.school.application.sync.AttendanceOfflineSyncHandler;
 import com.altafjava.school.config.SchoolPlatformConfigurer;
@@ -52,7 +53,8 @@ class SchoolPlatformContractVerificationTest {
 		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
 		// though none of these tests touch offlineSyncEntityHandlers() itself.
 		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
-				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class));
+				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class),
+				Mockito.mock(SchoolDataRetentionHandler.class));
 		assertThat(configurer.platformName())
 				.as("SchoolPlatformConfigurer.platformName must return a non-blank platform name")
 				.isNotBlank();
@@ -65,7 +67,8 @@ class SchoolPlatformContractVerificationTest {
 		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
 		// though none of these tests touch offlineSyncEntityHandlers() itself.
 		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
-				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class));
+				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class),
+				Mockito.mock(SchoolDataRetentionHandler.class));
 		List<String> paths = configurer.domainTenantChangelogPaths();
 		assertThat(paths)
 				.as("School domain must register at least one Liquibase changelog for tenant schema seeding")
@@ -79,7 +82,8 @@ class SchoolPlatformContractVerificationTest {
 		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
 		// though none of these tests touch offlineSyncEntityHandlers() itself.
 		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
-				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class));
+				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class),
+				Mockito.mock(SchoolDataRetentionHandler.class));
 		assertThat(configurer.maxTenantsPerInstance())
 				.as("maxTenantsPerInstance must be a positive integer")
 				.isPositive();
@@ -90,11 +94,26 @@ class SchoolPlatformContractVerificationTest {
 	void schoolPlatformConfigurer_domainPiiHandler_isPresent() {
 		StudentGuardianPiiHandler piiHandler = Mockito.mock(StudentGuardianPiiHandler.class);
 		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
-				Mockito.mock(AttendanceOfflineSyncHandler.class), piiHandler);
+				Mockito.mock(AttendanceOfflineSyncHandler.class), piiHandler,
+				Mockito.mock(SchoolDataRetentionHandler.class));
 		assertThat(configurer.domainPiiHandler())
 				.as("school-saas holds Student/Guardian PII, so a GDPR/DPDP erasure request must "
 						+ "reach it — an empty domainPiiHandler() would silently skip domain-side erasure")
 				.contains(piiHandler);
+	}
+
+	@Test
+	@DisplayName("SchoolPlatformConfigurer.domainRetentionHandler is present")
+	void schoolPlatformConfigurer_domainRetentionHandler_isPresent() {
+		SchoolDataRetentionHandler retentionHandler = Mockito.mock(SchoolDataRetentionHandler.class);
+		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
+				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class),
+				retentionHandler);
+		assertThat(configurer.domainRetentionHandler())
+				.as("school-saas holds Student PII subject to FERPA/COPPA retention windows, so the daily "
+						+ "retention sweep must reach it — an empty domainRetentionHandler() would silently skip "
+						+ "domain-side retention enforcement")
+				.contains(retentionHandler);
 	}
 
 	@Test
@@ -143,7 +162,8 @@ class SchoolPlatformContractVerificationTest {
 		// Map.of rejects a null value, so the constructor needs a real (mock) handler even
 		// though none of these tests touch offlineSyncEntityHandlers() itself.
 		SchoolPlatformConfigurer configurer = new SchoolPlatformConfigurer(
-				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class));
+				Mockito.mock(AttendanceOfflineSyncHandler.class), Mockito.mock(StudentGuardianPiiHandler.class),
+				Mockito.mock(SchoolDataRetentionHandler.class));
 		assertThat(configurer.accessTokenExpiry().toHours())
 				.as("Access token expiry should not exceed 24 hours for security reasons")
 				.isLessThanOrEqualTo(24);

@@ -54,5 +54,6 @@
     <include file="db/domain/changesets/047-custom-field-grouping-visibility.xml"/>
     <include file="db/domain/changesets/048-pay-component-definitions.xml"/>
     <include file="db/domain/changesets/049-exam-type-definitions.xml"/>
+    <include file="db/domain/changesets/050-retention-and-guardian-consent.xml"/>
 
 </databaseChangeLog>

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.altafjava.platform.application.alert.AlertRuleService;
 import com.altafjava.platform.application.event.events.TenantCreatedEvent;
 import com.altafjava.platform.application.service.approval.ApprovalWorkflowDefinitionService;
+import com.altafjava.platform.application.service.privacy.DataRetentionPolicyService;
 import com.altafjava.platform.core.exception.BusinessException;
 import com.altafjava.platform.core.tenant.TenantContext;
 import com.altafjava.platform.core.tenant.TenantContextSnapshot;
@@ -20,6 +21,7 @@ import com.altafjava.platform.domain.notification.model.NotificationChannel;
 import com.altafjava.platform.domain.notification.model.NotificationTemplate;
 import com.altafjava.platform.domain.notification.model.NotificationType;
 import com.altafjava.platform.domain.notification.repository.NotificationTemplateRepository;
+import com.altafjava.platform.domain.privacy.model.DeletionPolicy;
 import com.altafjava.platform.domain.report.model.ReportDefinition;
 import com.altafjava.platform.domain.report.model.ReportOutputFormat;
 import com.altafjava.platform.domain.report.model.ReportType;
@@ -164,7 +166,14 @@ public class SchoolTenantProvisioningListener {
 	private final ApprovalWorkflowDefinitionRepository approvalWorkflowDefinitionRepository;
 	private final PayComponentDefinitionRepository payComponentDefinitionRepository;
 	private final ExamTypeDefinitionRepository examTypeDefinitionRepository;
+	private final DataRetentionPolicyService dataRetentionPolicyService;
 	private final ObjectMapper objectMapper;
+
+	private static final String STUDENT_ENTITY_TYPE = "STUDENT";
+	// 7 years post-withdrawal/graduation — an editable starting point (PUT
+	// /api/v1/data-retention-policies/{id}), not a legal opinion; confirm against the tenant's
+	// actual jurisdiction (FERPA/COPPA/GDPR-K/DPDP) before relying on it.
+	private static final int STUDENT_RETENTION_PERIOD_DAYS = 2555;
 
 	@Async("platformTaskExecutor")
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -182,6 +191,7 @@ public class SchoolTenantProvisioningListener {
 			seedDefaultApprovalWorkflows();
 			seedDefaultPayComponents(event.tenantId());
 			seedDefaultExamTypes(event.tenantId());
+			seedDefaultDataRetentionPolicy(event.tenantId());
 		});
 		log.info("action=school-tenant-provisioning-complete tenantId={}", event.tenantId());
 	}
@@ -337,6 +347,21 @@ public class SchoolTenantProvisioningListener {
 		}
 		examTypeDefinitionRepository.save(ExamTypeDefinition.create(seed.code(), seed.name(), seed.displayOrder()));
 		log.info("action=seed-exam-type-created tenantId={} code={}", tenantId, seed.code());
+	}
+
+	private void seedDefaultDataRetentionPolicy(Long tenantId) {
+		boolean exists = dataRetentionPolicyService.findAllForTenant(tenantId).stream()
+				.anyMatch(policy -> STUDENT_ENTITY_TYPE.equals(policy.getEntityType()));
+		if (exists) {
+			log.info("action=seed-retention-policy-skipped tenantId={} entityType={} reason=already-exists",
+					tenantId, STUDENT_ENTITY_TYPE);
+			return;
+		}
+		dataRetentionPolicyService.create(tenantId, STUDENT_ENTITY_TYPE, STUDENT_RETENTION_PERIOD_DAYS,
+				DeletionPolicy.ANONYMIZE,
+				"Default starting point — confirm against the tenant's actual jurisdiction before relying on it");
+		log.info("action=seed-retention-policy-created tenantId={} entityType={} retentionPeriodDays={}", tenantId,
+				STUDENT_ENTITY_TYPE, STUDENT_RETENTION_PERIOD_DAYS);
 	}
 
 	private String serializeVariableNames(List<String> variableNames) {
